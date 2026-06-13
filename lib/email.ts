@@ -56,7 +56,7 @@ export async function sendEmail(
 
 // ── Templates HTML ───────────────────────────────────────────────────────────
 
-function shell(inner: string): string {
+export function shell(inner: string): string {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://aurapost.fr';
   return `<!DOCTYPE html>
 <html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -76,7 +76,7 @@ function shell(inner: string): string {
 </body></html>`;
 }
 
-function button(href: string, label: string): string {
+export function button(href: string, label: string): string {
   return `<div style="text-align:center;margin-top:8px">
     <a href="${href}" style="display:inline-block;padding:14px 32px;background:#7c3aed;color:#fff;font-size:15px;font-weight:600;border-radius:10px;text-decoration:none">${label}</a>
   </div>`;

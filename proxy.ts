@@ -96,7 +96,7 @@ export default async function proxy(req: NextRequest) {
     pathname === '/maintenance' ||
     pathname === '/pricing' ||
     pathname === '/offline' ||
-    pathname === '/demo' ||
+    pathname.startsWith('/demo') ||
     pathname.startsWith('/auth/') ||
     pathname.startsWith('/api/auth') ||
     pathname.startsWith('/api/cron') ||
