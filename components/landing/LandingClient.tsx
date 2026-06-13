@@ -14,8 +14,11 @@ import { MouseGlow, BetaBadge } from '@/components/ui/decor';
 import { useIsDesktop } from '@/lib/hooks/use-media-query';
 import { PLANS, formatPrice } from '@/lib/plans';
 import { HERO_VARIANTS, type HeroCopy } from '@/lib/ab';
+import { unsplash, FITNESS_PHOTO_IDS } from '@/lib/stock-images';
 import LiveCounter from './LiveCounter';
 import TrustWidget from './TrustWidget';
+import HeroMockup from './HeroMockup';
+import InstagramGridBackground from './InstagramGridBackground';
 
 // Effets lourds chargés en dynamic import (bundle initial allégé), désactivés sur mobile.
 const Particles = dynamic(() => import('@/components/ui/particles').then((m) => m.Particles), { ssr: false });
@@ -27,9 +30,9 @@ const Testimonials = dynamic(() => import('./Testimonials'));
 const ExitIntent = dynamic(() => import('./ExitIntent'), { ssr: false });
 
 const FEATURES = [
-  { icon: Camera, title: '8 posts Instagram', desc: 'Légendes, hashtags et hooks calibrés sur ta spécialité et ton ton.', n: '01' },
-  { icon: Briefcase, title: '4 posts LinkedIn', desc: 'Du contenu d’autorité pour asseoir ta crédibilité de coach.', n: '02' },
-  { icon: Globe, title: 'Ton site, loué', desc: 'Une vitrine sur-mesure sur ton sous-domaine, rédigée par l’IA.', n: '03' },
+  { icon: Camera, title: '8 posts Instagram', desc: 'Légendes, hashtags et hooks calibrés sur ta spécialité et ton ton.', n: '01', img: unsplash(FITNESS_PHOTO_IDS[1], 600, 400) },
+  { icon: Briefcase, title: '4 posts LinkedIn', desc: 'Du contenu d’autorité pour asseoir ta crédibilité de coach.', n: '02', img: unsplash(FITNESS_PHOTO_IDS[11], 600, 400) },
+  { icon: Globe, title: 'Ton site, loué', desc: 'Une vitrine sur-mesure sur ton sous-domaine, rédigée par l’IA.', n: '03', img: unsplash(FITNESS_PHOTO_IDS[5], 600, 400) },
 ];
 
 export default function LandingClient({ heroCopy = HERO_VARIANTS.a }: { heroCopy?: HeroCopy }) {
@@ -62,52 +65,61 @@ export default function LandingClient({ heroCopy = HERO_VARIANTS.a }: { heroCopy
       </header>
 
       {/* Hero */}
-      <section className="relative flex min-h-[88vh] items-center overflow-hidden">
+      <section className="relative flex min-h-[88vh] items-center overflow-hidden py-16">
+        <InstagramGridBackground />
         {isDesktop && <Spotlight className="-top-40 left-0 md:-top-20 md:left-60" fill="#7C3AED" />}
-        {isDesktop && <Particles quantity={70} />}
+        {isDesktop && <Particles quantity={40} />}
         <MouseGlow />
-        <span className="section-number pointer-events-none absolute -right-4 top-10 select-none md:right-10">N°1</span>
+        <span className="section-number pointer-events-none absolute -right-4 top-6 select-none md:right-6">N°1</span>
 
-        <div className="relative z-10 mx-auto w-full max-w-5xl px-6 text-center">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-md border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-widest text-primary">
-            <Sparkles className="h-3.5 w-3.5" /> Contenu social piloté par IA
+        <div className="relative z-10 mx-auto grid w-full max-w-6xl items-center gap-12 px-6 lg:grid-cols-[1.05fr_1fr]">
+          {/* Colonne texte */}
+          <div className="text-center lg:text-left">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-md border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-widest text-primary">
+              <Sparkles className="h-3.5 w-3.5" /> Contenu social piloté par IA
+            </div>
+
+            <h1 className="text-6xl font-black uppercase leading-[0.92] tracking-tighter sm:text-7xl md:text-8xl">
+              {heroCopy.line1}
+              <br />
+              <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">{heroCopy.line2}</span>
+            </h1>
+
+            <div className="mt-6 flex justify-center lg:justify-start">
+              <TypewriterEffect
+                className="text-xl font-bold sm:text-2xl"
+                words={[
+                  ...heroCopy.subtitle.text.split(' ').map((text) => ({ text })),
+                  { text: heroCopy.subtitle.highlight, className: 'text-primary' },
+                ]}
+              />
+            </div>
+
+            <div className="mt-6 flex justify-center lg:justify-start">
+              <LiveCounter />
+            </div>
+
+            <p className="mx-auto mt-6 max-w-xl text-base text-muted-foreground lg:mx-0">
+              AuraPost écrit tes posts Instagram &amp; LinkedIn de coach sportif et te loue un site vitrine — à partir de ton seul profil.
+            </p>
+
+            <div className="mt-10 flex flex-wrap items-center justify-center gap-4 lg:justify-start">
+              <ShimmerButton onClick={() => (window.location.href = '/register')} className="h-12 px-8 text-base">
+                Créer mes 12 posts <ArrowRight className="h-4 w-4" />
+              </ShimmerButton>
+              <Button asChild variant="outline" size="lg" className="hover-lift">
+                <Link href="/demo">Voir la démo</Link>
+              </Button>
+            </div>
+            <p className="mt-4 text-sm text-muted-foreground">Sans carte bancaire · Un mois de contenu d’un coup</p>
+            <div className="mt-6 flex justify-center lg:justify-start">
+              <TrustWidget />
+            </div>
           </div>
 
-          <h1 className="text-6xl font-black uppercase leading-[0.92] tracking-tighter sm:text-7xl md:text-8xl">
-            {heroCopy.line1}
-            <br />
-            <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">{heroCopy.line2}</span>
-          </h1>
-
-          <div className="mt-6 flex justify-center">
-            <TypewriterEffect
-              className="text-xl font-bold sm:text-2xl"
-              words={[
-                ...heroCopy.subtitle.text.split(' ').map((text) => ({ text })),
-                { text: heroCopy.subtitle.highlight, className: 'text-primary' },
-              ]}
-            />
-          </div>
-
-          <div className="mt-6 flex justify-center">
-            <LiveCounter />
-          </div>
-
-          <p className="mx-auto mt-6 max-w-xl text-base text-muted-foreground">
-            AuraPost écrit tes posts Instagram &amp; LinkedIn de coach sportif et te loue un site vitrine — à partir de ton seul profil.
-          </p>
-
-          <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-            <ShimmerButton onClick={() => (window.location.href = '/register')} className="h-12 px-8 text-base">
-              Créer mes 12 posts <ArrowRight className="h-4 w-4" />
-            </ShimmerButton>
-            <Button asChild variant="outline" size="lg" className="hover-lift">
-              <Link href="/demo">Voir la démo</Link>
-            </Button>
-          </div>
-          <p className="mt-4 text-sm text-muted-foreground">Sans carte bancaire · Un mois de contenu d’un coup</p>
-          <div className="mt-6 flex justify-center">
-            <TrustWidget />
+          {/* Colonne mockup produit (MacBook) — masqué sur très petit écran */}
+          <div className="hidden lg:block">
+            <HeroMockup />
           </div>
         </div>
       </section>
@@ -118,14 +130,22 @@ export default function LandingClient({ heroCopy = HERO_VARIANTS.a }: { heroCopy
           <div className="grid gap-6 md:grid-cols-3">
             {FEATURES.map((f, i) => (
               <ScrollReveal key={f.title} delay={i * 0.1}>
-                <div className="hover-lift relative overflow-hidden rounded-lg border border-border bg-card p-7">
+                <div className="hover-lift group relative overflow-hidden rounded-lg border border-border bg-card">
                   <BorderBeam delay={i * 2} />
-                  <span className="absolute -right-2 -top-6 text-7xl font-black text-white/[0.03]">{f.n}</span>
-                  <div className="flex h-12 w-12 items-center justify-center rounded-md bg-primary/15">
-                    <f.icon className="h-6 w-6 text-primary" />
+                  {/* Image de contexte (coach / posts / site) */}
+                  <div className="relative h-40 w-full overflow-hidden">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={f.img} alt="" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-card via-card/40 to-transparent" />
+                    <span className="absolute right-3 top-2 text-6xl font-black text-white/10">{f.n}</span>
+                    <div className="absolute bottom-3 left-4 flex h-10 w-10 items-center justify-center rounded-md bg-primary/90 backdrop-blur">
+                      <f.icon className="h-5 w-5 text-white" />
+                    </div>
                   </div>
-                  <h3 className="mt-5 text-xl font-black uppercase tracking-tight">{f.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{f.desc}</p>
+                  <div className="p-7 pt-5">
+                    <h3 className="text-xl font-black uppercase tracking-tight">{f.title}</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{f.desc}</p>
+                  </div>
                 </div>
               </ScrollReveal>
             ))}

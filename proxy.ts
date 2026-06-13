@@ -34,7 +34,7 @@ function buildCSP(): string {
     "default-src 'self'",
     "script-src 'self' 'unsafe-inline'",
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob:",
+    "img-src 'self' data: blob: https://images.unsplash.com https://i.pravatar.cc https://picsum.photos",
     "font-src 'self' data:",
     "connect-src 'self' https://*.turso.io wss://*.turso.io https://api.anthropic.com https://api.stripe.com https://*.upstash.io",
     "object-src 'none'",

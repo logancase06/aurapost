@@ -15,6 +15,15 @@ const nextConfig = {
   compress: true,
   poweredByHeader: false,
 
+  // Hôtes d'images externes autorisés (photos fitness Unsplash, avatars pravatar).
+  images: {
+    remotePatterns: [
+      { protocol: 'https', hostname: 'images.unsplash.com' },
+      { protocol: 'https', hostname: 'i.pravatar.cc' },
+      { protocol: 'https', hostname: 'picsum.photos' },
+    ],
+  },
+
   async headers() {
     return [
       // Routes API mutatives — pas de cache par défaut.
