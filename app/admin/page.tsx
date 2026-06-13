@@ -2,13 +2,17 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { auth } from '@/lib/auth';
 import { isAdminSession } from '@/lib/admin';
-import { getAdminStats, listCoaches, recentSignups } from '@/lib/db/admin';
+import {
+  getAdminStats, listCoaches, recentSignups,
+  getBusinessMetrics, listInactiveCoaches, listSupportTickets,
+} from '@/lib/db/admin';
 import { formatDate } from '@/lib/utils';
 import { Sparkles, ShieldCheck, ArrowLeft } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import TenantToggle from './TenantToggle';
+import AdminInsights from './AdminInsights';
 
 export const metadata = { title: 'Administration' };
 
@@ -17,7 +21,14 @@ export default async function AdminPage() {
   if (!session?.user?.id) redirect('/login');
   if (!isAdminSession(session)) redirect('/dashboard');
 
-  const [stats, coaches, signups] = await Promise.all([getAdminStats(), listCoaches(), recentSignups()]);
+  const [stats, coaches, signups, metrics, inactive, tickets] = await Promise.all([
+    getAdminStats(),
+    listCoaches(),
+    recentSignups(),
+    getBusinessMetrics(),
+    listInactiveCoaches(),
+    listSupportTickets(),
+  ]);
 
   return (
     <main id="main-content" className="min-h-screen bg-background">
@@ -47,6 +58,8 @@ export default async function AdminPage() {
           <Stat label="Abonnements actifs" value={String(stats.activeSubscriptions)} />
           <Stat label="Revenu (mock)" value={stats.mockRevenue} />
         </div>
+
+        <AdminInsights metrics={metrics} inactive={inactive} tickets={tickets} />
 
         <div className="mt-8 grid gap-8 lg:grid-cols-3">
           <div className="lg:col-span-2">

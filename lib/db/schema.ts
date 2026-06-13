@@ -227,6 +227,25 @@ export const notifications = sqliteTable(
   })
 );
 
+// Tickets de support (widget /support → visibles dans /admin).
+export const supportTickets = sqliteTable(
+  'support_tickets',
+  {
+    id: text('id').primaryKey(),
+    tenantId: text('tenant_id'), // null si soumis hors session
+    name: text('name').notNull(),
+    email: text('email').notNull(),
+    subject: text('subject').notNull(),
+    message: text('message').notNull(),
+    status: text('status').notNull().default('open'), // 'open' | 'closed'
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => ({
+    statusIdx: index('support_tickets_status_idx').on(t.status),
+    createdIdx: index('support_tickets_created_idx').on(t.createdAt),
+  })
+);
+
 export const activityLogs = sqliteTable(
   'activity_logs',
   {

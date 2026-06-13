@@ -157,6 +157,19 @@ CREATE TABLE IF NOT EXISTS notifications (
 CREATE INDEX IF NOT EXISTS notifications_tenant_idx ON notifications (tenant_id);
 CREATE INDEX IF NOT EXISTS notifications_created_idx ON notifications (created_at);
 
+CREATE TABLE IF NOT EXISTS support_tickets (
+  id TEXT PRIMARY KEY,
+  tenant_id TEXT,
+  name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  message TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'open',
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS support_tickets_status_idx ON support_tickets (status);
+CREATE INDEX IF NOT EXISTS support_tickets_created_idx ON support_tickets (created_at);
+
 CREATE TABLE IF NOT EXISTS activity_logs (
   id TEXT PRIMARY KEY,
   tenant_id TEXT,

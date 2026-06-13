@@ -37,7 +37,7 @@ export async function GET() {
   ]);
 
   // On retire les hash de mot de passe de l'export.
-  const safeUser = user.map(({ passwordHash, ...rest }) => rest);
+  const safeUser = user.map(({ passwordHash: _omit, ...rest }) => rest);
 
   await logActivity(tenantId, session.user.id, 'gdpr_export', null, {});
 

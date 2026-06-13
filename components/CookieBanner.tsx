@@ -36,6 +36,8 @@ export default function CookieBanner() {
   const [marketing, setMarketing] = useState(false);
 
   useEffect(() => {
+    // Affichage client-only (localStorage indisponible au SSR).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!getStoredConsent()) setVisible(true);
   }, []);
 

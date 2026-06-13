@@ -15,6 +15,7 @@ import { useIsDesktop } from '@/lib/hooks/use-media-query';
 import { PLANS, formatPrice } from '@/lib/plans';
 import { HERO_VARIANTS, type HeroCopy } from '@/lib/ab';
 import LiveCounter from './LiveCounter';
+import TrustWidget from './TrustWidget';
 
 // Effets lourds chargés en dynamic import (bundle initial allégé), désactivés sur mobile.
 const Particles = dynamic(() => import('@/components/ui/particles').then((m) => m.Particles), { ssr: false });
@@ -105,6 +106,9 @@ export default function LandingClient({ heroCopy = HERO_VARIANTS.a }: { heroCopy
             </Button>
           </div>
           <p className="mt-4 text-sm text-muted-foreground">Sans carte bancaire · Un mois de contenu d’un coup</p>
+          <div className="mt-6 flex justify-center">
+            <TrustWidget />
+          </div>
         </div>
       </section>
 
@@ -217,22 +221,18 @@ export default function LandingClient({ heroCopy = HERO_VARIANTS.a }: { heroCopy
           <span className="flex items-center gap-2 font-black uppercase tracking-tight text-foreground">
             <Sparkles className="h-4 w-4 text-primary" /> AuraPost
           </span>
-          <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
-            <Link href="/blog" className="hover:text-foreground">
-              Blog
-            </Link>
-            <Link href="/coaches" className="hover:text-foreground">
-              Coachs
-            </Link>
-            <Link href="/status" className="hover:text-foreground">
-              Statut
-            </Link>
-            <Link href="/privacy" className="hover:text-foreground">
-              Confidentialité
-            </Link>
-            <Link href="/terms" className="hover:text-foreground">
-              CGU
-            </Link>
+          <span className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+            <Link href="/pricing" className="hover:text-foreground">Tarifs</Link>
+            <Link href="/blog" className="hover:text-foreground">Blog</Link>
+            <Link href="/coaches" className="hover:text-foreground">Coachs</Link>
+            <Link href="/wall-of-love" className="hover:text-foreground">Avis</Link>
+            <Link href="/vs/agence" className="hover:text-foreground">vs Agence</Link>
+            <Link href="/affiliates" className="hover:text-foreground">Affiliés</Link>
+            <Link href="/help" className="hover:text-foreground">Aide</Link>
+            <Link href="/changelog" className="hover:text-foreground">Nouveautés</Link>
+            <Link href="/status" className="hover:text-foreground">Statut</Link>
+            <Link href="/privacy" className="hover:text-foreground">Confidentialité</Link>
+            <Link href="/terms" className="hover:text-foreground">CGU</Link>
             <span>© {new Date().getFullYear()} AuraPost</span>
           </span>
         </div>

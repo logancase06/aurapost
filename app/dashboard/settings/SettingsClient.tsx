@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { Download, Trash2, Globe, Loader2, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,7 +9,6 @@ import { cn } from '@/lib/utils';
 import { updateLanguageAction } from './actions';
 
 export default function SettingsClient({ initialLanguage }: { initialLanguage: 'fr' | 'en' }) {
-  const router = useRouter();
   const [language, setLanguage] = useState<'fr' | 'en'>(initialLanguage);
   const [confirm, setConfirm] = useState('');
   const [pending, startTransition] = useTransition();
