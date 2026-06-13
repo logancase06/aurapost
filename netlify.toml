@@ -1,0 +1,65 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# AuraPost — configuration Netlify (Next.js 16, App Router)
+#
+# Le plugin officiel @netlify/plugin-nextjs gère :
+#   - le routage App Router (SSR/SSG/ISR) → pas de redirect SPA manuel,
+#   - le déploiement du middleware (proxy.ts) en Edge Function,
+#   - les Route Handlers en Netlify Functions (Lambda).
+# Les headers de sécurité (CSP, X-Frame-Options, …) sont posés dynamiquement par
+# proxy.ts ; on les redouble ici pour les assets statiques servis hors middleware.
+# ─────────────────────────────────────────────────────────────────────────────
+
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "20"
+  NEXT_TELEMETRY_DISABLED = "1"
+  # Empêche un build de planter si une var optionnelle manque (toutes ont un mock).
+  NPM_FLAGS = "--no-audit --no-fund"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# ── Headers de sécurité (filet de sécurité pour le statique) ─────────────────
+# proxy.ts reste la source de vérité pour les pages/API dynamiques.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=()"
+    Cross-Origin-Opener-Policy = "same-origin"
+    Strict-Transport-Security = "max-age=63072000; includeSubDomains; preload"
+
+# Assets immuables (hash dans le nom) — cache agressif.
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/fonts/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# ── Redirections ──────────────────────────────────────────────────────────────
+# Lien de parrainage court → page d'inscription avec code prérempli.
+[[redirects]]
+  from = "/ref/:code"
+  to = "/register?ref=:code"
+  status = 302
+  force = false
+
+# Health check : alias court.
+[[redirects]]
+  from = "/healthz"
+  to = "/api/health"
+  status = 200
+  force = true
+
+# ── Edge Functions ────────────────────────────────────────────────────────────
+# Le middleware Next (proxy.ts) est automatiquement déployé en Edge par le plugin.
+# Aucune edge function manuelle nécessaire : déclaré ici pour la traçabilité.

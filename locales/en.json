@@ -1,0 +1,94 @@
+{
+  "common": {
+    "appName": "AuraPost",
+    "loading": "Loading…",
+    "save": "Save",
+    "cancel": "Cancel",
+    "back": "Back",
+    "next": "Next",
+    "continue": "Continue",
+    "retry": "Retry",
+    "copy": "Copy",
+    "copied": "Copied",
+    "share": "Share"
+  },
+  "nav": {
+    "demo": "Demo",
+    "login": "Sign in",
+    "start": "Get started",
+    "blog": "Blog",
+    "coaches": "Coaches",
+    "status": "Status",
+    "posts": "Posts",
+    "calendar": "Calendar",
+    "website": "My site",
+    "analytics": "Analytics",
+    "referral": "Referrals",
+    "history": "History",
+    "billing": "Billing"
+  },
+  "landing": {
+    "badge": "AI-powered social content",
+    "ctaPrimary": "Create my 12 posts",
+    "ctaSecondary": "See the demo",
+    "noCard": "No credit card · A month of content in one go",
+    "howItWorks": "How it works",
+    "beforeAfter": "Before / After AuraPost",
+    "testimonials": "They won’t go back",
+    "pricingTitle": "Pick your plan",
+    "liveCounter": "posts generated this month"
+  },
+  "auth": {
+    "registerTitle": "Create your account — free, no credit card.",
+    "name": "Your name",
+    "brandName": "Your brand / business name",
+    "email": "Email",
+    "password": "Password",
+    "consent": "I accept AuraPost’s terms of use and privacy policy.",
+    "createAccount": "Create my account",
+    "alreadyMember": "Already registered?",
+    "signIn": "Sign in"
+  },
+  "dashboard": {
+    "greeting": "Hi",
+    "generate": "Create my 12 posts",
+    "captionPack": "Pack of 30 captions",
+    "alreadyGenerated": "This month’s content created",
+    "verifyEmail": "Verify your email — we sent you a link when you signed up.",
+    "suggestionsTitle": "Suggestions for next month",
+    "emptyTitle": "Your page is empty. For now.",
+    "filters": { "all": "All", "draft": "Pending", "approved": "Approved", "rejected": "Rejected" }
+  },
+  "post": {
+    "approve": "Approve",
+    "reject": "Reject",
+    "variant": "Variant",
+    "approved": "Post approved",
+    "rejected": "Post rejected",
+    "schedule": "Schedule",
+    "scheduled": "Post scheduled",
+    "copiedTimes": "Copied {count} times"
+  },
+  "referral": {
+    "title": "Referrals",
+    "subtitle": "Invite a coach. You both get 1 free month when they sign up.",
+    "yourLink": "Your referral link",
+    "referrals": "Referees",
+    "monthsEarned": "Months earned",
+    "yourReferees": "Your referees",
+    "credited": "Credited",
+    "pending": "Pending"
+  },
+  "calendar": {
+    "title": "Editorial calendar",
+    "toSchedule": "To schedule",
+    "exportICal": "Export iCal",
+    "dragHint": "Drag a post onto a day. Drop here to remove it from the calendar."
+  },
+  "settings": {
+    "language": "Language",
+    "languageHint": "Language of the interface and generated content.",
+    "french": "French",
+    "english": "English"
+  }
+}

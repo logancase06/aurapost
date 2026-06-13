@@ -1,0 +1,94 @@
+{
+  "common": {
+    "appName": "AuraPost",
+    "loading": "Chargement…",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "back": "Retour",
+    "next": "Suivant",
+    "continue": "Continuer",
+    "retry": "Réessayer",
+    "copy": "Copier",
+    "copied": "Copié",
+    "share": "Partager"
+  },
+  "nav": {
+    "demo": "Démo",
+    "login": "Connexion",
+    "start": "Commencer",
+    "blog": "Blog",
+    "coaches": "Coachs",
+    "status": "Statut",
+    "posts": "Posts",
+    "calendar": "Calendrier",
+    "website": "Mon site",
+    "analytics": "Analytics",
+    "referral": "Parrainage",
+    "history": "Historique",
+    "billing": "Abonnement"
+  },
+  "landing": {
+    "badge": "Contenu social piloté par IA",
+    "ctaPrimary": "Créer mes 12 posts",
+    "ctaSecondary": "Voir la démo",
+    "noCard": "Sans carte bancaire · Un mois de contenu d’un coup",
+    "howItWorks": "Comment ça marche",
+    "beforeAfter": "Avant / Après AuraPost",
+    "testimonials": "Ils ne reviendront pas en arrière",
+    "pricingTitle": "Choisis ton arme",
+    "liveCounter": "posts générés ce mois"
+  },
+  "auth": {
+    "registerTitle": "Créez votre compte — gratuit, sans carte bancaire.",
+    "name": "Votre nom",
+    "brandName": "Nom de votre marque / activité",
+    "email": "Email",
+    "password": "Mot de passe",
+    "consent": "J’accepte les conditions d’utilisation et la politique de confidentialité d’AuraPost.",
+    "createAccount": "Créer mon compte",
+    "alreadyMember": "Déjà inscrit ?",
+    "signIn": "Se connecter"
+  },
+  "dashboard": {
+    "greeting": "Salut",
+    "generate": "Créer mes 12 posts",
+    "captionPack": "Pack de 30 légendes",
+    "alreadyGenerated": "Contenu du mois créé",
+    "verifyEmail": "Vérifie ton adresse email — on t’a envoyé un lien à l’inscription.",
+    "suggestionsTitle": "Suggestions pour le mois prochain",
+    "emptyTitle": "Ta page est vide. Pour l’instant.",
+    "filters": { "all": "Tous", "draft": "En attente", "approved": "Approuvés", "rejected": "Rejetés" }
+  },
+  "post": {
+    "approve": "Approuver",
+    "reject": "Rejeter",
+    "variant": "Variante",
+    "approved": "Post approuvé",
+    "rejected": "Post rejeté",
+    "schedule": "Programmer",
+    "scheduled": "Post programmé",
+    "copiedTimes": "Copié {count} fois"
+  },
+  "referral": {
+    "title": "Parrainage",
+    "subtitle": "Invitez un coach. Vous gagnez 1 mois gratuit chacun à son inscription.",
+    "yourLink": "Votre lien de parrainage",
+    "referrals": "Filleuls",
+    "monthsEarned": "Mois gagnés",
+    "yourReferees": "Vos filleuls",
+    "credited": "Crédité",
+    "pending": "En attente"
+  },
+  "calendar": {
+    "title": "Calendrier éditorial",
+    "toSchedule": "À programmer",
+    "exportICal": "Export iCal",
+    "dragHint": "Glissez un post sur un jour. Déposez ici pour retirer du calendrier."
+  },
+  "settings": {
+    "language": "Langue",
+    "languageHint": "Langue de l’interface et du contenu généré.",
+    "french": "Français",
+    "english": "Anglais"
+  }
+}

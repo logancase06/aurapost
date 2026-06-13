@@ -1,0 +1,153 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  Thème AuraPost — dark mode par défaut, accent violet.
+  Tokens shadcn/ui (HSL sans wrapper). Le mode sombre est appliqué de force
+  (classe `dark` sur <html>), :root reprend les mêmes valeurs pour éviter tout FOUC.
+  Palette cible : background #0A0A0F · cards #111118 · primary #7C3AED · accent #A855F7.
+*/
+
+@layer base {
+  :root,
+  .dark {
+    --background: 240 24% 5%; /* #0A0A0F */
+    --foreground: 0 0% 98%;
+
+    --card: 240 18% 8%; /* #111118 */
+    --card-foreground: 0 0% 98%;
+
+    --popover: 240 18% 9%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 262 83% 58%; /* #7C3AED */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 10% 15%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 240 10% 13%;
+    --muted-foreground: 240 6% 64%;
+
+    --accent: 271 91% 65%; /* #A855F7 */
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+
+    --success: 152 60% 45%;
+    --warning: 38 92% 55%;
+
+    --border: 240 10% 18%;
+    --input: 240 10% 18%;
+    --ring: 262 83% 58%;
+
+    /* Angles nets — border-radius max 8px (style « Nike SaaS »). */
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-background text-foreground;
+    min-height: 100vh;
+    font-feature-settings:
+      'rlig' 1,
+      'calt' 1;
+  }
+}
+
+/* Lien d'évitement clavier (WCAG 2.4.1) */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+}
+.skip-link:focus {
+  left: 0.5rem;
+  top: 0.5rem;
+  z-index: 9999;
+  padding: 0.5rem 1rem;
+  background: hsl(var(--primary));
+  color: #fff;
+  border-radius: 0.5rem;
+}
+
+/* Dégradé radial décoratif réutilisable (héros). */
+.aura-glow {
+  background:
+    radial-gradient(60% 60% at 50% 0%, hsl(262 83% 58% / 0.18) 0%, transparent 70%),
+    radial-gradient(40% 40% at 80% 20%, hsl(271 91% 65% / 0.12) 0%, transparent 70%);
+}
+
+/* Survol : la card se soulève et projette une ombre (micro-interaction). */
+.hover-lift {
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px -12px hsl(262 83% 58% / 0.35);
+  border-color: hsl(262 83% 58% / 0.4);
+}
+
+/* Sections en diagonale (clip-path) — jamais de séparateurs droits. */
+.clip-diagonal-top {
+  clip-path: polygon(0 4vw, 100% 0, 100% 100%, 0 100%);
+}
+.clip-diagonal-bottom {
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 4vw), 0 100%);
+}
+
+/* Curseur premium : pointer renforcé sur les éléments interactifs. */
+@media (pointer: fine) {
+  button:not(:disabled),
+  a {
+    cursor: pointer;
+  }
+}
+
+/* Carrousel témoignages — défilement infini (la liste est doublée dans le JSX). */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* Apparition des étoiles de notation (pop). */
+@keyframes star-pop {
+  0% {
+    transform: scale(0) rotate(-20deg);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1) rotate(0);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [class*='marquee'] {
+    animation: none !important;
+  }
+}
+
+/* Numéro de section éditorial (très grand, en filigrane). */
+.section-number {
+  font-weight: 900;
+  font-size: clamp(6rem, 18vw, 16rem);
+  line-height: 0.8;
+  letter-spacing: -0.05em;
+  color: hsl(0 0% 100% / 0.04);
+}
