@@ -43,6 +43,10 @@ export default function CookieBanner() {
     const value: CookieConsent = { functional: true, ...consent, at: new Date().toISOString() };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
     window.dispatchEvent(new CustomEvent('aurapost:consent', { detail: value }));
+    // Met à jour le Consent Mode GA + Meta selon les choix.
+    void import('@/lib/analytics').then((m) => m.updateAnalyticsConsent(consent.analytics));
+    const w = window as unknown as { fbq?: (...a: unknown[]) => void };
+    if (typeof w.fbq === 'function') w.fbq('consent', consent.marketing ? 'grant' : 'revoke');
     setVisible(false);
   }
 

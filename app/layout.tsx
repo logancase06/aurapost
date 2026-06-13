@@ -9,6 +9,8 @@ import { GrainOverlay } from '@/components/ui/decor';
 import { CustomCursor } from '@/components/ui/custom-cursor';
 import { FaviconController } from '@/components/ui/favicon-controller';
 import CookieBanner from '@/components/CookieBanner';
+import InstallPrompt from '@/components/InstallPrompt';
+import AnalyticsScripts from '@/components/AnalyticsScripts';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://aurapost.fr';
 
@@ -29,6 +31,11 @@ export const metadata: Metadata = {
     description: 'Un mois de posts Instagram & LinkedIn générés en 30 secondes.',
   },
   robots: { index: true, follow: true },
+  icons: {
+    icon: [{ url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' }],
+    apple: [{ url: '/icons/apple-touch-icon.png', sizes: '180x180' }],
+  },
+  appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'AuraPost' },
 };
 
 export const viewport: Viewport = {
@@ -49,6 +56,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <FaviconController />
         <SessionProviderWrapper>{children}</SessionProviderWrapper>
         <ServiceWorkerRegister />
+        <AnalyticsScripts />
+        <InstallPrompt />
         <CookieBanner />
         <Toaster
           position="top-right"

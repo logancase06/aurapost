@@ -26,4 +26,17 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+// Bundle analyzer optionnel : `npm run analyze` (ANALYZE=true). Guard : si le package
+// n'est pas installé, on retourne la config telle quelle (le build reste vert).
+async function withAnalyzer(config) {
+  if (process.env.ANALYZE !== 'true') return config;
+  try {
+    const { default: bundleAnalyzer } = await import('@next/bundle-analyzer');
+    return bundleAnalyzer({ enabled: true })(config);
+  } catch {
+    console.warn('[next.config] @next/bundle-analyzer non installé — `npm i -D @next/bundle-analyzer`');
+    return config;
+  }
+}
+
+export default await withAnalyzer(nextConfig);

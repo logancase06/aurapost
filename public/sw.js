@@ -1,6 +1,7 @@
-// Service Worker minimal AuraPost — cache de l'app shell + fallback offline basique.
-const CACHE = 'aurapost-v1';
-const OFFLINE_URLS = ['/', '/offline'];
+// Service Worker AuraPost — cache app shell, offline (dernier dashboard en cache),
+// notifications push « Vos posts du mois sont prêts ».
+const CACHE = 'aurapost-v2';
+const OFFLINE_URLS = ['/', '/offline', '/icons/icon-192.png'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(OFFLINE_URLS)));
@@ -44,7 +45,29 @@ self.addEventListener('push', (event) => {
       return {};
     }
   })();
-  const title = data.title || 'AuraPost';
-  const body = data.body || 'Vous avez une nouvelle notification.';
-  event.waitUntil(self.registration.showNotification(title, { body, icon: '/icon.png' }));
+  const title = data.title || 'AuraPost ✦';
+  const body = data.body || 'Vos posts du mois sont prêts à être relus.';
+  const url = data.url || '/dashboard';
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body,
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
+      data: { url },
+      actions: [{ action: 'open', title: 'Voir mes posts' }],
+    })
+  );
+});
+
+// Clic sur la notification → ouvre/focus le dashboard.
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = (event.notification.data && event.notification.data.url) || '/dashboard';
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+      const existing = clients.find((c) => c.url.includes(url));
+      if (existing) return existing.focus();
+      return self.clients.openWindow(url);
+    })
+  );
 });
