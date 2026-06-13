@@ -227,6 +227,12 @@ export default function LandingClient({ heroCopy = HERO_VARIANTS.a }: { heroCopy
             <Link href="/status" className="hover:text-foreground">
               Statut
             </Link>
+            <Link href="/privacy" className="hover:text-foreground">
+              Confidentialité
+            </Link>
+            <Link href="/terms" className="hover:text-foreground">
+              CGU
+            </Link>
             <span>© {new Date().getFullYear()} AuraPost</span>
           </span>
         </div>

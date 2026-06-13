@@ -8,6 +8,7 @@ import ServiceWorkerRegister from '@/components/ServiceWorkerRegister';
 import { GrainOverlay } from '@/components/ui/decor';
 import { CustomCursor } from '@/components/ui/custom-cursor';
 import { FaviconController } from '@/components/ui/favicon-controller';
+import CookieBanner from '@/components/CookieBanner';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://aurapost.fr';
 
@@ -48,6 +49,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <FaviconController />
         <SessionProviderWrapper>{children}</SessionProviderWrapper>
         <ServiceWorkerRegister />
+        <CookieBanner />
         <Toaster
           position="top-right"
           toastOptions={{
