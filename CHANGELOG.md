@@ -2,6 +2,50 @@
 
 Toutes les évolutions notables du projet. Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/).
 
+## [0.7.0] — 2026-06-14 — Go-to-market, conversion, RGPD, PWA & business
+
+### Git & déploiement
+- Dépôt git dédié au projet (branche `main`), `.gitignore` + `.gitattributes` vérifiés.
+- `scripts/deploy-check.ts` : porte de pré-déploiement (variables critiques + intégrations).
+
+### Démo & acquisition
+- **Page de démo personnalisée `/demo/[slug]`** (premier client : **Vincent Ferré**, coach Hyrox à Nice) :
+  dashboard en lecture seule, 12 posts ultra-réalistes, site loué, analytics, CTA. Page de vente à envoyer en DM.
+- **Séquence email d'onboarding J+0 → J+30** (`lib/email-sequences.ts` + cron) selon l'état du coach.
+
+### Conversion
+- **Pricing redessiné** : toggle mensuel/annuel (-20%), features complètes, FAQ accordéon,
+  garantie 30 jours, popup de sortie.
+- **`/success`** (confettis canvas + prochaines étapes) et **`/cancel`** (raison d'annulation,
+  offre de pause, email de rétention).
+
+### RGPD & confidentialité (Étape 17)
+- Pages **`/privacy`** et **`/terms`** complètes. **Bannière cookies** à granularité (fonctionnel/analytics/marketing).
+- **`/api/gdpr/export`** (JSON), **`/api/gdpr/delete`** (suppression + email), purge des logs > 90 j (cron).
+- Page **`/dashboard/settings`** : langue, export et suppression de compte.
+
+### PWA (Étape 18)
+- `manifest.webmanifest` + icônes (192/512/maskable/apple), invite « Ajouter à l'écran d'accueil » (3ᵉ visite),
+  service worker (offline + notifications push « Vos posts du mois sont prêts »).
+
+### Analytics (Étape 9)
+- GA4 + Meta Pixel **gatés par le consentement** (`lib/analytics.ts`, Consent Mode v2), events clés.
+
+### Confiance & contenu (Étapes 12, 14, 15)
+- **Trust widget** landing, **`/wall-of-love`**, **`/vs/agence`**, **`/affiliates`**, **badge « Certifié AuraPost »**.
+- **`/support`** (tickets stockés, visibles en admin), **`/help`** (5 articles), **`/changelog`** public.
+- **`sitemap-coaches.xml`** dédié.
+
+### Admin business (Étapes 6 / 19 partiel)
+- Graphe MRR (simulé), heatmap horaire des générations (réelle), coachs inactifs + bouton « relance »,
+  taux d'approbation réel, conversion/NPS, export CSV des coachs.
+
+### Outillage (Étape 10 / 20)
+- `scripts/{backup,load-test,lighthouse}.ts`, bundle analyzer (`npm run analyze`).
+- Docs : `ROADMAP.md`, `LAUNCH_CHECKLIST.md`, `INVESTOR_DECK.md`, `PRESS_KIT.md`.
+
+> Build vert, lint 0 erreur, 22 tests Jest verts, ~85 routes.
+
 ## [0.6.0] — 2026-06-13 — Production-ready, sécurité, croissance & SEO
 
 ### A · Déploiement Netlify
