@@ -1,6 +1,9 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { auth } from '@/lib/auth';
+import { db } from '@/lib/db';
+import { coachProfiles } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
 import { getWebsiteForTenant } from '@/lib/db/website';
 import { getCoachSiteData } from '@/lib/db/public';
 import { ExternalLink, Wand2 } from 'lucide-react';
@@ -9,7 +12,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import DashboardShell from '../DashboardShell';
 import WebsiteActions from './WebsiteActions';
-import CoachSite from '@/templates/coach-site/CoachSite';
+import TemplateChooser from './TemplateChooser';
+import CoachSite, { styleForTone, type SiteStyle } from '@/templates/coach-site/CoachSite';
+
+const SITE_STYLES: SiteStyle[] = ['impact', 'clarte', 'authenticite'];
 
 export const metadata = { title: 'Mon site' };
 
@@ -24,6 +30,10 @@ export default async function WebsitePage() {
   const siteData = site ? await getCoachSiteData(site.subdomain) : null;
   const publicUrl = site ? `https://${site.subdomain}.${APP_DOMAIN}` : null;
 
+  const [prof] = await db.select({ tone: coachProfiles.tone }).from(coachProfiles).where(eq(coachProfiles.tenantId, tenantId)).limit(1);
+  const recommended = styleForTone(prof?.tone);
+  const currentStyle = site && SITE_STYLES.includes(site.template as SiteStyle) ? (site.template as SiteStyle) : null;
+
   return (
     <DashboardShell active="/dashboard/website">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -33,6 +43,13 @@ export default async function WebsitePage() {
         </div>
         <WebsiteActions exists={!!site} />
       </div>
+
+      {/* Choix du style visuel */}
+      <Card className="mt-6 p-5">
+        <p className="font-semibold">Choisis le style de ton site</p>
+        <p className="mb-4 text-sm text-muted-foreground">3 directions artistiques. Tu peux changer à tout moment — le contenu reste identique.</p>
+        <TemplateChooser current={currentStyle} recommended={recommended} />
+      </Card>
 
       {/* Génération avancée à partir des vraies données */}
       <Card className="mt-6 flex flex-wrap items-center gap-4 border-primary/30 bg-primary/5 p-5">

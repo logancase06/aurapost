@@ -118,6 +118,48 @@ export async function createOrActivateWebsite(tenantId: string, userId: string):
   return { ok: true, subdomain, created: true };
 }
 
+/**
+ * Définit le style visuel du site ('impact'|'clarte'|'authenticite'). Crée la ligne
+ * site (inactive, sans contenu) si elle n'existe pas encore — le choix de style peut
+ * précéder la génération.
+ */
+export async function setSiteStyle(
+  tenantId: string,
+  userId: string,
+  style: string
+): Promise<{ ok: boolean; error?: 'no_profile' }> {
+  const now = new Date().toISOString();
+  const existing = await getWebsiteForTenant(tenantId);
+  if (existing) {
+    await db.update(websites).set({ template: style, updatedAt: now }).where(eq(websites.id, existing.id));
+    await logActivity(tenantId, userId, 'site_style_changed', existing.id, { style });
+    return { ok: true };
+  }
+
+  const [profile] = await db
+    .select({ displayName: coachProfiles.displayName })
+    .from(coachProfiles)
+    .where(eq(coachProfiles.tenantId, tenantId))
+    .limit(1);
+  if (!profile) return { ok: false, error: 'no_profile' };
+
+  const subdomain = await computeUniqueSubdomain(tenantId, profile.displayName);
+  const id = nanoid();
+  await db.insert(websites).values({
+    id,
+    tenantId,
+    subdomain,
+    template: style,
+    status: 'inactive',
+    themeColor: '#7c3aed',
+    headline: profile.displayName,
+    createdAt: now,
+    updatedAt: now,
+  });
+  await logActivity(tenantId, userId, 'site_style_changed', id, { style, created: true });
+  return { ok: true };
+}
+
 export async function setWebsiteStatus(
   tenantId: string,
   userId: string,
