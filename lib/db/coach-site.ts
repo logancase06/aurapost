@@ -1,12 +1,32 @@
 import { db } from './index';
-import { coachProfiles, websites, generatedPosts } from './schema';
+import { coachProfiles, websites, coachPhotos, generatedPosts, users } from './schema';
 import { and, eq, ne, desc } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { slugify } from '@/lib/utils';
 import { logActivity } from './activity';
 import { generateSiteContent, type SiteContent, type SiteGenInput } from '@/lib/site-content';
+import {
+  parseSiteContent,
+  mergeSiteContent,
+  buildGeneratedSiteContent,
+  fromGeneratedCopy,
+  type SiteContent as EditableSiteContent,
+} from './site';
+import { styleForTone, type SiteStyle } from '@/templates/coach-site/CoachSite';
 import type { InstagramData } from '@/lib/instagram';
 import type { ReviewsAnalysis } from '@/lib/reviews';
+
+const SITE_STYLES: SiteStyle[] = ['impact', 'clarte', 'authenticite'];
+
+function strengthsFromReviews(raw: string | null): string[] {
+  if (!raw) return [];
+  try {
+    const o = JSON.parse(raw) as { strengths?: unknown };
+    return Array.isArray(o.strengths) ? o.strengths.map((s) => String(s).trim()).filter(Boolean) : [];
+  } catch {
+    return [];
+  }
+}
 
 function parseJson<T>(raw: string | null): T | null {
   if (!raw) return null;
@@ -137,15 +157,22 @@ export async function generateAndStoreSite(
   };
 
   const content = await generateSiteContent(input);
+  // Stocké au format éditable (shape unique websites.content) ; conserve les overrides
+  // manuels déjà saisis (re-génération = la base change, l'édition coach est préservée).
   const now = new Date().toISOString();
-  const existing = await db.select({ id: websites.id, subdomain: websites.subdomain, status: websites.status }).from(websites).where(eq(websites.tenantId, tenantId)).limit(1);
+  const existing = await db.select({ id: websites.id, subdomain: websites.subdomain, status: websites.status, template: websites.template, content: websites.content }).from(websites).where(eq(websites.tenantId, tenantId)).limit(1);
+
+  const generated = fromGeneratedCopy(content, input, { instagramUrl: state.instagramUrl });
+  const prevOverrides = existing[0]?.content ? parseSiteContent(existing[0].content) : null;
+  const siteContent = prevOverrides ? mergeSiteContent(generated, prevOverrides) : generated;
+  const stored = JSON.stringify(siteContent);
 
   let subdomain: string;
   if (existing[0]) {
     subdomain = existing[0].subdomain;
     await db
       .update(websites)
-      .set({ content: JSON.stringify(content), seoDescription: content.seo_description, headline: content.hero_title, updatedAt: now })
+      .set({ content: stored, seoDescription: content.seo_description, headline: siteContent.hero.title ?? content.hero_title, updatedAt: now })
       .where(eq(websites.id, existing[0].id));
   } else {
     subdomain = await uniqueSubdomain(tenantId, state.displayName);
@@ -153,11 +180,11 @@ export async function generateAndStoreSite(
       id: nanoid(),
       tenantId,
       subdomain,
-      template: 'aura',
+      template: 'impact',
       status: 'inactive',
       themeColor: '#7c3aed',
-      headline: content.hero_title,
-      content: JSON.stringify(content),
+      headline: siteContent.hero.title ?? content.hero_title,
+      content: stored,
       seoDescription: content.seo_description,
       createdAt: now,
       updatedAt: now,
@@ -195,4 +222,114 @@ export async function publishWebsite(tenantId: string, userId: string): Promise<
   await db.update(websites).set({ status: 'active', publishedAt: new Date().toISOString(), ...touch() }).where(eq(websites.id, row.id));
   await logActivity(tenantId, userId, 'website_published', row.id, { subdomain: row.subdomain });
   return { ok: true, subdomain: row.subdomain };
+}
+
+export async function unpublishWebsite(tenantId: string, userId: string): Promise<{ ok: boolean }> {
+  const [row] = await db.select({ id: websites.id }).from(websites).where(eq(websites.tenantId, tenantId)).limit(1);
+  if (!row) return { ok: false };
+  await db.update(websites).set({ status: 'inactive', ...touch() }).where(eq(websites.id, row.id));
+  await logActivity(tenantId, userId, 'website_deactivated', row.id);
+  return { ok: true };
+}
+
+// ── Éditeur (nouveau modèle SiteContent éditable) ────────────────────────────
+
+/** Base de contenu dérivée du profil (fallback) pour un tenant. */
+async function baselineFor(tenantId: string): Promise<EditableSiteContent | null> {
+  const [prof] = await db
+    .select({
+      displayName: coachProfiles.displayName,
+      speciality: coachProfiles.speciality,
+      city: coachProfiles.city,
+      bio: coachProfiles.bio,
+      linkedinHeadline: coachProfiles.linkedinHeadline,
+      linkedinSummary: coachProfiles.linkedinSummary,
+      instagramUrl: coachProfiles.instagramUrl,
+      reviewsAnalysis: coachProfiles.reviewsAnalysis,
+      photos: coachProfiles.photos,
+    })
+    .from(coachProfiles)
+    .where(eq(coachProfiles.tenantId, tenantId))
+    .limit(1);
+  if (!prof) return null;
+
+  let photoUrl = parseJson<string[]>(prof.photos)?.[0] ?? null;
+  if (!photoUrl) {
+    const [p] = await db.select({ url: coachPhotos.r2Url }).from(coachPhotos).where(eq(coachPhotos.tenantId, tenantId)).orderBy(desc(coachPhotos.createdAt)).limit(1);
+    photoUrl = p?.url ?? null;
+  }
+  const [u] = await db.select({ email: users.email }).from(users).where(eq(users.tenantId, tenantId)).limit(1);
+
+  return buildGeneratedSiteContent({
+    displayName: prof.displayName,
+    speciality: prof.speciality,
+    city: prof.city,
+    bio: prof.linkedinSummary || prof.bio,
+    headline: prof.linkedinHeadline,
+    strengths: strengthsFromReviews(prof.reviewsAnalysis),
+    email: u?.email ?? null,
+    instagramUrl: prof.instagramUrl,
+    photoUrl,
+  });
+}
+
+export interface SiteEditorData {
+  content: EditableSiteContent;
+  subdomain: string | null;
+  style: SiteStyle;
+  published: boolean;
+  hasGenerated: boolean;
+  profile: { name: string; speciality: string; city: string | null; tone: string };
+}
+
+/** Données complètes pour pré-remplir l'éditeur (contenu mergé base + overrides). */
+export async function getSiteEditorData(tenantId: string): Promise<SiteEditorData | null> {
+  const baseline = await baselineFor(tenantId);
+  if (!baseline) return null;
+
+  const [prof] = await db
+    .select({ displayName: coachProfiles.displayName, speciality: coachProfiles.speciality, city: coachProfiles.city, tone: coachProfiles.tone })
+    .from(coachProfiles)
+    .where(eq(coachProfiles.tenantId, tenantId))
+    .limit(1);
+
+  const [site] = await db
+    .select({ subdomain: websites.subdomain, template: websites.template, status: websites.status, content: websites.content })
+    .from(websites)
+    .where(eq(websites.tenantId, tenantId))
+    .limit(1);
+
+  const stored = site?.content ? parseSiteContent(site.content) : null;
+  const content = stored ? mergeSiteContent(baseline, stored) : baseline;
+  const style: SiteStyle = site && SITE_STYLES.includes(site.template as SiteStyle) ? (site.template as SiteStyle) : styleForTone(prof?.tone);
+
+  return {
+    content,
+    subdomain: site?.subdomain ?? null,
+    style,
+    published: site?.status === 'active',
+    hasGenerated: !!site?.content,
+    profile: { name: prof?.displayName ?? '', speciality: prof?.speciality ?? '', city: prof?.city ?? null, tone: prof?.tone ?? 'motivant' },
+  };
+}
+
+/** Enregistre le contenu édité (shape SiteContent éditable) dans websites.content. */
+export async function saveEditorSiteContent(
+  tenantId: string,
+  userId: string,
+  content: EditableSiteContent
+): Promise<{ ok: boolean; error?: 'no_site' }> {
+  const [row] = await db.select({ id: websites.id }).from(websites).where(eq(websites.tenantId, tenantId)).limit(1);
+  if (!row) return { ok: false, error: 'no_site' };
+  await db
+    .update(websites)
+    .set({
+      content: JSON.stringify(content),
+      headline: (content.hero.title ?? '').slice(0, 200) || undefined,
+      seoDescription: (content.about.bio ?? '').slice(0, 160) || undefined,
+      ...touch(),
+    })
+    .where(eq(websites.id, row.id));
+  await logActivity(tenantId, userId, 'site_edited', row.id, {});
+  return { ok: true };
 }
