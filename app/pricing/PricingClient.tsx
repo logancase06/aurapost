@@ -28,6 +28,10 @@ const FAQ = [
     a: 'Oui, sans engagement. Et si tu hésites, tu peux mettre ton abonnement en pause un mois au lieu d’annuler.',
   },
   {
+    q: 'Pourquoi pas juste ChatGPT ?',
+    a: 'ChatGPT est un généraliste qu’il faut prompter à chaque fois et qui repart de zéro. AuraPost est pensé pour les coachs : 12 posts calibrés en 1 clic, hashtags de niche, site et calendrier inclus, et il mémorise ton style. Comparatif détaillé sur /vs/chatgpt.',
+  },
+  {
     q: 'Et si ça ne me convient pas ?',
     a: 'Garantie satisfait ou remboursé pendant 30 jours. Tu testes sans risque.',
   },

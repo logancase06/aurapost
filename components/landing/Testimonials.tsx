@@ -1,22 +1,34 @@
 'use client';
 
 import { Star, Dumbbell, Flame, Zap, Activity, Mountain } from 'lucide-react';
-import { avatar } from '@/lib/stock-images';
 
 interface Testimonial {
   name: string;
   role: string;
   quote: string;
-  img: number; // index pravatar
+  accent: string;
 }
 
 const TESTIMONIALS: Testimonial[] = [
-  { name: 'Karim B.', role: 'Préparation physique · Nice', quote: 'J’ai triplé mes clients en 6 mois. Je ne touche plus à mes posts, je relis et je valide.', img: 12 },
-  { name: 'Léa M.', role: 'Coach CrossFit · Lyon', quote: 'Fini la page blanche du dimanche soir. Un mois de contenu en deux minutes, c’est irréel.', img: 5 },
-  { name: 'Thomas R.', role: 'Yoga & mobilité · Bordeaux', quote: 'Le ton colle parfaitement à ma voix. Mes abonnés ne voient pas la différence.', img: 33 },
-  { name: 'Sarah K.', role: 'Coach nutrition · Paris', quote: 'Mon site vitrine + mes posts au même endroit. J’ai gagné un temps fou.', img: 47 },
-  { name: 'Yanis D.', role: 'Boxe & cardio · Marseille', quote: 'Le calendrier éditorial a structuré toute ma communication. Game changer.', img: 68 },
+  { name: 'Karim B.', role: 'Préparation physique · Nice', quote: 'J’ai triplé mes clients en 6 mois. Je ne touche plus à mes posts, je relis et je valide.', accent: '#7C3AED' },
+  { name: 'Léa M.', role: 'Coach CrossFit · Lyon', quote: 'Fini la page blanche du dimanche soir. Un mois de contenu en deux minutes, c’est irréel.', accent: '#A855F7' },
+  { name: 'Thomas R.', role: 'Yoga & mobilité · Bordeaux', quote: 'Le ton colle parfaitement à ma voix. Mes abonnés ne voient pas la différence.', accent: '#6D28D9' },
+  { name: 'Sarah K.', role: 'Coach nutrition · Paris', quote: 'Mon site vitrine + mes posts au même endroit. J’ai gagné un temps fou.', accent: '#db2777' },
+  { name: 'Yanis D.', role: 'Boxe & cardio · Marseille', quote: 'Le calendrier éditorial a structuré toute ma communication. Game changer.', accent: '#8B5CF6' },
 ];
+
+function Avatar({ name, accent }: { name: string; accent: string }) {
+  const initials = name.split(/\s+/).map((p) => p[0]).join('').slice(0, 2).toUpperCase();
+  return (
+    <div
+      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-black text-white ring-2 ring-primary/20"
+      style={{ background: `linear-gradient(135deg, ${accent}, #A855F7)` }}
+      aria-hidden
+    >
+      {initials}
+    </div>
+  );
+}
 
 // Logos de marques fitness fictives (B&W), affichées sous les témoignages.
 const BRANDS = [
@@ -43,8 +55,7 @@ function Card({ t }: { t: Testimonial }) {
       <Stars />
       <blockquote className="mt-3 text-sm leading-relaxed text-foreground/90">“{t.quote}”</blockquote>
       <figcaption className="mt-4 flex items-center gap-3">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={avatar(t.img)} alt={t.name} width={44} height={44} loading="lazy" className="h-11 w-11 rounded-full object-cover ring-2 ring-primary/30" />
+        <Avatar name={t.name} accent={t.accent} />
         <div>
           <p className="text-sm font-bold">{t.name}</p>
           <p className="text-xs text-muted-foreground">{t.role}</p>

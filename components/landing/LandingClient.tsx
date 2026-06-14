@@ -15,7 +15,6 @@ import { useIsDesktop } from '@/lib/hooks/use-media-query';
 import { PLANS, formatPrice } from '@/lib/plans';
 import { HERO_VARIANTS, type HeroCopy } from '@/lib/ab';
 import { unsplash, FITNESS_PHOTO_IDS } from '@/lib/stock-images';
-import LiveCounter from './LiveCounter';
 import TrustWidget from './TrustWidget';
 import HeroMockup from './HeroMockup';
 import { PhoneFrame } from '@/components/ui/device-frames';
@@ -28,6 +27,7 @@ const Meteors = dynamic(() => import('@/components/ui/meteors').then((m) => m.Me
 const HowItWorks = dynamic(() => import('./HowItWorks'));
 const BeforeAfter = dynamic(() => import('./BeforeAfter'));
 const Testimonials = dynamic(() => import('./Testimonials'));
+const LiveGenerator = dynamic(() => import('./LiveGenerator'));
 const ExitIntent = dynamic(() => import('./ExitIntent'), { ssr: false });
 
 const FEATURES = [
@@ -96,10 +96,6 @@ export default function LandingClient({ heroCopy = HERO_VARIANTS.a }: { heroCopy
               />
             </div>
 
-            <div className="mt-6 flex justify-center lg:justify-start">
-              <LiveCounter />
-            </div>
-
             <p className="mx-auto mt-6 max-w-xl text-base text-muted-foreground lg:mx-0">
               AuraPost écrit tes posts Instagram &amp; LinkedIn de coach sportif et te loue un site vitrine — à partir de ton seul profil.
             </p>
@@ -161,6 +157,9 @@ export default function LandingClient({ heroCopy = HERO_VARIANTS.a }: { heroCopy
 
       {/* Comment ça marche */}
       <HowItWorks />
+
+      {/* Mini-générateur live (la section qui convertit) */}
+      <LiveGenerator />
 
       {/* Avant / Après */}
       <BeforeAfter />
@@ -253,6 +252,7 @@ export default function LandingClient({ heroCopy = HERO_VARIANTS.a }: { heroCopy
             <Link href="/coaches" className="hover:text-foreground">Coachs</Link>
             <Link href="/wall-of-love" className="hover:text-foreground">Avis</Link>
             <Link href="/vs/agence" className="hover:text-foreground">vs Agence</Link>
+            <Link href="/vs/chatgpt" className="hover:text-foreground">vs ChatGPT</Link>
             <Link href="/affiliates" className="hover:text-foreground">Affiliés</Link>
             <Link href="/help" className="hover:text-foreground">Aide</Link>
             <Link href="/changelog" className="hover:text-foreground">Nouveautés</Link>
