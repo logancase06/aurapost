@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import {
@@ -330,9 +330,9 @@ export default function OnboardingWizard({ initial }: { initial: InitialDraft })
 
                 {/* Instagram */}
                 <div className="rounded-xl border border-border p-4">
-                  <p className="mb-2 flex items-center gap-2 text-sm font-semibold"><Camera className="h-4 w-4" /> Instagram</p>
+                  <Label htmlFor="ig-url" className="mb-2 flex items-center gap-2 text-sm font-semibold"><Camera className="h-4 w-4" /> Instagram</Label>
                   <div className="flex gap-2">
-                    <Input value={igUrl} onChange={(e) => setIgUrl(e.target.value)} placeholder="https://instagram.com/ton_compte" />
+                    <Input id="ig-url" value={igUrl} onChange={(e) => setIgUrl(e.target.value)} placeholder="https://instagram.com/ton_compte" />
                     <Button type="button" onClick={analyzeIg} disabled={igLoading || !igUrl.trim()}>
                       {igLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Analyser'}
                     </Button>
@@ -381,8 +381,8 @@ export default function OnboardingWizard({ initial }: { initial: InitialDraft })
 
                 {/* Avis */}
                 <div className="rounded-xl border border-border p-4">
-                  <p className="mb-2 flex items-center gap-2 text-sm font-semibold"><Star className="h-4 w-4" /> Tes avis clients</p>
-                  <textarea value={reviewsText} onChange={(e) => setReviewsText(e.target.value)} rows={3} placeholder="Colle ici tes meilleurs avis Google, DM Instagram, WhatsApp…" className="flex w-full rounded-md border border-input bg-background/50 px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+                  <Label htmlFor="reviews-text" className="mb-2 flex items-center gap-2 text-sm font-semibold"><Star className="h-4 w-4" /> Tes avis clients</Label>
+                  <textarea id="reviews-text" value={reviewsText} onChange={(e) => setReviewsText(e.target.value)} rows={3} placeholder="Colle ici tes meilleurs avis Google, DM Instagram, WhatsApp…" className="flex w-full rounded-md border border-input bg-background/50 px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
                   <Button type="button" variant="outline" size="sm" className="mt-2" onClick={analyzeRv} disabled={rvLoading || reviewsText.trim().length < 20}>
                     {rvLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Analyser mes avis'}
                   </Button>
@@ -540,19 +540,21 @@ export default function OnboardingWizard({ initial }: { initial: InitialDraft })
 }
 
 function Field({ label, value, onChange, placeholder, required }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string; required?: boolean }) {
+  const id = useId();
   return (
     <div className="space-y-2">
-      <Label>{label}{required && <span className="text-primary"> *</span>}</Label>
-      <Input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />
+      <Label htmlFor={id}>{label}{required && <span className="text-primary"> *</span>}</Label>
+      <Input id={id} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />
     </div>
   );
 }
 
 function TextareaField({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
+  const id = useId();
   return (
     <div className="space-y-2">
-      <Label>{label}</Label>
-      <textarea value={value} onChange={(e) => onChange(e.target.value)} rows={3} placeholder={placeholder} className="flex w-full rounded-md border border-input bg-background/50 px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+      <Label htmlFor={id}>{label}</Label>
+      <textarea id={id} value={value} onChange={(e) => onChange(e.target.value)} rows={3} placeholder={placeholder} className="flex w-full rounded-md border border-input bg-background/50 px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
     </div>
   );
 }
