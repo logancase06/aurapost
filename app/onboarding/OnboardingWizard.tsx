@@ -13,6 +13,8 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { computeCompletion } from '@/lib/completion';
+import { SPECIALITY_SUGGESTIONS } from '@/lib/specialities';
+import { PostCardSkeletonGrid } from '@/components/PostCardSkeleton';
 import type { PhotoRow } from '@/lib/db/photos';
 import type { PostDraft } from '@/lib/content-generator';
 import {
@@ -251,6 +253,10 @@ export default function OnboardingWizard({ initial }: { initial: InitialDraft })
 
   return (
     <div className="w-full">
+      {step === 1 && (
+        <p className="mb-4 text-center text-sm text-muted-foreground">4 étapes · 3 minutes · et tes premiers posts sont prêts.</p>
+      )}
+
       {/* Stepper + autosave */}
       <div className="mb-2 flex items-center justify-between">
         {STEPS.map((label, i) => {
@@ -296,7 +302,17 @@ export default function OnboardingWizard({ initial }: { initial: InitialDraft })
                   <p className="text-sm text-muted-foreground">60 secondes — c’est le socle de ton contenu.</p>
                 </div>
                 <Field label="Nom public" value={displayName} onChange={setDisplayName} placeholder="ex: Coach Léa Fitness" required />
-                <Field label="Spécialité" value={speciality} onChange={setSpeciality} placeholder="ex: Préparation physique CrossFit" required />
+                <div>
+                  <Field label="Spécialité" value={speciality} onChange={setSpeciality} placeholder="ex: Préparation physique CrossFit" required />
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    <span className="self-center text-xs text-muted-foreground">Suggestions :</span>
+                    {SPECIALITY_SUGGESTIONS.map((s) => (
+                      <button key={s} type="button" onClick={() => setSpeciality(s)} className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground">
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field label="Ville" value={city} onChange={setCity} placeholder="ex: Lyon" />
                   <div className="space-y-2">
@@ -397,6 +413,12 @@ export default function OnboardingWizard({ initial }: { initial: InitialDraft })
                   </Button>
                   {rvDone && rvStrengths.length > 0 && (
                     <p className="mt-2 text-xs text-muted-foreground">Points forts détectés : <span className="font-medium text-foreground">{rvStrengths.join(', ')}</span></p>
+                  )}
+                  {!reviewsText.trim() && !rvDone && (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Pas encore d’avis ? Pas de problème — tu pourras en ajouter depuis ton profil plus tard.<br />
+                      <span className="italic">Ex : « Alex m’a aidé à perdre 8 kg en 3 mois, je recommande ! » — Marie</span>
+                    </p>
                   )}
                 </div>
 
@@ -516,6 +538,13 @@ export default function OnboardingWizard({ initial }: { initial: InitialDraft })
                   <div className="flex items-start gap-2 rounded-xl border border-warning/30 bg-warning/10 p-3 text-xs text-foreground">
                     <AlertTriangle className="h-4 w-4 shrink-0 text-warning" />
                     <span>Sans photo, ton site aura un visuel générique. <button type="button" onClick={() => go(3)} className="font-semibold underline">Ajouter une photo</button> ou continue sans.</span>
+                  </div>
+                )}
+
+                {generating && (
+                  <div className="space-y-3">
+                    <p className="text-center text-sm text-muted-foreground">On rédige tes 12 posts dans ta voix — ~20 à 40 secondes, ne ferme pas cette page.</p>
+                    <PostCardSkeletonGrid count={3} />
                   </div>
                 )}
 
