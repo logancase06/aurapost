@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import DashboardShell from '../DashboardShell';
 import WebsiteActions from './WebsiteActions';
 import TemplateChooser from './TemplateChooser';
+import CopyUrlButton from './CopyUrlButton';
 import CoachSite, { styleForTone, type SiteStyle } from '@/templates/coach-site/CoachSite';
 
 const SITE_STYLES: SiteStyle[] = ['impact', 'clarte', 'authenticite'];
@@ -76,10 +77,14 @@ export default async function WebsitePage() {
         <>
           <Card className="mt-6 flex flex-wrap items-center gap-4 p-5">
             <Badge variant={site.status === 'active' ? 'success' : 'secondary'}>{site.status === 'active' ? 'Actif' : 'Inactif'}</Badge>
-            <code className="rounded bg-secondary px-2 py-1 text-sm text-primary">
-              {site.subdomain}.{APP_DOMAIN}
-            </code>
+            <div>
+              <code className="rounded bg-secondary px-2 py-1 text-sm text-primary">
+                {site.subdomain}.{APP_DOMAIN}
+              </code>
+              <p className="mt-1 text-xs text-muted-foreground">Partage ce lien à tes clients.</p>
+            </div>
             <div className="ml-auto flex flex-wrap gap-2">
+              {publicUrl && <CopyUrlButton url={publicUrl} />}
               {hasContent && (
                 <Button asChild variant="gradient" size="sm">
                   <Link href="/dashboard/website/editor">

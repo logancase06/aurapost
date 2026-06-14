@@ -19,6 +19,7 @@ function LoginContent() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [tab, setTab] = useState('password');
 
   async function handlePasswordLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -60,7 +61,7 @@ function LoginContent() {
           AuraPost
         </Link>
 
-        <Tabs defaultValue="password" className="w-full">
+        <Tabs value={tab} onValueChange={setTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="password">Mot de passe</TabsTrigger>
             <TabsTrigger value="magic">
@@ -81,6 +82,13 @@ function LoginContent() {
               <Button type="submit" variant="gradient" className="w-full" disabled={loading}>
                 {loading && <Loader2 className="h-4 w-4 animate-spin" />} Se connecter
               </Button>
+              <button
+                type="button"
+                onClick={() => setTab('magic')}
+                className="block w-full text-center text-sm text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+              >
+                Mot de passe oublié ? Reçois un lien de connexion par email.
+              </button>
             </form>
           </TabsContent>
 

@@ -1,4 +1,7 @@
-import Link from 'next/link';
+'use client';
+
+import { ArrowUp } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 // Empty state dessiné — illustration SVG custom + message motivant.
 export function EmptyPosts({ alreadyGenerated }: { alreadyGenerated: boolean }) {
@@ -28,9 +31,18 @@ export function EmptyPosts({ alreadyGenerated }: { alreadyGenerated: boolean }) 
           : 'Un clic, et 12 posts taillés pour ton audience apparaissent ici. Lance la machine.'}
       </p>
       {!alreadyGenerated && (
-        <Link href="#" className="mt-4 text-sm font-semibold text-primary hover:underline">
-          ↑ Bouton « Créer mes 12 posts » en haut de page
-        </Link>
+        <Button
+          variant="gradient"
+          className="mt-5"
+          onClick={() => {
+            // Remonte vers le bouton « Créer mes 12 posts » (en haut de page).
+            const btn = document.querySelector<HTMLElement>('[data-generate]');
+            if (btn) btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            else window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+        >
+          <ArrowUp className="h-4 w-4" /> Créer mes 12 posts
+        </Button>
       )}
     </div>
   );

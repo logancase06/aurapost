@@ -93,7 +93,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
             </span>
           )}
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2" data-generate>
           <CaptionPackButton />
           <GenerateButton alreadyGenerated={alreadyGenerated} />
         </div>
