@@ -166,7 +166,7 @@ export default function SiteWizard({ initial }: { initial: InitialState }) {
         return;
       }
       toast.success('Site généré ✦');
-      router.push('/dashboard/website/preview');
+      router.push('/dashboard/website/editor');
     } catch {
       toast.error('Erreur réseau.');
     } finally {

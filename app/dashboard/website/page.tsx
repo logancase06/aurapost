@@ -2,8 +2,9 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { coachProfiles } from '@/lib/db/schema';
+import { coachProfiles, websites } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
+import { Pencil } from 'lucide-react';
 import { getWebsiteForTenant } from '@/lib/db/website';
 import { getCoachSiteData } from '@/lib/db/public';
 import { ExternalLink, Wand2 } from 'lucide-react';
@@ -33,6 +34,9 @@ export default async function WebsitePage() {
   const [prof] = await db.select({ tone: coachProfiles.tone }).from(coachProfiles).where(eq(coachProfiles.tenantId, tenantId)).limit(1);
   const recommended = styleForTone(prof?.tone);
   const currentStyle = site && SITE_STYLES.includes(site.template as SiteStyle) ? (site.template as SiteStyle) : null;
+  // Bouton éditeur visible seulement si le site a été généré au moins une fois.
+  const [w] = site ? await db.select({ content: websites.content }).from(websites).where(eq(websites.tenantId, tenantId)).limit(1) : [];
+  const hasContent = !!w?.content;
 
   return (
     <DashboardShell active="/dashboard/website">
@@ -75,7 +79,14 @@ export default async function WebsitePage() {
             <code className="rounded bg-secondary px-2 py-1 text-sm text-primary">
               {site.subdomain}.{APP_DOMAIN}
             </code>
-            <div className="ml-auto flex gap-2">
+            <div className="ml-auto flex flex-wrap gap-2">
+              {hasContent && (
+                <Button asChild variant="gradient" size="sm">
+                  <Link href="/dashboard/website/editor">
+                    <Pencil className="h-3.5 w-3.5" /> Personnaliser mon site
+                  </Link>
+                </Button>
+              )}
               <Button asChild variant="outline" size="sm">
                 <Link href={`/site/${site.subdomain}`} target="_blank">
                   Aperçu local <ExternalLink className="h-3.5 w-3.5" />
