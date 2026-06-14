@@ -8,6 +8,8 @@ export type PlanId = 'starter' | 'content_only' | 'pack_complet';
 
 /** Libellé unique de l'offre d'essai (utilisé dans toute l'UI). */
 export const FREE_TRIAL_LABEL = '14 jours gratuits';
+/** Durée d'essai en jours — appliquée au checkout Stripe (trial_period_days). */
+export const FREE_TRIAL_DAYS = 14;
 /** Remise annuelle (paiement à l'année). */
 export const ANNUAL_DISCOUNT = 0.2;
 

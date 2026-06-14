@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { requireTenantId } from '@/lib/tenant';
 import { stripe } from '@/lib/stripe';
-import { getPlan } from '@/lib/plans';
+import { getPlan, FREE_TRIAL_DAYS } from '@/lib/plans';
 import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
@@ -39,6 +39,8 @@ export async function POST(req: NextRequest) {
       customer_email: u?.email,
       success_url: `${APP_URL}/dashboard/billing?success=1`,
       cancel_url: `${APP_URL}/dashboard/billing?canceled=1`,
+      // Essai gratuit 14 jours (cohérent avec FREE_TRIAL_LABEL affiché partout).
+      subscription_data: { trial_period_days: FREE_TRIAL_DAYS, metadata: { tenantId, plan: plan.id } },
       metadata: { tenantId, plan: plan.id },
     });
 
