@@ -33,6 +33,34 @@ export default function PostCard({ post }: { post: PostRow }) {
     });
   }
 
+  // Approbation 1-clic + nudge « et maintenant ? » avec action copier inline.
+  function approveQuick() {
+    startTransition(async () => {
+      const res = await approvePostAction(post.id);
+      if (!res.ok) {
+        toast.error(res.error || 'Action impossible');
+        return;
+      }
+      toast(
+        (t) => (
+          <span className="flex items-center gap-2">
+            Post approuvé ✓
+            <button
+              onClick={() => {
+                void copy();
+                toast.dismiss(t.id);
+              }}
+              className="font-semibold text-primary underline underline-offset-2"
+            >
+              Copier la légende →
+            </button>
+          </span>
+        ),
+        { icon: '✅', duration: 6000 }
+      );
+    });
+  }
+
   async function copy() {
     const text = `${post.content}\n\n${post.hashtags.map((h) => `#${h}`).join(' ')}`.trim();
     try {
@@ -80,28 +108,29 @@ export default function PostCard({ post }: { post: PostRow }) {
 
       <Separator className="my-4" />
 
+      {/* Cibles tactiles ≥44px sur mobile (h-11), compactes sur desktop (sm:h-8). */}
       <div className="flex flex-wrap items-center gap-2">
         {post.status !== 'approved' && (
           <>
             {/* Approbation rapide en 1 clic */}
-            <Button size="sm" onClick={() => run(() => approvePostAction(post.id), 'Post approuvé ✓')} disabled={pending} className="bg-success text-white hover:bg-success/90">
+            <Button size="sm" onClick={approveQuick} disabled={pending} className="h-11 bg-success text-white hover:bg-success/90 sm:h-8">
               <Check className="h-3.5 w-3.5" /> Approuver
             </Button>
             {/* Option : approuver en ajoutant une photo (dialog 3 étapes) */}
-            <Button size="sm" variant="outline" onClick={() => setApproveOpen(true)} disabled={pending} title="Approuver en ajoutant une photo">
+            <Button size="sm" variant="outline" onClick={() => setApproveOpen(true)} disabled={pending} title="Approuver en ajoutant une photo" className="h-11 sm:h-8">
               <ImageIcon className="h-3.5 w-3.5" /> + photo
             </Button>
           </>
         )}
         {post.status !== 'rejected' && (
-          <Button size="sm" variant="secondary" onClick={() => run(() => rejectPostAction(post.id), 'Post rejeté')} disabled={pending}>
+          <Button size="sm" variant="secondary" onClick={() => run(() => rejectPostAction(post.id), 'Post rejeté')} disabled={pending} className="h-11 sm:h-8">
             <X className="h-3.5 w-3.5" /> Rejeter
           </Button>
         )}
-        <Button size="sm" variant="outline" onClick={() => run(() => requestVariantAction(post.id), 'Variante générée ✦')} disabled={pending}>
+        <Button size="sm" variant="outline" onClick={() => run(() => requestVariantAction(post.id), 'Variante générée ✦')} disabled={pending} className="h-11 sm:h-8">
           {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />} Variante
         </Button>
-        <Button size="sm" variant="ghost" onClick={copy} className="ml-auto">
+        <Button size="sm" variant="ghost" onClick={copy} className="ml-auto h-11 sm:h-8">
           <Copy className="h-3.5 w-3.5" /> {copied ? 'Copié' : 'Copier'}
         </Button>
       </div>

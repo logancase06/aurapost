@@ -463,7 +463,17 @@ export default function ApprovePostDialog({
               <h3 className="font-bold">Et maintenant ?</h3>
 
               {isInstagram ? (
-                <ActionButton accent={accent} onClick={prepareInstagram} disabled={pending} icon={<Download className="h-4 w-4" />} title="Préparer pour Instagram" subtitle={skip ? 'Légende copiée' : 'Image 1080×1080 téléchargée + légende copiée'} primary />
+                <>
+                  <ActionButton accent={accent} onClick={prepareInstagram} disabled={pending} icon={<Download className="h-4 w-4" />} title="Préparer pour Instagram" subtitle={skip ? 'Légende copiée' : 'Image 1080×1080 téléchargée + légende copiée'} primary />
+                  {/* Instagram n'a pas d'API de publication directe → on guide le coller. */}
+                  <ol className="space-y-1 rounded-xl border border-border p-3 text-xs text-muted-foreground">
+                    <li className="flex items-center gap-2 text-success"><Check className="h-3.5 w-3.5" /> Légende copiée automatiquement</li>
+                    <li className="flex items-center gap-2"><span style={{ color: accent }}>1.</span> Ouvre l’app Instagram</li>
+                    <li className="flex items-center gap-2"><span style={{ color: accent }}>2.</span> Nouvelle publication</li>
+                    <li className="flex items-center gap-2"><span style={{ color: accent }}>3.</span> Colle la légende (déjà copiée ✓)</li>
+                    {!skip && <li className="flex items-center gap-2"><span style={{ color: accent }}>4.</span> Ajoute l’image téléchargée</li>}
+                  </ol>
+                </>
               ) : (
                 <ActionButton accent={accent} onClick={publishLinkedin} disabled={pending} icon={<Send className="h-4 w-4" />} title="Publier sur LinkedIn" subtitle="Ouvre LinkedIn + légende copiée" primary />
               )}
