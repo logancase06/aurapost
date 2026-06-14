@@ -42,6 +42,8 @@ export interface SiteGenInput {
   strengths?: string[];
   testimonial?: string | null;
   tone?: string | null;
+  /** Résultats concrets obtenus par les clients (saisis à l'onboarding). */
+  results?: string | null;
   /** 3 derniers posts approuvés du coach — alimentent le ton/style du site. */
   recentPosts?: string[];
 }
@@ -54,6 +56,7 @@ Profil : ${d.name}, ${d.speciality}, ${d.city ?? 'ville non précisée'}
 Bio : ${d.bio ?? 'non fournie'}
 Ton : ${d.tone ?? 'motivant'}
 Avis clients / points forts : ${(d.strengths ?? []).join(', ') || d.testimonial || 'non fournis'}
+Résultats concrets obtenus par ses clients : ${d.results ?? 'non fournis'}
 Posts Instagram approuvés :
 ${posts || '(aucun pour l’instant)'}
 

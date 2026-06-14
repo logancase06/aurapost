@@ -1,6 +1,6 @@
 import { db } from './index';
-import { coachProfiles, websites } from './schema';
-import { and, eq, ne } from 'drizzle-orm';
+import { coachProfiles, websites, generatedPosts } from './schema';
+import { and, eq, ne, desc } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { slugify } from '@/lib/utils';
 import { logActivity } from './activity';
@@ -22,6 +22,7 @@ export interface SiteWizardState {
   speciality: string;
   city: string | null;
   bio: string | null;
+  results: string | null;
   instagramUrl: string | null;
   instagramData: InstagramData | null;
   reviewsText: string | null;
@@ -36,6 +37,7 @@ export async function getSiteWizardState(tenantId: string): Promise<SiteWizardSt
       speciality: coachProfiles.speciality,
       city: coachProfiles.city,
       bio: coachProfiles.bio,
+      results: coachProfiles.results,
       instagramUrl: coachProfiles.instagramUrl,
       instagramData: coachProfiles.instagramData,
       reviewsText: coachProfiles.reviewsText,
@@ -51,6 +53,7 @@ export async function getSiteWizardState(tenantId: string): Promise<SiteWizardSt
     speciality: row.speciality,
     city: row.city,
     bio: row.bio,
+    results: row.results,
     instagramUrl: row.instagramUrl,
     instagramData: parseJson<InstagramData>(row.instagramData),
     reviewsText: row.reviewsText,
@@ -113,6 +116,14 @@ export async function generateAndStoreSite(
   const state = await getSiteWizardState(tenantId);
   if (!state) return { ok: false, error: 'no_profile' };
 
+  // 3 derniers posts approuvés → alimentent le ton/style réel du coach dans le site.
+  const recent = await db
+    .select({ content: generatedPosts.content })
+    .from(generatedPosts)
+    .where(and(eq(generatedPosts.tenantId, tenantId), eq(generatedPosts.status, 'approved')))
+    .orderBy(desc(generatedPosts.createdAt))
+    .limit(3);
+
   const input: SiteGenInput = {
     name: state.displayName,
     speciality: state.speciality,
@@ -121,6 +132,8 @@ export async function generateAndStoreSite(
     strengths: state.reviewsAnalysis?.strengths,
     testimonial: state.reviewsAnalysis?.testimonial,
     tone: state.reviewsAnalysis?.tone,
+    results: state.results,
+    recentPosts: recent.map((r) => r.content).filter(Boolean),
   };
 
   const content = await generateSiteContent(input);
