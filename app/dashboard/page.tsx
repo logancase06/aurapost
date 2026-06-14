@@ -5,7 +5,7 @@ import { db } from '@/lib/db';
 import { users, tenants } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { listPosts, getPostStats, hasGeneratedThisMonth, type PostStatus } from '@/lib/db/posts';
-import { getSmartSuggestions } from '@/lib/db/suggestions';
+import { getSmartSuggestions, getGenerationStreak } from '@/lib/db/suggestions';
 import { getOnboardingProgress, getProfileCompletion } from '@/lib/db/onboarding';
 import { currentMonth } from '@/lib/utils';
 import { XCircle, Mail } from 'lucide-react';
@@ -66,13 +66,14 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
     | undefined;
 
   const month = currentMonth();
-  const [stats, posts, alreadyGenerated, progress, suggestions, completion] = await Promise.all([
+  const [stats, posts, alreadyGenerated, progress, suggestions, completion, streak] = await Promise.all([
     getPostStats(tenantId, month),
     listPosts(tenantId, { status }),
     hasGeneratedThisMonth(tenantId, month),
     getOnboardingProgress(tenantId),
     getSmartSuggestions(tenantId),
     getProfileCompletion(tenantId),
+    getGenerationStreak(tenantId),
   ]);
 
   const firstName = (me?.fullName ?? session.user.name ?? '').split(' ')[0] || 'coach';
@@ -86,6 +87,11 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
           <p className="mt-1 text-sm text-muted-foreground">
             Plan <span className="font-semibold capitalize text-foreground">{session.user.plan}</span> · {month} · prêt à publier ?
           </p>
+          {streak.streak >= 1 && streak.current && (
+            <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-warning/15 px-3 py-1 text-xs font-semibold text-warning">
+              {streak.streak >= 2 ? `🔥 ${streak.streak} mois d’affilée` : '✦ 1er mois — garde le rythme !'}
+            </span>
+          )}
         </div>
         <div className="flex flex-wrap gap-2">
           <CaptionPackButton />

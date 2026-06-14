@@ -2,6 +2,7 @@ import { and, eq, sql } from 'drizzle-orm';
 import { db } from './index';
 import { generatedPosts } from './schema';
 import { listGeneratedMonths } from './posts';
+import { currentMonth } from '@/lib/utils';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Suggestions intelligentes : après ≥ 1 mois d'utilisation, on analyse les posts
@@ -10,6 +11,44 @@ import { listGeneratedMonths } from './posts';
 // Analyse déterministe (pas d'appel réseau) : classe les thèmes par taux
 // d'approbation, puis mappe vers des angles complémentaires. Fiable et instantané.
 // ─────────────────────────────────────────────────────────────────────────────
+
+// ── Streak de régularité ─────────────────────────────────────────────────────
+// Encourage le coach à générer son contenu chaque mois (boucle de rétention).
+
+/** Mois précédent au format 'YYYY-MM'. */
+function prevMonth(ym: string): string {
+  const [y, m] = ym.split('-').map(Number);
+  if (!y || !m) return ym;
+  const d = m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, '0')}`;
+  return d;
+}
+
+export interface StreakResult {
+  /** Nb de mois consécutifs générés en terminant au mois le plus récent. */
+  streak: number;
+  /** true si la série est « à jour » (mois courant ou précédent généré). */
+  current: boolean;
+}
+
+/** Calcule la série de mois consécutifs depuis une liste 'YYYY-MM' triée desc. */
+export function computeStreak(monthsDesc: string[], now: string): StreakResult {
+  if (!monthsDesc.length) return { streak: 0, current: false };
+  let streak = 1;
+  for (let i = 1; i < monthsDesc.length; i++) {
+    if (monthsDesc[i] === prevMonth(monthsDesc[i - 1])) streak++;
+    else break;
+  }
+  const latest = monthsDesc[0];
+  const current = latest === now || latest === prevMonth(now);
+  return { streak, current };
+}
+
+/** Série de régularité du coach (mois consécutifs avec génération). */
+export async function getGenerationStreak(tenantId: string): Promise<StreakResult> {
+  if (!tenantId) return { streak: 0, current: false };
+  const months = await listGeneratedMonths(tenantId);
+  return computeStreak(months, currentMonth());
+}
 
 export interface ThemeSuggestion {
   theme: string;
