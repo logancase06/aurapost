@@ -67,9 +67,11 @@ export const coachProfiles = sqliteTable(
     tone: text('tone').notNull().default('motivant'), // 'motivant' | 'educatif' | 'personnel'
     bio: text('bio'),
     targetAudience: text('target_audience'), // ex: "débutants 25-40 ans"
+    results: text('results'), // ce que les clients obtiennent concrètement
     language: text('language').notNull().default('fr'), // 'fr' | 'en' — langue des posts générés
     instagramUrl: text('instagram_url'),
-    instagramData: text('instagram_data'), // JSON : { name, bio, followers, captions[] }
+    instagramData: text('instagram_data'), // JSON : { name, bio, followers, captions[] } (scrape brut)
+    instagramAnalysis: text('instagram_analysis'), // JSON : { tone, style, themes[], phrase, bio } (analyse Claude)
     reviewsText: text('reviews_text'), // texte brut collé par le coach
     reviewsAnalysis: text('reviews_analysis'), // JSON : { strengths[], testimonial, tone }
     photos: text('photos'), // JSON : string[] d'URLs (R2 ou data URL en mock)

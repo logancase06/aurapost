@@ -94,22 +94,62 @@ export async function getProfileInput(tenantId: string): Promise<CoachProfileInp
       contentStyle: coachProfiles.contentStyle,
       bio: coachProfiles.bio,
       targetAudience: coachProfiles.targetAudience,
+      results: coachProfiles.results,
       language: coachProfiles.language,
+      instagramAnalysis: coachProfiles.instagramAnalysis,
+      reviewsAnalysis: coachProfiles.reviewsAnalysis,
     })
     .from(coachProfiles)
     .where(eq(coachProfiles.tenantId, tenantId))
     .limit(1);
   if (!row) return null;
+  // Les résultats concrets enrichissent la bio injectée dans le prompt de génération.
+  const bio = row.results ? `${row.bio ?? ''}\nRésultats obtenus par mes clients : ${row.results}`.trim() : row.bio;
   return {
     displayName: row.displayName,
     speciality: row.speciality,
     city: row.city,
     tone: row.tone,
     contentStyle: row.contentStyle,
-    bio: row.bio,
+    bio,
     targetAudience: row.targetAudience,
     language: row.language ?? 'fr',
+    toneAnalysis: buildToneAnalysis(row.instagramAnalysis, row.reviewsAnalysis),
   };
+}
+
+/**
+ * Condense l'analyse Instagram (ton, style, phrase typique) et les avis (points forts,
+ * résultats) en une consigne texte injectée dans le prompt — pour des posts qui sonnent
+ * exactement comme le coach.
+ */
+function buildToneAnalysis(instagramJson: string | null, reviewsJson: string | null): string | null {
+  const parts: string[] = [];
+  try {
+    if (instagramJson) {
+      const ig = JSON.parse(instagramJson) as {
+        ton_dominant?: string;
+        style_ecriture?: string;
+        themes_recurrents?: string[];
+        phrase_caracteristique?: string;
+      };
+      if (ig.ton_dominant) parts.push(`Ton dominant : ${ig.ton_dominant}`);
+      if (ig.style_ecriture) parts.push(`Style d'écriture : ${ig.style_ecriture}`);
+      if (ig.themes_recurrents?.length) parts.push(`Thèmes récurrents : ${ig.themes_recurrents.join(', ')}`);
+      if (ig.phrase_caracteristique) parts.push(`Phrase caractéristique : « ${ig.phrase_caracteristique} »`);
+    }
+  } catch {
+    /* JSON corrompu : on ignore */
+  }
+  try {
+    if (reviewsJson) {
+      const rv = JSON.parse(reviewsJson) as { strengths?: string[] };
+      if (rv.strengths?.length) parts.push(`Points forts perçus par les clients : ${rv.strengths.join(', ')}`);
+    }
+  } catch {
+    /* idem */
+  }
+  return parts.length ? parts.join('. ') : null;
 }
 
 // ── Lectures ─────────────────────────────────────────────────────────────────

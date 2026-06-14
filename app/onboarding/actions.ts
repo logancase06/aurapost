@@ -6,77 +6,216 @@ import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { auth } from '@/lib/auth';
 import { requireTenantId } from '@/lib/tenant';
-import { CoachProfileSchema } from '@/lib/validation';
+import { sanitizeText } from '@/lib/security';
 import { logActivity } from '@/lib/db/activity';
 import { logError, logInfo } from '@/lib/logger';
+import { isInstagramUrl, scrapeInstagram, analyzeInstagram, type InstagramAnalysis } from '@/lib/instagram';
+import { isLinkedinUrl, scrapeLinkedin, type LinkedinData } from '@/lib/linkedin';
+import { analyzeReviews, type ReviewsAnalysis } from '@/lib/reviews';
+import { generateSingleDemoPost, type PostDraft } from '@/lib/content-generator';
 
 export type OnboardingState = { error?: string } | null;
 
-/**
- * Enregistre le profil coach et marque l'onboarding comme terminé.
- * Toute écriture passe par requireTenantId() → isolation multi-tenant garantie.
- */
-export async function saveCoachProfile(_prev: OnboardingState, formData: FormData): Promise<OnboardingState> {
-  logInfo('[onboarding] saveCoachProfile appelé', {});
-  const session = await auth();
-  if (!session?.user?.id) {
-    logError('[onboarding] pas de session', {});
-    return { error: 'Non autorisé — reconnecte-toi.' };
-  }
+const TONE_CANON: Record<string, string> = {
+  motivant: 'motivant',
+  inspirant: 'motivant',
+  educatif: 'educatif',
+  humoristique: 'personnel',
+  personnel: 'personnel',
+};
 
-  let tenantId: string;
+async function ctx(): Promise<{ tenantId: string; userId: string } | { error: string }> {
+  const session = await auth();
+  if (!session?.user?.id) return { error: 'Non autorisé — reconnecte-toi.' };
   try {
-    tenantId = await requireTenantId();
+    return { tenantId: await requireTenantId(), userId: session.user.id };
   } catch {
-    logError('[onboarding] tenantId manquant dans la session', { userId: session.user.id });
     return { error: 'Session invalide — déconnecte-toi et recrée un compte.' };
   }
+}
 
-  const parsed = CoachProfileSchema.safeParse({
-    displayName: formData.get('displayName'),
-    speciality: formData.get('speciality'),
-    city: formData.get('city') || undefined,
-    contentStyle: formData.get('contentStyle') || undefined,
-    tone: formData.get('tone') || 'motivant',
-    bio: formData.get('bio') || undefined,
-    targetAudience: formData.get('targetAudience') || undefined,
-    language: formData.get('language') || 'fr',
-  });
-
-  if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? 'Données invalides' };
-  }
-
+/** Crée la ligne profil si absente (nécessite nom + spécialité), sinon ne fait rien. */
+async function ensureProfile(tenantId: string, userId: string, displayName?: string, speciality?: string): Promise<boolean> {
+  const [existing] = await db.select({ id: coachProfiles.id }).from(coachProfiles).where(eq(coachProfiles.tenantId, tenantId)).limit(1);
+  if (existing) return true;
+  if (!displayName || !speciality) return false;
   const now = new Date().toISOString();
-  const data = parsed.data;
-
-  // Un seul profil par tenant en Starter : on remplace l'éventuel profil existant.
-  await db.delete(coachProfiles).where(eq(coachProfiles.tenantId, tenantId));
-
   await db.insert(coachProfiles).values({
     id: nanoid(),
     tenantId,
-    userId: session.user.id,
-    displayName: data.displayName,
-    speciality: data.speciality,
-    city: data.city ?? null,
-    contentStyle: data.contentStyle ?? null,
-    tone: data.tone,
-    bio: data.bio ?? null,
-    targetAudience: data.targetAudience ?? null,
-    language: data.language,
+    userId,
+    displayName: sanitizeText(displayName).slice(0, 120),
+    speciality: sanitizeText(speciality).slice(0, 160),
+    tone: 'motivant',
+    language: 'fr',
     createdAt: now,
     updatedAt: now,
   });
+  return true;
+}
 
-  const upd = await db.update(users).set({ onboardingCompleted: true }).where(eq(users.id, session.user.id));
-  logInfo('[onboarding] profil enregistré + onboarding terminé', {
-    tenantId,
-    userId: session.user.id,
-    rowsAffected: (upd as { rowsAffected?: number }).rowsAffected ?? 'n/a',
-  });
+export interface ProfileDraft {
+  displayName: string;
+  speciality: string;
+  city?: string;
+  contentStyle?: string;
+  tone?: string;
+  bio?: string;
+  targetAudience?: string;
+  results?: string;
+  language?: string;
+}
 
-  await logActivity(tenantId, session.user.id, 'onboarding_completed', null, { speciality: data.speciality });
+/**
+ * Sauvegarde incrémentale du profil (autosave debounce côté client). Upsert :
+ * crée la ligne au 1er appel (nom + spécialité requis), met à jour ensuite.
+ */
+export async function saveProfileDraft(input: ProfileDraft): Promise<{ ok: boolean; error?: string }> {
+  const c = await ctx();
+  if ('error' in c) return { ok: false, error: c.error };
 
-  return null;
+  const displayName = sanitizeText(input.displayName || '').slice(0, 120);
+  const speciality = sanitizeText(input.speciality || '').slice(0, 160);
+  if (!displayName || !speciality) return { ok: false, error: 'Nom et spécialité requis.' };
+
+  await ensureProfile(c.tenantId, c.userId, displayName, speciality);
+
+  const tone = ['motivant', 'educatif', 'personnel'].includes(input.tone ?? '') ? input.tone! : undefined;
+  await db
+    .update(coachProfiles)
+    .set({
+      displayName,
+      speciality,
+      city: input.city != null ? sanitizeText(input.city).slice(0, 120) || null : undefined,
+      contentStyle: input.contentStyle != null ? sanitizeText(input.contentStyle).slice(0, 80) || null : undefined,
+      tone,
+      bio: input.bio != null ? sanitizeText(input.bio).slice(0, 1000) || null : undefined,
+      targetAudience: input.targetAudience != null ? sanitizeText(input.targetAudience).slice(0, 200) || null : undefined,
+      results: input.results != null ? sanitizeText(input.results).slice(0, 500) || null : undefined,
+      language: input.language === 'en' || input.language === 'fr' ? input.language : undefined,
+      updatedAt: new Date().toISOString(),
+    })
+    .where(eq(coachProfiles.tenantId, c.tenantId));
+
+  return { ok: true };
+}
+
+const IG_REASONS: Record<string, string> = {
+  invalid_url: 'URL Instagram invalide.',
+  blocked: 'Instagram a bloqué la lecture. Remplis à la main, c’est tout aussi efficace.',
+  private_or_blocked: 'Compte privé ou illisible. Remplis à la main ci-dessous.',
+  error: 'Lecture impossible. Remplis à la main ci-dessous.',
+};
+
+export interface InstagramImport {
+  ok: boolean;
+  error?: string;
+  followers?: string | null;
+  analysis?: InstagramAnalysis;
+}
+
+/** Analyse Instagram : scrape public + analyse Claude, persistée sur le profil. */
+export async function importInstagramAction(url: string): Promise<InstagramImport> {
+  const c = await ctx();
+  if ('error' in c) return { ok: false, error: c.error };
+  if (!isInstagramUrl(url)) return { ok: false, error: IG_REASONS.invalid_url };
+
+  const scrape = await scrapeInstagram(url);
+  if (!scrape.ok) return { ok: false, error: IG_REASONS[scrape.reason] ?? IG_REASONS.error };
+
+  const analysis = await analyzeInstagram(scrape.data);
+
+  const ok = await ensureProfile(c.tenantId, c.userId);
+  if (ok) {
+    await db
+      .update(coachProfiles)
+      .set({
+        instagramUrl: url.trim().slice(0, 300),
+        instagramData: JSON.stringify(scrape.data),
+        instagramAnalysis: JSON.stringify(analysis),
+        tone: TONE_CANON[analysis.ton_dominant] ?? undefined,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(coachProfiles.tenantId, c.tenantId));
+  } else {
+    // Pas encore de ligne profil : on garde juste l'URL pour persistance au step 1.
+    logInfo('[onboarding] instagram analysé avant création profil', { tenantId: c.tenantId });
+  }
+
+  return { ok: true, followers: scrape.data.followers, analysis };
+}
+
+export interface LinkedinImport {
+  ok: boolean;
+  error?: string;
+  data?: LinkedinData;
+}
+
+/** Import LinkedIn best-effort : renvoie headline + résumé pour pré-remplir la bio. */
+export async function importLinkedinAction(url: string): Promise<LinkedinImport> {
+  const c = await ctx();
+  if ('error' in c) return { ok: false, error: c.error };
+  if (!isLinkedinUrl(url)) return { ok: false, error: 'URL LinkedIn invalide.' };
+
+  const scrape = await scrapeLinkedin(url);
+  if (!scrape.ok) return { ok: false, error: 'Profil LinkedIn illisible. Remplis ta bio à la main.' };
+  return { ok: true, data: scrape.data };
+}
+
+export interface ReviewsImport {
+  ok: boolean;
+  error?: string;
+  analysis?: ReviewsAnalysis;
+}
+
+/** Analyse des avis collés : extrait points forts + témoignage, persistés. */
+export async function analyzeReviewsAction(text: string): Promise<ReviewsImport> {
+  const c = await ctx();
+  if ('error' in c) return { ok: false, error: c.error };
+  const clean = sanitizeText(text || '').trim();
+  if (clean.length < 20) return { ok: false, error: 'Colle au moins quelques lignes d’avis.' };
+
+  const analysis = await analyzeReviews(clean);
+
+  const ok = await ensureProfile(c.tenantId, c.userId);
+  if (ok) {
+    await db
+      .update(coachProfiles)
+      .set({ reviewsText: clean.slice(0, 4000), reviewsAnalysis: JSON.stringify(analysis), updatedAt: new Date().toISOString() })
+      .where(eq(coachProfiles.tenantId, c.tenantId));
+  }
+  return { ok: true, analysis };
+}
+
+/** AJOUT 3 — génère 1 post exemple instantané pour l'aperçu avant génération complète. */
+export async function generateExampleAction(): Promise<{ ok: boolean; error?: string; post?: PostDraft }> {
+  const c = await ctx();
+  if ('error' in c) return { ok: false, error: c.error };
+  const [prof] = await db
+    .select({ speciality: coachProfiles.speciality, city: coachProfiles.city })
+    .from(coachProfiles)
+    .where(eq(coachProfiles.tenantId, c.tenantId))
+    .limit(1);
+  if (!prof) return { ok: false, error: 'Renseigne d’abord ton profil.' };
+  try {
+    const post = await generateSingleDemoPost(prof.speciality, prof.city ?? undefined);
+    return { ok: true, post };
+  } catch (err) {
+    logError('[onboarding] exemple post échoué', { error: String(err) });
+    return { ok: false, error: 'Aperçu indisponible — tu peux continuer.' };
+  }
+}
+
+/** Termine l'onboarding (le profil est déjà persisté par les steps). */
+export async function finishOnboarding(): Promise<{ ok: boolean; error?: string }> {
+  const c = await ctx();
+  if ('error' in c) return { ok: false, error: c.error };
+
+  const [prof] = await db.select({ speciality: coachProfiles.speciality }).from(coachProfiles).where(eq(coachProfiles.tenantId, c.tenantId)).limit(1);
+  if (!prof) return { ok: false, error: 'Complète au moins ton nom et ta spécialité.' };
+
+  await db.update(users).set({ onboardingCompleted: true }).where(eq(users.id, c.userId));
+  await logActivity(c.tenantId, c.userId, 'onboarding_completed', null, { speciality: prof.speciality });
+  logInfo('[onboarding] terminé', { tenantId: c.tenantId, userId: c.userId });
+  return { ok: true };
 }

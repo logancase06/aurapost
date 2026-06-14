@@ -1,4 +1,6 @@
 import { logError, logInfo } from './logger';
+import { runClaudeCode } from './claude-code';
+import { extractJson } from './parse-json';
 
 // Scraping de page Instagram PUBLIQUE, côté serveur uniquement, sans authentification.
 // Instagram bloque massivement les requêtes non authentifiées : on tente une extraction
@@ -78,4 +80,92 @@ export async function scrapeInstagram(url: string): Promise<ScrapeResult> {
     logError('[instagram] scraping échoué', { error: String(err) });
     return { ok: false, reason: 'error' };
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Analyse du profil scrapé via Claude : extrait le ton, le style et une bio
+// reformulée — injectés ensuite dans la génération pour que les posts sonnent
+// EXACTEMENT comme le coach écrit. Fallback déterministe si Claude indisponible.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface InstagramAnalysis {
+  ton_dominant: string; // motivant | educatif | humoristique | personnel | inspirant
+  style_ecriture: string; // longueur, emojis, ponctuation
+  themes_recurrents: string[];
+  phrase_caracteristique: string; // max 15 mots
+  bio_reformulee: string; // max 30 mots
+}
+
+const ANALYSIS_PROMPT = `Analyse ce profil Instagram d'un coach sportif et extrais :
+- ton_dominant : un seul mot parmi motivant/educatif/humoristique/personnel/inspirant
+- style_ecriture : courte description (longueur des posts, usage emojis, ponctuation)
+- themes_recurrents : liste des sujets abordés (3 à 5 items)
+- phrase_caracteristique : une phrase typique de ce coach (max 15 mots)
+- bio_reformulee : bio reformulée de façon plus percutante (max 30 mots)
+Réponds UNIQUEMENT en JSON strict : { "ton_dominant": "...", "style_ecriture": "...", "themes_recurrents": ["..."], "phrase_caracteristique": "...", "bio_reformulee": "..." }`;
+
+const TONES = ['motivant', 'educatif', 'humoristique', 'personnel', 'inspirant'];
+
+function normalizeAnalysis(raw: unknown): InstagramAnalysis | null {
+  const o = raw as Record<string, unknown>;
+  if (!o) return null;
+  const tonRaw = typeof o.ton_dominant === 'string' ? o.ton_dominant.toLowerCase().trim() : '';
+  const ton = TONES.find((t) => tonRaw.includes(t)) ?? 'motivant';
+  const themes = Array.isArray(o.themes_recurrents)
+    ? o.themes_recurrents.map((t) => String(t).trim()).filter(Boolean).slice(0, 5)
+    : [];
+  const style = typeof o.style_ecriture === 'string' ? o.style_ecriture.trim() : '';
+  const phrase = typeof o.phrase_caracteristique === 'string' ? o.phrase_caracteristique.trim() : '';
+  const bio = typeof o.bio_reformulee === 'string' ? o.bio_reformulee.trim() : '';
+  if (!style && themes.length === 0 && !phrase) return null;
+  return {
+    ton_dominant: ton,
+    style_ecriture: style || 'Posts courts, directs, avec emojis.',
+    themes_recurrents: themes,
+    phrase_caracteristique: phrase,
+    bio_reformulee: bio,
+  };
+}
+
+export async function analyzeInstagram(data: InstagramData): Promise<InstagramAnalysis> {
+  const corpus = [
+    `Nom : ${data.name}`,
+    data.followers ? `Abonnés : ${data.followers}` : '',
+    data.bio ? `Bio : ${data.bio}` : '',
+    data.captions.length ? `Dernières légendes :\n- ${data.captions.join('\n- ')}` : '',
+  ]
+    .filter(Boolean)
+    .join('\n');
+
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const text = await runClaudeCode(`${ANALYSIS_PROMPT}\n\nProfil :\n"""${corpus.slice(0, 4000)}"""`);
+      const parsed = normalizeAnalysis(extractJson(text));
+      if (parsed) return parsed;
+    } catch (err) {
+      logError('[instagram] analyse échouée', { attempt, error: String(err) });
+    }
+  }
+  return mockAnalysis(data);
+}
+
+// Fallback : déduit un ton depuis les emojis/mots-clés des légendes.
+function mockAnalysis(data: InstagramData): InstagramAnalysis {
+  const text = `${data.bio} ${data.captions.join(' ')}`.toLowerCase();
+  const ton = /😂|mdr|haha|lol/.test(text)
+    ? 'humoristique'
+    : /astuce|conseil|technique|comment/.test(text)
+      ? 'educatif'
+      : /mon parcours|je me souviens|honnêtement/.test(text)
+        ? 'personnel'
+        : 'motivant';
+  const phrase =
+    data.captions.find((c) => c.length > 15)?.split(/[.!?\n]/)[0]?.split(' ').slice(0, 15).join(' ') ?? '';
+  return {
+    ton_dominant: ton,
+    style_ecriture: 'Posts courts et rythmés, emojis fréquents, ton direct.',
+    themes_recurrents: ['entraînement', 'motivation', 'résultats'],
+    phrase_caracteristique: phrase,
+    bio_reformulee: (data.bio || '').split(' ').slice(0, 30).join(' '),
+  };
 }

@@ -1,16 +1,14 @@
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { users } from '@/lib/db/schema';
+import { users, coachProfiles } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { Sparkles, Check } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { Card } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import OnboardingForm from './OnboardingForm';
+import { listPhotos } from '@/lib/db/photos';
+import OnboardingWizard, { type InitialDraft } from './OnboardingWizard';
 
 export const metadata = { title: 'Configurer mon profil' };
-
-const STEPS = ['Profil', 'Génération', 'Site', 'Abonnement'];
 
 export default async function OnboardingPage() {
   const session = await auth();
@@ -23,6 +21,51 @@ export default async function OnboardingPage() {
     .limit(1);
   if (me?.onboardingCompleted) redirect('/dashboard');
 
+  const tenantId = session.user.tenantId!;
+
+  // Reprise : on recharge le brouillon déjà saisi (le coach peut revenir plus tard).
+  const [prof] = await db
+    .select({
+      displayName: coachProfiles.displayName,
+      speciality: coachProfiles.speciality,
+      city: coachProfiles.city,
+      contentStyle: coachProfiles.contentStyle,
+      tone: coachProfiles.tone,
+      bio: coachProfiles.bio,
+      targetAudience: coachProfiles.targetAudience,
+      results: coachProfiles.results,
+      language: coachProfiles.language,
+      instagramUrl: coachProfiles.instagramUrl,
+      instagramAnalysis: coachProfiles.instagramAnalysis,
+      reviewsText: coachProfiles.reviewsText,
+      reviewsAnalysis: coachProfiles.reviewsAnalysis,
+    })
+    .from(coachProfiles)
+    .where(eq(coachProfiles.tenantId, tenantId))
+    .limit(1);
+
+  const photos = await listPhotos(tenantId, 10);
+
+  const igAnalysis = safeParse<{ ton_dominant?: string }>(prof?.instagramAnalysis);
+  const rvAnalysis = safeParse<{ strengths?: string[] }>(prof?.reviewsAnalysis);
+
+  const initial: InitialDraft = {
+    displayName: prof?.displayName ?? '',
+    speciality: prof?.speciality ?? '',
+    city: prof?.city ?? '',
+    contentStyle: prof?.contentStyle ?? '',
+    tone: prof?.tone ?? 'motivant',
+    bio: prof?.bio ?? '',
+    targetAudience: prof?.targetAudience ?? '',
+    results: prof?.results ?? '',
+    language: prof?.language ?? 'fr',
+    hasInstagram: !!prof?.instagramUrl,
+    igTone: igAnalysis?.ton_dominant ?? null,
+    hasReviews: !!prof?.reviewsText,
+    reviewStrengths: rvAnalysis?.strengths ?? [],
+    photos,
+  };
+
   return (
     <main id="main-content" className="relative flex min-h-screen flex-col items-center px-4 py-12">
       <div className="aura-glow absolute inset-0" aria-hidden />
@@ -34,33 +77,19 @@ export default async function OnboardingPage() {
           AuraPost
         </div>
 
-        {/* Stepper horizontal */}
-        <div className="mb-2 flex items-center justify-between">
-          {STEPS.map((label, i) => (
-            <div key={label} className="flex items-center gap-2">
-              <span
-                className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${
-                  i === 0 ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'
-                }`}
-              >
-                {i === 0 ? '1' : <Check className="h-3 w-3 opacity-40" />}
-              </span>
-              <span className={`text-xs font-medium ${i === 0 ? 'text-foreground' : 'text-muted-foreground'}`}>{label}</span>
-            </div>
-          ))}
-        </div>
-        <Progress value={25} />
-
-        <Card className="mt-6 animate-fade-up border-border/80 bg-card/80 p-8 backdrop-blur-xl">
-          <h1 className="text-xl font-bold">Configurons votre profil de coach</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Ces informations alimentent la génération de votre contenu Instagram &amp; LinkedIn. Vous pourrez les modifier plus tard.
-          </p>
-          <div className="mt-6">
-            <OnboardingForm />
-          </div>
+        <Card className="animate-fade-up border-border/80 bg-card/80 p-6 backdrop-blur-xl sm:p-8">
+          <OnboardingWizard initial={initial} />
         </Card>
       </div>
     </main>
   );
+}
+
+function safeParse<T>(json: string | null | undefined): T | null {
+  if (!json) return null;
+  try {
+    return JSON.parse(json) as T;
+  } catch {
+    return null;
+  }
 }
