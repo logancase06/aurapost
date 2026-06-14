@@ -27,7 +27,12 @@ export interface CompletionResult {
   items: CompletionItem[];
   /** Prochaine action à fort impact (le 1er item non fait), ou null si complet. */
   nextHint: string | null;
+  /** Bénéfice concret du niveau de complétion (sincère : alimente la génération). */
+  benefit: string;
 }
+
+const BENEFIT_FULL = 'Profil complet : on génère tes posts dans TA voix — ton, forces clients et résultats sont injectés à chaque post.';
+const BENEFIT_PARTIAL = 'Chaque info ajoutée rend tes posts plus personnalisés : ton détecté, preuve sociale tirée de tes avis, résultats concrets.';
 
 export function computeCompletion(input: CompletionInput): CompletionResult {
   const photos = input.photosCount ?? 0;
@@ -53,5 +58,10 @@ export function computeCompletion(input: CompletionInput): CompletionResult {
     instagram: 'Ajoute ton URL Instagram (+15 %)',
   };
 
-  return { score, items, nextHint: next ? hints[next.key] ?? next.label : null };
+  return {
+    score,
+    items,
+    nextHint: next ? hints[next.key] ?? next.label : null,
+    benefit: score >= 100 ? BENEFIT_FULL : BENEFIT_PARTIAL,
+  };
 }

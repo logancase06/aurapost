@@ -37,12 +37,11 @@ export default function ProfileCompletion({
       <Progress value={data.score} className="mt-3" />
 
       {complete ? (
-        <p className="mt-3 text-xs text-muted-foreground">
-          Ton profil est riche — on génère le meilleur contenu possible dans ta voix.
-        </p>
+        <p className="mt-3 text-xs text-muted-foreground">{data.benefit}</p>
       ) : (
         <div className="mt-4">
-          <p className="text-xs text-muted-foreground">Pour un meilleur contenu, ajoute :</p>
+          <p className="rounded-lg bg-primary/10 p-2.5 text-xs text-foreground">✦ {data.benefit}</p>
+          <p className="mt-3 text-xs text-muted-foreground">Pour un meilleur contenu, ajoute :</p>
           <ul className="mt-2 space-y-1.5">
             {missing.map((it) => (
               <li key={it.key} className="flex items-center justify-between gap-3 text-sm">

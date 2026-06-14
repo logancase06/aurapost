@@ -487,7 +487,8 @@ export default function OnboardingWizard({ initial }: { initial: InitialDraft })
                     <span className="flex items-center gap-2 font-semibold"><Sparkles className="h-4 w-4 text-primary" /> Profil complété à {completion.score}%</span>
                   </div>
                   <Progress value={completion.score} className="mt-2" />
-                  {completion.nextHint && <p className="mt-2 text-xs text-muted-foreground">{completion.nextHint}</p>}
+                  <p className="mt-2 text-xs text-foreground">✦ {completion.benefit}</p>
+                  {completion.nextHint && <p className="mt-1 text-xs text-muted-foreground">{completion.nextHint}</p>}
                 </div>
 
                 {/* Aperçu post exemple (AJOUT 3) */}
