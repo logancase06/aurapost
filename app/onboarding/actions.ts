@@ -8,6 +8,7 @@ import { auth } from '@/lib/auth';
 import { requireTenantId } from '@/lib/tenant';
 import { CoachProfileSchema } from '@/lib/validation';
 import { logActivity } from '@/lib/db/activity';
+import { logError, logInfo } from '@/lib/logger';
 
 export type OnboardingState = { error?: string } | null;
 
@@ -16,10 +17,20 @@ export type OnboardingState = { error?: string } | null;
  * Toute écriture passe par requireTenantId() → isolation multi-tenant garantie.
  */
 export async function saveCoachProfile(_prev: OnboardingState, formData: FormData): Promise<OnboardingState> {
+  logInfo('[onboarding] saveCoachProfile appelé', {});
   const session = await auth();
-  if (!session?.user?.id) return { error: 'Non autorisé' };
+  if (!session?.user?.id) {
+    logError('[onboarding] pas de session', {});
+    return { error: 'Non autorisé — reconnecte-toi.' };
+  }
 
-  const tenantId = await requireTenantId();
+  let tenantId: string;
+  try {
+    tenantId = await requireTenantId();
+  } catch {
+    logError('[onboarding] tenantId manquant dans la session', { userId: session.user.id });
+    return { error: 'Session invalide — déconnecte-toi et recrée un compte.' };
+  }
 
   const parsed = CoachProfileSchema.safeParse({
     displayName: formData.get('displayName'),
@@ -58,7 +69,12 @@ export async function saveCoachProfile(_prev: OnboardingState, formData: FormDat
     updatedAt: now,
   });
 
-  await db.update(users).set({ onboardingCompleted: true }).where(eq(users.id, session.user.id));
+  const upd = await db.update(users).set({ onboardingCompleted: true }).where(eq(users.id, session.user.id));
+  logInfo('[onboarding] profil enregistré + onboarding terminé', {
+    tenantId,
+    userId: session.user.id,
+    rowsAffected: (upd as { rowsAffected?: number }).rowsAffected ?? 'n/a',
+  });
 
   await logActivity(tenantId, session.user.id, 'onboarding_completed', null, { speciality: data.speciality });
 

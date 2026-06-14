@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -18,7 +17,6 @@ const TONES = [
 ] as const;
 
 export default function OnboardingForm() {
-  const router = useRouter();
   const [pending, setPending] = useState(false);
   const [tone, setTone] = useState<string>('motivant');
   // Pré-sélectionne la langue détectée du navigateur (détection auto à l'inscription).
@@ -34,15 +32,24 @@ export default function OnboardingForm() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     setPending(true);
-    const res = await saveCoachProfile(null, formData);
+    let res: Awaited<ReturnType<typeof saveCoachProfile>> = null;
+    try {
+      res = await saveCoachProfile(null, formData);
+    } catch (err) {
+      console.error('[onboarding-client] action a levé:', err);
+      setPending(false);
+      toast.error('Erreur lors de l’enregistrement. Réessaie.');
+      return;
+    }
     setPending(false);
     if (res?.error) {
       toast.error(res.error);
       return;
     }
     toast.success('Profil enregistré ✦');
-    router.push('/dashboard');
-    router.refresh();
+    // Navigation pleine page (fiable) : le dashboard se rend à neuf avec la session
+    // à jour (onboardingCompleted). Évite la course router.push()+router.refresh().
+    window.location.assign('/dashboard');
   }
 
   return (
