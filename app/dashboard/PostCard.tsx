@@ -3,13 +3,13 @@
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
-import { Check, X, RefreshCw, Copy, Camera, Briefcase, Loader2, Maximize2 } from 'lucide-react';
+import { Check, X, RefreshCw, Copy, Camera, Briefcase, Loader2, Maximize2, ImageIcon } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { BorderBeam } from '@/components/ui/border-beam';
-import { rejectPostAction, requestVariantAction } from './post-actions';
+import { approvePostAction, rejectPostAction, requestVariantAction } from './post-actions';
 import ApprovePostDialog from './ApprovePostDialog';
 import type { PostRow } from '@/lib/db/posts';
 
@@ -82,9 +82,16 @@ export default function PostCard({ post }: { post: PostRow }) {
 
       <div className="flex flex-wrap items-center gap-2">
         {post.status !== 'approved' && (
-          <Button size="sm" onClick={() => setApproveOpen(true)} disabled={pending} className="bg-success text-white hover:bg-success/90">
-            <Check className="h-3.5 w-3.5" /> Approuver
-          </Button>
+          <>
+            {/* Approbation rapide en 1 clic */}
+            <Button size="sm" onClick={() => run(() => approvePostAction(post.id), 'Post approuvé ✓')} disabled={pending} className="bg-success text-white hover:bg-success/90">
+              <Check className="h-3.5 w-3.5" /> Approuver
+            </Button>
+            {/* Option : approuver en ajoutant une photo (dialog 3 étapes) */}
+            <Button size="sm" variant="outline" onClick={() => setApproveOpen(true)} disabled={pending} title="Approuver en ajoutant une photo">
+              <ImageIcon className="h-3.5 w-3.5" /> + photo
+            </Button>
+          </>
         )}
         {post.status !== 'rejected' && (
           <Button size="sm" variant="secondary" onClick={() => run(() => rejectPostAction(post.id), 'Post rejeté')} disabled={pending}>
