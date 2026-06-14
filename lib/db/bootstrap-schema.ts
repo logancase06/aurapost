@@ -157,6 +157,29 @@ CREATE TABLE IF NOT EXISTS notifications (
 CREATE INDEX IF NOT EXISTS notifications_tenant_idx ON notifications (tenant_id);
 CREATE INDEX IF NOT EXISTS notifications_created_idx ON notifications (created_at);
 
+CREATE TABLE IF NOT EXISTS coach_photos (
+  id TEXT PRIMARY KEY,
+  tenant_id TEXT NOT NULL,
+  r2_key TEXT,
+  r2_url TEXT NOT NULL,
+  thumbnail_url TEXT,
+  width INTEGER,
+  height INTEGER,
+  size_bytes INTEGER,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS coach_photos_tenant_idx ON coach_photos (tenant_id);
+
+CREATE TABLE IF NOT EXISTS post_photos (
+  id TEXT PRIMARY KEY,
+  post_id TEXT NOT NULL,
+  photo_id TEXT NOT NULL,
+  final_r2_key TEXT,
+  text_overlay TEXT,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS post_photos_post_idx ON post_photos (post_id);
+
 CREATE TABLE IF NOT EXISTS support_tickets (
   id TEXT PRIMARY KEY,
   tenant_id TEXT,

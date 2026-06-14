@@ -227,6 +227,41 @@ export const notifications = sqliteTable(
   })
 );
 
+// Bibliothèque de photos du coach (upload → R2 ou data URL en mock).
+export const coachPhotos = sqliteTable(
+  'coach_photos',
+  {
+    id: text('id').primaryKey(),
+    tenantId: text('tenant_id').notNull(),
+    r2Key: text('r2_key'),
+    r2Url: text('r2_url').notNull(),
+    thumbnailUrl: text('thumbnail_url'),
+    width: integer('width'),
+    height: integer('height'),
+    sizeBytes: integer('size_bytes'),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => ({
+    tenantIdx: index('coach_photos_tenant_idx').on(t.tenantId),
+  })
+);
+
+// Liaison post ↔ photo + rendu final (texte superposé).
+export const postPhotos = sqliteTable(
+  'post_photos',
+  {
+    id: text('id').primaryKey(),
+    postId: text('post_id').notNull(),
+    photoId: text('photo_id').notNull(),
+    finalR2Key: text('final_r2_key'),
+    textOverlay: text('text_overlay'),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => ({
+    postIdx: index('post_photos_post_idx').on(t.postId),
+  })
+);
+
 // Tickets de support (widget /support → visibles dans /admin).
 export const supportTickets = sqliteTable(
   'support_tickets',

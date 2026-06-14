@@ -10,11 +10,16 @@ import {
 interface StoredSiteContent {
   hero_title?: string;
   hero_subtitle?: string;
+  hero_tagline?: string;
+  story?: string;
+  story_quote?: string;
   about?: string;
   cta?: string;
+  accent_color?: string;
   seo_description?: string;
   services?: { title: string; description: string; icon?: string }[];
   testimonials?: { name: string; quote: string }[];
+  results?: { result: string; name: string; city?: string }[];
 }
 
 /** Données publiques du site loué (route /site/[subdomain]). Exploite le contenu IA si présent. */
@@ -64,10 +69,14 @@ export async function getCoachSiteData(subdomain: string, opts?: { requireActive
     city: profile.city,
     bio: profile.bio,
     themeColor: site.themeColor ?? '#7c3aed',
+    accentColor: content?.accent_color ?? null,
     photoUrl: photos[0] ?? null,
     heroTitle: content?.hero_title,
     heroSubtitle: content?.hero_subtitle,
+    heroTagline: content?.hero_tagline,
     about: content?.about,
+    story: content?.story,
+    storyQuote: content?.story_quote,
     cta: content?.cta,
     seoDescription: site.seoDescription ?? content?.seo_description,
     services:
@@ -78,6 +87,10 @@ export async function getCoachSiteData(subdomain: string, opts?: { requireActive
       content?.testimonials && content.testimonials.length >= 1
         ? content.testimonials.map((t) => ({ name: t.name, quote: t.quote }))
         : defaultTestimonials(),
+    results:
+      content?.results && content.results.length >= 1
+        ? content.results.map((r) => ({ result: r.result, name: r.name, city: r.city }))
+        : undefined,
   };
 }
 

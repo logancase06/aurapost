@@ -1,24 +1,35 @@
 import { runClaudeCode } from './claude-code';
 import { extractJson } from './parse-json';
+import { accentForSpeciality, defaultServices, defaultResults } from '@/templates/coach-site/CoachSite';
 import { logError } from './logger';
 
-// Génération du contenu complet d'une landing coach via le SDK Claude Code (mock fallback).
+// Génère le contenu d'un site coach v2 (authentique, premium) via Claude Code (mock fallback).
 
 export interface SiteService {
   title: string;
   description: string;
-  icon: string; // nom d'icône Lucide
+  icon: string; // conservé pour compat
 }
 export interface SiteTestimonial {
   name: string;
   quote: string;
 }
+export interface SiteResult {
+  result: string;
+  name: string;
+  city?: string;
+}
 export interface SiteContent {
   hero_title: string;
   hero_subtitle: string;
+  hero_tagline: string;
+  story: string;
+  story_quote: string;
   services: SiteService[];
   about: string;
   testimonials: SiteTestimonial[];
+  results: SiteResult[];
+  accent_color: string;
   cta: string;
   seo_description: string;
 }
@@ -31,62 +42,71 @@ export interface SiteGenInput {
   strengths?: string[];
   testimonial?: string | null;
   tone?: string | null;
+  /** 3 derniers posts approuvés du coach — alimentent le ton/style du site. */
+  recentPosts?: string[];
 }
 
 function buildPrompt(d: SiteGenInput): string {
-  return `Tu es un expert en création de sites web pour coachs sportifs.
-Voici les données réelles de ce coach :
-- Nom : ${d.name}
-- Spécialité : ${d.speciality}
-- Ville : ${d.city ?? 'non précisée'}
-- Bio Instagram : ${d.bio ?? 'non fournie'}
-- Points forts clients : ${(d.strengths ?? []).join(', ') || 'non fournis'}
-- Témoignage clé : ${d.testimonial ?? 'non fourni'}
-- Ton : ${d.tone ?? 'motivant'}
+  const posts = (d.recentPosts ?? []).slice(0, 3).map((p, i) => `Post ${i + 1} : ${p.slice(0, 300)}`).join('\n');
+  return `Tu génères le contenu d'un site coach sportif authentique et premium.
 
-Génère le contenu complet de sa landing page en JSON :
-- hero_title : accroche principale (max 8 mots, percutante)
-- hero_subtitle : sous-titre (max 20 mots)
-- services : array de 3 services avec titre + description + icône Lucide (champ "icon")
-- about : texte "À propos" (max 60 mots, à la première personne)
-- testimonials : array de 2 témoignages reformulés depuis les avis (champs "name" et "quote")
-- cta : phrase d'appel à l'action (max 10 mots)
-- seo_description : meta description SEO (max 155 caractères)
-Réponds uniquement en JSON structuré.`;
+Profil : ${d.name}, ${d.speciality}, ${d.city ?? 'ville non précisée'}
+Bio : ${d.bio ?? 'non fournie'}
+Ton : ${d.tone ?? 'motivant'}
+Avis clients / points forts : ${(d.strengths ?? []).join(', ') || d.testimonial || 'non fournis'}
+Posts Instagram approuvés :
+${posts || '(aucun pour l’instant)'}
+
+Génère en JSON UNIQUEMENT :
+- hero_tagline : phrase d'accroche courte (max 8 mots, première personne, percutante)
+- story : texte "Mon histoire" (≈150 mots, première personne, authentique, narration, PAS de bullet points)
+- story_quote : phrase clé extraite du story (max 15 mots, marquante)
+- services : 3 services réels basés sur la spécialité (objets {title court, description concrète ≈20 mots})
+- results : 2 témoignages reformulés courts (objets {result, name (prénom), city})
+- accent_color : couleur hex adaptée à la spécialité (Hyrox→#FF4D00, Yoga→#7A9E7E, Running→#1A56DB)
+- seo_description : meta description (max 155 caractères)
+
+Ton : authentique, direct, sans jargon marketing — comme si le coach l'avait écrit lui-même.
+Si le coach écrit "Tu crois que tes jambes lâchent", le site doit avoir ce même ton direct et nerveux.`;
 }
-
-const LUCIDE_ICONS = new Set(['Dumbbell', 'HeartPulse', 'Target', 'Flame', 'Trophy', 'Apple', 'Users', 'Timer', 'Activity']);
 
 function normalize(raw: unknown, d: SiteGenInput): SiteContent | null {
   const o = raw as Record<string, unknown>;
+
   const services = Array.isArray(o?.services)
     ? o.services.slice(0, 3).map((s) => {
         const it = s as Record<string, unknown>;
-        const icon = typeof it.icon === 'string' && LUCIDE_ICONS.has(it.icon) ? it.icon : 'Dumbbell';
-        return {
-          title: String(it.title ?? 'Service'),
-          description: String(it.description ?? ''),
-          icon,
-        };
-      })
-    : [];
-  const testimonials = Array.isArray(o?.testimonials)
-    ? o.testimonials.slice(0, 2).map((t) => {
-        const it = t as Record<string, unknown>;
-        return { name: String(it.name ?? 'Client'), quote: String(it.quote ?? '') };
+        return { title: String(it.title ?? 'Service').trim(), description: String(it.description ?? '').trim(), icon: 'Dumbbell' };
       })
     : [];
 
-  const hero_title = typeof o?.hero_title === 'string' ? o.hero_title.trim() : '';
-  if (!hero_title || services.length < 3) return null;
+  const results = Array.isArray(o?.results)
+    ? o.results.slice(0, 2).map((r) => {
+        const it = r as Record<string, unknown>;
+        return { result: String(it.result ?? it.quote ?? '').trim(), name: String(it.name ?? 'Client').trim(), city: String(it.city ?? '').trim() };
+      })
+    : [];
+
+  const story = typeof o?.story === 'string' ? o.story.trim() : '';
+  if (!story || services.length < 3) return null;
+
+  const accent =
+    typeof o?.accent_color === 'string' && /^#[0-9a-fA-F]{6}$/.test(o.accent_color.trim())
+      ? o.accent_color.trim()
+      : accentForSpeciality(d.speciality);
 
   return {
-    hero_title,
-    hero_subtitle: String(o?.hero_subtitle ?? `${d.speciality}${d.city ? ` à ${d.city}` : ''}`),
+    hero_title: String(o?.hero_tagline ?? d.name).trim(),
+    hero_subtitle: `${d.speciality}${d.city ? ` · ${d.city}` : ''}`,
+    hero_tagline: String(o?.hero_tagline ?? 'Ton objectif mérite une vraie méthode.').trim(),
+    story,
+    story_quote: String(o?.story_quote ?? '').trim(),
     services,
-    about: String(o?.about ?? d.bio ?? ''),
-    testimonials: testimonials.length >= 2 ? testimonials : defaultTestimonials(d),
-    cta: String(o?.cta ?? 'Réservez votre première séance'),
+    about: story,
+    testimonials: results.map((r) => ({ name: r.name, quote: r.result })),
+    results: results.length >= 2 ? results : defaultResults(d.speciality),
+    accent_color: accent,
+    cta: 'Réserver une séance',
     seo_description: String(o?.seo_description ?? `${d.name}, coach ${d.speciality}${d.city ? ` à ${d.city}` : ''}.`).slice(0, 160),
   };
 }
@@ -105,33 +125,27 @@ export async function generateSiteContent(d: SiteGenInput): Promise<SiteContent>
   return defaultContent(d);
 }
 
-function defaultTestimonials(d: SiteGenInput): SiteTestimonial[] {
-  if (d.testimonial) {
-    return [
-      { name: 'Client satisfait', quote: d.testimonial },
-      { name: 'Marie L.', quote: 'Un accompagnement qui a tout changé pour moi.' },
-    ];
-  }
-  return [
-    { name: 'Marie L.', quote: 'Un accompagnement qui a tout changé. Je n’ai jamais été aussi régulière.' },
-    { name: 'Thomas R.', quote: 'Des séances exigeantes mais bienveillantes. Des résultats en quelques semaines.' },
-  ];
-}
-
-// Template par défaut (fallback ultime si la génération IA échoue 3 fois).
+// Template par défaut (fallback ultime si la génération IA échoue).
 export function defaultContent(d: SiteGenInput): SiteContent {
   const place = d.city ? ` à ${d.city}` : '';
+  const services = defaultServices(d.speciality).map((s) => ({ ...s, icon: 'Dumbbell' }));
+  const results = defaultResults(d.speciality);
+  const story =
+    d.bio ||
+    `Coach ${d.speciality.toLowerCase()}${place}, j'accompagne celles et ceux qui veulent des résultats concrets, pas des promesses. ` +
+      `Mon approche : de la méthode, de la constance, et un suivi exigeant mais humain. On avance ensemble, à ton rythme, vers ton objectif.`;
   return {
-    hero_title: `Atteignez vos objectifs avec ${d.name}`,
-    hero_subtitle: `Coach ${d.speciality}${place} — un accompagnement personnalisé pour des résultats durables.`,
-    services: [
-      { title: 'Coaching individuel', description: `Un suivi sur-mesure en ${d.speciality.toLowerCase()}, adapté à votre niveau.`, icon: 'Dumbbell' },
-      { title: 'Programmes personnalisés', description: 'Des plans d’entraînement et de nutrition construits pour votre quotidien.', icon: 'Target' },
-      { title: 'Suivi & motivation', description: 'Un suivi régulier pour garder le cap et célébrer vos progrès.', icon: 'HeartPulse' },
-    ],
-    about: d.bio || `Coach ${d.speciality}${place}, je vous accompagne pas à pas vers vos objectifs avec exigence et bienveillance.`,
-    testimonials: defaultTestimonials(d),
-    cta: 'Réservez votre première séance',
-    seo_description: `${d.name} — Coach ${d.speciality}${place}. Coaching personnalisé, résultats durables.`.slice(0, 160),
+    hero_title: d.name,
+    hero_subtitle: `${d.speciality}${d.city ? ` · ${d.city}` : ''}`,
+    hero_tagline: 'Ton corps peut. C’est ta tête qu’on entraîne d’abord.',
+    story,
+    story_quote: 'La méthode bat la motivation. Toujours.',
+    services,
+    about: story,
+    testimonials: results.map((r) => ({ name: r.name, quote: r.result })),
+    results,
+    accent_color: accentForSpeciality(d.speciality),
+    cta: 'Réserver une séance',
+    seo_description: `${d.name} — Coach ${d.speciality}${place}. Méthode, suivi, résultats durables.`.slice(0, 160),
   };
 }
