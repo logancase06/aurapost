@@ -14,6 +14,15 @@ function instagramUrl(raw: string | null | undefined): string | null {
   return `https://instagram.com/${v.replace(/^@/, '')}`;
 }
 
+/** N'autorise que des schémas d'URL sûrs dans les href du site public (anti-XSS).
+ *  hero.ctaUrl n'est pas validé en URL par le schéma → on bloque javascript:/data: ici. */
+function safeUrl(raw: string | null | undefined): string | null {
+  const v = (raw ?? '').trim();
+  if (!v) return null;
+  if (/^(https?:\/\/|mailto:|tel:)/i.test(v)) return v;
+  return null;
+}
+
 /** Données publiques du site loué (route /site/[subdomain]). Exploite le contenu IA si présent. */
 export async function getCoachSiteData(subdomain: string, opts?: { requireActive?: boolean }): Promise<CoachSiteData | null> {
   const [site] = await db
@@ -89,7 +98,7 @@ export async function getCoachSiteData(subdomain: string, opts?: { requireActive
   const services = (c.services ?? []).filter((s) => s.enabled && s.title.trim()).map((s) => ({ title: s.title, description: s.description }));
   // Section "résultats" = témoignages portant un résultat concret (sinon masquée).
   const results = c.testimonials.filter((t) => (t.result ?? '').trim()).map((t) => ({ result: t.result as string, name: t.author, city: '' }));
-  const bookingUrl = (c.contact.calendly || c.hero.ctaUrl || '').trim() || null;
+  const bookingUrl = safeUrl(c.contact.calendly || c.hero.ctaUrl);
 
   return {
     subdomain: site.subdomain,
