@@ -8,8 +8,9 @@ import { listPosts, getPostStats, hasGeneratedThisMonth, type PostStatus } from 
 import { getSmartSuggestions, getGenerationStreak } from '@/lib/db/suggestions';
 import { getOnboardingProgress, getProfileCompletion } from '@/lib/db/onboarding';
 import { currentMonth } from '@/lib/utils';
-import { XCircle, Mail } from 'lucide-react';
+import { XCircle, Mail, CalendarDays, ChevronDown } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import DashboardShell from './DashboardShell';
 import GenerateButton from './GenerateButton';
@@ -79,6 +80,13 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
   const firstName = (me?.fullName ?? session.user.name ?? '').split(' ')[0] || 'coach';
   const emailVerified = !!session.user.emailVerifiedAt;
 
+  // Bandeau « nouveau mois » : a déjà généré au moins une fois, mais pas ce mois-ci.
+  const showNewMonth = !alreadyGenerated && progress.generation;
+  const monthName = new Date().toLocaleDateString('fr-FR', { month: 'long' });
+  const monthLabel = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+  // Bloc « améliore ton profil » (stepper setup + complétion) — repliable.
+  const showImprove = !progress.complete || completion.score < 100;
+
   return (
     <DashboardShell active="/dashboard">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -106,24 +114,19 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
         </Alert>
       )}
 
-      <OnboardingStepper progress={progress} />
-
-      {completion.score < 100 && (
-        <div className="mt-6">
-          <ProfileCompletion data={completion} />
-        </div>
+      {/* Bandeau « nouveau mois » — action principale du mois, en haut */}
+      {showNewMonth && (
+        <Card className="mt-6 flex flex-wrap items-center gap-4 border-primary/30 bg-primary/5 p-5">
+          <CalendarDays className="h-6 w-6 shrink-0 text-primary" />
+          <div className="flex-1">
+            <p className="font-semibold">{monthLabel} est là — génère tes 12 posts du mois</p>
+            <p className="text-sm text-muted-foreground">Ton profil a peut-être évolué ? <Link href="/dashboard/profile" className="text-primary hover:underline">Mets-le à jour</Link> avant de générer.</p>
+          </div>
+          <GenerateButton alreadyGenerated={false} />
+        </Card>
       )}
 
-      <SectionBoundary label="Suggestions">
-        <SmartSuggestions data={suggestions} />
-      </SectionBoundary>
-
-      <div className="mt-6">
-        <SectionBoundary label="Statistiques">
-          <StatCards stats={{ total: stats.total, approved: stats.approved, draft: stats.draft, rejected: stats.rejected }} />
-        </SectionBoundary>
-      </div>
-
+      {/* Posts — remontés : le coach voit son contenu immédiatement */}
       <div className="mt-8 inline-flex rounded-lg border border-border bg-card p-1">
         {STATUS_FILTERS.map((f) => (
           <Link
@@ -142,6 +145,30 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
       <SectionBoundary label="Posts">
         {posts.length === 0 ? <EmptyPosts alreadyGenerated={alreadyGenerated} /> : <PostsBoard posts={posts} />}
       </SectionBoundary>
+
+      {/* Améliore ton profil — setup + complétion, repliable (sous les posts) */}
+      {showImprove && (
+        <details className="mt-8 rounded-xl border border-border bg-card p-1">
+          <summary className="flex cursor-pointer items-center justify-between gap-2 rounded-lg px-4 py-3 text-sm font-semibold">
+            <span>Améliore ton profil {completion.score < 100 && <span className="text-primary">· {completion.score}%</span>}</span>
+            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          </summary>
+          <div className="space-y-4 p-3">
+            <OnboardingStepper progress={progress} />
+            {completion.score < 100 && <ProfileCompletion data={completion} />}
+          </div>
+        </details>
+      )}
+
+      <SectionBoundary label="Suggestions">
+        <SmartSuggestions data={suggestions} />
+      </SectionBoundary>
+
+      <div className="mt-6">
+        <SectionBoundary label="Statistiques">
+          <StatCards stats={{ total: stats.total, approved: stats.approved, draft: stats.draft, rejected: stats.rejected }} />
+        </SectionBoundary>
+      </div>
     </DashboardShell>
   );
 }
