@@ -41,6 +41,7 @@ export interface CoachSiteData {
   services: CoachServiceItem[];
   testimonials: CoachTestimonialItem[];
   strengths?: string[];
+  forces?: { title: string; description?: string }[];
   // Contenu généré (optionnel) :
   heroTitle?: string;
   heroSubtitle?: string;
@@ -166,8 +167,14 @@ export default function CoachSite({ data }: { data: CoachSiteData }) {
     (data.whatsapp ? `https://wa.me/${data.whatsapp.replace(/[^0-9]/g, '')}` : '') ||
     (data.contactEmail ? `mailto:${data.contactEmail}` : '') ||
     '#contact';
-  const results = data.results?.length ? data.results : defaultResults(data.speciality);
-  const forces = (data.strengths?.length ? data.strengths : data.services.map((s) => s.title)).slice(0, 3);
+  const results = data.results?.length ? data.results : [];
+  const forces: { title: string; description?: string }[] = (
+    data.forces?.length
+      ? data.forces
+      : data.strengths?.length
+        ? data.strengths.map((title) => ({ title, description: undefined }))
+        : data.services.map((s) => ({ title: s.title, description: s.description }))
+  ).slice(0, 3);
   const isLight = !t.heroDark;
 
   const headFont = { fontFamily: t.fontHead, fontWeight: t.headWeight, letterSpacing: t.headTracking, textTransform: t.headTransform };
@@ -230,16 +237,19 @@ export default function CoachSite({ data }: { data: CoachSiteData }) {
       </section>
 
       {/* ── FORCES (preuve sociale immédiate) ─────────────────────── */}
-      <Reveal as="section" style={wrap}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 24 }}>
-          {forces.map((f, i) => (
-            <div key={i} style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: style === 'impact' ? 2 : 14, padding: 28 }}>
-              <span style={{ ...headFont, fontSize: '1.6rem', color: accent }}>{String(i + 1).padStart(2, '0')}</span>
-              <p style={{ margin: '10px 0 0', fontSize: 17, fontWeight: 700, color: t.ink }}>{f}</p>
-            </div>
-          ))}
-        </div>
-      </Reveal>
+      {forces.length > 0 && (
+        <Reveal as="section" style={wrap}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 24 }}>
+            {forces.map((f, i) => (
+              <div key={i} style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: style === 'impact' ? 2 : 14, padding: 28 }}>
+                <span style={{ ...headFont, fontSize: '1.6rem', color: accent }}>{String(i + 1).padStart(2, '0')}</span>
+                <p style={{ margin: '10px 0 0', fontSize: 17, fontWeight: 700, color: t.ink }}>{f.title}</p>
+                {f.description && <p style={{ margin: '8px 0 0', fontSize: 14, lineHeight: 1.55, color: t.muted }}>{f.description}</p>}
+              </div>
+            ))}
+          </div>
+        </Reveal>
+      )}
 
       {/* ── MON HISTOIRE ──────────────────────────────────────────── */}
       {story && (
@@ -263,6 +273,7 @@ export default function CoachSite({ data }: { data: CoachSiteData }) {
       )}
 
       {/* ── CE QU'ON FAIT ENSEMBLE ────────────────────────────────── */}
+      {data.services.length > 0 && (
       <Reveal as="section" style={wrap}>
         <h2 style={sectionH2}>Ce qu’on fait ensemble</h2>
         <div>
@@ -277,23 +288,26 @@ export default function CoachSite({ data }: { data: CoachSiteData }) {
           ))}
         </div>
       </Reveal>
+      )}
 
-      {/* ── CE QUE ÇA CHANGE (résultats) ──────────────────────────── */}
-      <section style={{ background: isLight ? t.ink : '#111111', color: '#fff' }}>
-        <Reveal style={{ maxWidth: 1080, margin: '0 auto', padding: sectionPad }}>
-          <h2 style={{ ...sectionH2, color: '#fff' }}>Ce que ça change</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 40 }}>
-            {results.map((r, i) => (
-              <div key={i} style={{ borderTop: `3px solid ${accent}`, paddingTop: 24 }}>
-                <p style={{ fontSize: 'clamp(1.2rem, 2.6vw, 1.5rem)', fontWeight: 600, lineHeight: 1.4, margin: 0 }}>{r.result}</p>
-                <p style={{ margin: '16px 0 0', fontSize: 14, letterSpacing: '0.04em', color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase' }}>
-                  {r.name}{r.city ? ` · ${r.city}` : ''}
-                </p>
-              </div>
-            ))}
-          </div>
-        </Reveal>
-      </section>
+      {/* ── CE QUE ÇA CHANGE (résultats) — masqué si aucun ────────── */}
+      {results.length > 0 && (
+        <section style={{ background: isLight ? t.ink : '#111111', color: '#fff' }}>
+          <Reveal style={{ maxWidth: 1080, margin: '0 auto', padding: sectionPad }}>
+            <h2 style={{ ...sectionH2, color: '#fff' }}>Ce que ça change</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 40 }}>
+              {results.map((r, i) => (
+                <div key={i} style={{ borderTop: `3px solid ${accent}`, paddingTop: 24 }}>
+                  <p style={{ fontSize: 'clamp(1.2rem, 2.6vw, 1.5rem)', fontWeight: 600, lineHeight: 1.4, margin: 0 }}>{r.result}</p>
+                  <p style={{ margin: '16px 0 0', fontSize: 14, letterSpacing: '0.04em', color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase' }}>
+                    {r.name}{r.city ? ` · ${r.city}` : ''}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </Reveal>
+        </section>
+      )}
 
       {/* ── TÉMOIGNAGES (masqué si aucun) ─────────────────────────── */}
       {data.testimonials?.length > 0 && (

@@ -1,29 +1,17 @@
 import { db } from './index';
 import { websites, coachProfiles, coachPhotos, generatedPosts, users as usersTable } from './schema';
 import { and, eq, desc } from 'drizzle-orm';
-import {
-  defaultServices,
-  defaultTestimonials,
-  styleForTone,
-  type CoachSiteData,
-  type SiteStyle,
-} from '@/templates/coach-site/CoachSite';
+import { styleForTone, type CoachSiteData, type SiteStyle } from '@/templates/coach-site/CoachSite';
+import { buildGeneratedSiteContent, mergeSiteContent, parseSiteContent } from './site';
 
 const SITE_STYLES: SiteStyle[] = ['impact', 'clarte', 'authenticite'];
 
-interface StoredSiteContent {
-  hero_title?: string;
-  hero_subtitle?: string;
-  hero_tagline?: string;
-  story?: string;
-  story_quote?: string;
-  about?: string;
-  cta?: string;
-  accent_color?: string;
-  seo_description?: string;
-  services?: { title: string; description: string; icon?: string }[];
-  testimonials?: { name: string; quote: string }[];
-  results?: { result: string; name: string; city?: string }[];
+/** Normalise un identifiant/URL Instagram en URL absolue, ou null. */
+function instagramUrl(raw: string | null | undefined): string | null {
+  const v = (raw ?? '').trim();
+  if (!v) return null;
+  if (/^https?:\/\//.test(v)) return v;
+  return `https://instagram.com/${v.replace(/^@/, '')}`;
 }
 
 /** Données publiques du site loué (route /site/[subdomain]). Exploite le contenu IA si présent. */
@@ -78,21 +66,30 @@ export async function getCoachSiteData(subdomain: string, opts?: { requireActive
     .where(eq(usersTable.tenantId, site.tenantId))
     .limit(1);
 
-  let content: StoredSiteContent | null = null;
-  if (site.content) {
-    try {
-      content = JSON.parse(site.content) as StoredSiteContent;
-    } catch {
-      content = null;
-    }
-  }
+  // Contenu = base dérivée du profil + overrides édités (merge : non-vide gagne).
+  const baseline = buildGeneratedSiteContent({
+    displayName: profile.displayName,
+    speciality: profile.speciality,
+    city: profile.city,
+    bio: profile.bio,
+    strengths: parseStrengths(profile.reviewsAnalysis),
+    email: contact?.email ?? null,
+    instagramUrl: profile.instagramUrl,
+    photoUrl,
+  });
+  const stored = site.content ? parseSiteContent(site.content) : null;
+  const c = stored ? mergeSiteContent(baseline, stored) : baseline;
 
   // Style : valeur explicite (choix coach) sinon recommandé selon le ton.
   const style: SiteStyle = SITE_STYLES.includes(site.template as SiteStyle)
     ? (site.template as SiteStyle)
     : styleForTone(profile.tone);
 
-  const strengths = parseStrengths(profile.reviewsAnalysis);
+  const forces = c.strengths.filter((s) => s.enabled && s.title.trim()).map((s) => ({ title: s.title, description: s.description }));
+  const services = (c.services ?? []).filter((s) => s.enabled && s.title.trim()).map((s) => ({ title: s.title, description: s.description }));
+  // Section "résultats" = témoignages portant un résultat concret (sinon masquée).
+  const results = c.testimonials.filter((t) => (t.result ?? '').trim()).map((t) => ({ result: t.result as string, name: t.author, city: '' }));
+  const bookingUrl = (c.contact.calendly || c.hero.ctaUrl || '').trim() || null;
 
   return {
     subdomain: site.subdomain,
@@ -102,31 +99,22 @@ export async function getCoachSiteData(subdomain: string, opts?: { requireActive
     bio: profile.bio,
     themeColor: site.themeColor ?? '#7c3aed',
     style,
-    accentColor: content?.accent_color ?? null,
-    photoUrl,
-    contactEmail: contact?.email ?? null,
-    instagramUrl: profile.instagramUrl,
-    strengths: strengths ?? undefined,
-    heroTitle: content?.hero_title,
-    heroSubtitle: content?.hero_subtitle,
-    heroTagline: content?.hero_tagline,
-    about: content?.about,
-    story: content?.story,
-    storyQuote: content?.story_quote,
-    cta: content?.cta,
-    seoDescription: site.seoDescription ?? content?.seo_description,
-    services:
-      content?.services && content.services.length >= 1
-        ? content.services.map((s) => ({ title: s.title, description: s.description, icon: s.icon }))
-        : defaultServices(profile.speciality),
-    testimonials:
-      content?.testimonials && content.testimonials.length >= 1
-        ? content.testimonials.map((t) => ({ name: t.name, quote: t.quote }))
-        : defaultTestimonials(),
-    results:
-      content?.results && content.results.length >= 1
-        ? content.results.map((r) => ({ result: r.result, name: r.name, city: r.city }))
-        : undefined,
+    accentColor: null,
+    photoUrl: (c.hero.photoUrl || c.about.photoUrl || photoUrl) || null,
+    contactEmail: (c.contact.email || '').trim() || null,
+    whatsapp: (c.contact.whatsapp || '').trim() || null,
+    instagramUrl: instagramUrl(c.contact.instagram) ?? profile.instagramUrl,
+    bookingUrl,
+    cta: c.hero.ctaLabel,
+    heroTagline: c.hero.title,
+    heroSubtitle: c.hero.subtitle,
+    story: c.about.bio,
+    storyQuote: c.about.headline,
+    forces,
+    services,
+    testimonials: c.testimonials.map((t) => ({ name: t.author, quote: t.quote })),
+    results: results.length ? results : undefined,
+    seoDescription: site.seoDescription ?? undefined,
   };
 }
 
