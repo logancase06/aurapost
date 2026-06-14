@@ -173,10 +173,20 @@ export default function SiteEditor({ initial, appDomain }: { initial: SiteEditor
 
       {/* CONTACT */}
       <Panel title="Contact & réservation">
-        <FieldText label="Email de contact" value={content.contact.email ?? ''} onChange={(v) => setContact({ email: v })} placeholder="coach@exemple.com" />
-        <FieldText label="WhatsApp" value={content.contact.whatsapp ?? ''} onChange={(v) => setContact({ whatsapp: v })} placeholder="+33612345678" helper="Format international : +33612345678" />
-        <FieldText label="Instagram" value={content.contact.instagram ?? ''} onChange={(v) => setContact({ instagram: v })} placeholder="@ton_compte ou URL" />
-        <FieldText label="Lien de réservation" value={content.contact.calendly ?? ''} onChange={(v) => setContact({ calendly: v })} placeholder="https://calendly.com/votre-lien" helper="Calendly, Cal.com… → devient le bouton principal du site" />
+        <FieldText label="Email de contact" type="email" inputMode="email" autoComplete="email" value={content.contact.email ?? ''} onChange={(v) => setContact({ email: v })} placeholder="coach@exemple.com" />
+        <FieldText label="WhatsApp" type="tel" inputMode="tel" autoComplete="tel" value={content.contact.whatsapp ?? ''} onChange={(v) => setContact({ whatsapp: v })} placeholder="+33612345678" helper="Format international : +33612345678" />
+        <FieldText
+          label="Instagram"
+          value={content.contact.instagram ?? ''}
+          onChange={(v) => setContact({ instagram: v })}
+          onBlur={(v) => {
+            // « @handle » → URL complète (le rendu sait déjà normaliser, mais on clarifie).
+            const t = v.trim();
+            if (t && !/^https?:\/\//.test(t)) setContact({ instagram: `https://instagram.com/${t.replace(/^@/, '')}` });
+          }}
+          placeholder="@ton_compte ou URL"
+        />
+        <FieldText label="Lien de réservation" type="url" inputMode="url" value={content.contact.calendly ?? ''} onChange={(v) => setContact({ calendly: v })} placeholder="https://calendly.com/votre-lien" helper="Calendly, Cal.com… → devient le bouton principal de ton site" />
       </Panel>
     </div>
   );
@@ -264,14 +274,34 @@ function Panel({ title, children }: { title: string; children: React.ReactNode }
   );
 }
 
-function FieldText({ label, value, onChange, max, placeholder, helper }: { label: string; value: string; onChange: (v: string) => void; max?: number; placeholder?: string; helper?: string }) {
+function FieldText({ label, value, onChange, onBlur, max, placeholder, helper, type, inputMode, autoComplete }: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  onBlur?: (v: string) => void;
+  max?: number;
+  placeholder?: string;
+  helper?: string;
+  type?: string;
+  inputMode?: React.HTMLAttributes<HTMLInputElement>['inputMode'];
+  autoComplete?: string;
+}) {
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
         <Label className="text-xs">{label}</Label>
         {max && <span className="text-[10px] text-muted-foreground">{value.length}/{max}</span>}
       </div>
-      <Input value={value} placeholder={placeholder} maxLength={max} onChange={(e) => onChange(e.target.value)} />
+      <Input
+        value={value}
+        type={type}
+        inputMode={inputMode}
+        autoComplete={autoComplete}
+        placeholder={placeholder}
+        maxLength={max}
+        onChange={(e) => onChange(e.target.value)}
+        onBlur={onBlur ? (e) => onBlur(e.target.value) : undefined}
+      />
       {helper && <p className="text-[10px] text-muted-foreground">{helper}</p>}
     </div>
   );

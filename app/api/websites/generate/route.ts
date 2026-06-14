@@ -5,6 +5,9 @@ import { generateAndStoreSite } from '@/lib/db/coach-site';
 import { checkAuthRateLimit } from '@/lib/auth-rate-limit';
 import { logError } from '@/lib/logger';
 
+// La génération IA du site (retry + fallback) peut être longue → relève le timeout.
+export const maxDuration = 60;
+
 // Génère le contenu du site à partir de TOUTES les données réelles du coach (IA + retry + fallback).
 export async function POST() {
   try {
