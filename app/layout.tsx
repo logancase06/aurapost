@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
-import { Toaster } from 'react-hot-toast';
+import AppToaster from '@/components/AppToaster';
 import './globals.css';
 import SessionProviderWrapper from '@/components/SessionProviderWrapper';
 import ServiceWorkerRegister from '@/components/ServiceWorkerRegister';
@@ -59,16 +59,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AnalyticsScripts />
         <InstallPrompt />
         <CookieBanner />
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            style: {
-              background: 'hsl(240 18% 11%)',
-              color: 'hsl(0 0% 98%)',
-              border: '1px solid hsl(240 10% 18%)',
-            },
-          }}
-        />
+        <AppToaster />
       </body>
     </html>
   );

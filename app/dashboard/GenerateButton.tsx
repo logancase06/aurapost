@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { Sparkles, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { PostCardSkeletonGrid } from '@/components/PostCardSkeleton';
 import { setAppBusy } from '@/components/ui/favicon-controller';
 
 function notifyPostsReady(count: number) {
@@ -70,16 +71,8 @@ export default function GenerateButton({ alreadyGenerated }: { alreadyGenerated:
               <p className="text-sm text-muted-foreground">
                 On rédige tes 12 posts dans ta voix. Ça prend généralement 20 à 40 secondes — ne ferme pas cette fenêtre.
               </p>
-              {/* Skeleton des cartes de posts en préparation */}
-              <div className="space-y-3">
-                {[0, 1, 2].map((i) => (
-                  <div key={i} className="rounded-xl border border-border p-3">
-                    <div className="h-3 w-1/3 animate-pulse rounded bg-muted" />
-                    <div className="mt-2 h-2.5 w-full animate-pulse rounded bg-muted" />
-                    <div className="mt-1.5 h-2.5 w-4/5 animate-pulse rounded bg-muted" />
-                  </div>
-                ))}
-              </div>
+              {/* Skeleton calqué sur les vraies PostCard (cohérence visuelle). */}
+              <PostCardSkeletonGrid count={3} />
             </div>
           ) : (
             <div className="space-y-4">
