@@ -105,55 +105,56 @@ export async function getProfileInput(tenantId: string): Promise<CoachProfileInp
     .where(eq(coachProfiles.tenantId, tenantId))
     .limit(1);
   if (!row) return null;
-  // Les résultats concrets enrichissent la bio injectée dans le prompt de génération.
-  const bio = row.results ? `${row.bio ?? ''}\nRésultats obtenus par mes clients : ${row.results}`.trim() : row.bio;
   return {
     displayName: row.displayName,
     speciality: row.speciality,
     city: row.city,
     tone: row.tone,
     contentStyle: row.contentStyle,
-    bio,
+    bio: row.bio,
     targetAudience: row.targetAudience,
     language: row.language ?? 'fr',
-    toneAnalysis: buildToneAnalysis(row.instagramAnalysis, row.reviewsAnalysis),
+    // Signaux séparés (le prompt et le mock les exploitent distinctement) :
+    instagramVoice: buildInstagramVoice(row.instagramAnalysis),
+    clientStrengths: parseStrengths(row.reviewsAnalysis),
+    clientResults: row.results ?? null,
     linkedinHeadline: row.linkedinHeadline,
     linkedinSummary: row.linkedinSummary,
   };
 }
 
-/**
- * Condense l'analyse Instagram (ton, style, phrase typique) et les avis (points forts,
- * résultats) en une consigne texte injectée dans le prompt — pour des posts qui sonnent
- * exactement comme le coach.
- */
-function buildToneAnalysis(instagramJson: string | null, reviewsJson: string | null): string | null {
-  const parts: string[] = [];
+/** Condense l'analyse Instagram (ton, style, thèmes, phrase) en une consigne texte. */
+function buildInstagramVoice(instagramJson: string | null): string | null {
+  if (!instagramJson) return null;
   try {
-    if (instagramJson) {
-      const ig = JSON.parse(instagramJson) as {
-        ton_dominant?: string;
-        style_ecriture?: string;
-        themes_recurrents?: string[];
-        phrase_caracteristique?: string;
-      };
-      if (ig.ton_dominant) parts.push(`Ton dominant : ${ig.ton_dominant}`);
-      if (ig.style_ecriture) parts.push(`Style d'écriture : ${ig.style_ecriture}`);
-      if (ig.themes_recurrents?.length) parts.push(`Thèmes récurrents : ${ig.themes_recurrents.join(', ')}`);
-      if (ig.phrase_caracteristique) parts.push(`Phrase caractéristique : « ${ig.phrase_caracteristique} »`);
-    }
+    const ig = JSON.parse(instagramJson) as {
+      ton_dominant?: string;
+      style_ecriture?: string;
+      themes_recurrents?: string[];
+      phrase_caracteristique?: string;
+    };
+    const parts: string[] = [];
+    if (ig.ton_dominant) parts.push(`ton ${ig.ton_dominant}`);
+    if (ig.style_ecriture) parts.push(ig.style_ecriture);
+    if (ig.themes_recurrents?.length) parts.push(`thèmes : ${ig.themes_recurrents.join(', ')}`);
+    if (ig.phrase_caracteristique) parts.push(`ex. de phrase : « ${ig.phrase_caracteristique} »`);
+    return parts.length ? parts.join(' · ') : null;
   } catch {
-    /* JSON corrompu : on ignore */
+    return null;
   }
+}
+
+/** Extrait les points forts clients de l'analyse d'avis (JSON). */
+function parseStrengths(reviewsJson: string | null): string[] | null {
+  if (!reviewsJson) return null;
   try {
-    if (reviewsJson) {
-      const rv = JSON.parse(reviewsJson) as { strengths?: string[] };
-      if (rv.strengths?.length) parts.push(`Points forts perçus par les clients : ${rv.strengths.join(', ')}`);
-    }
+    const rv = JSON.parse(reviewsJson) as { strengths?: unknown };
+    if (!Array.isArray(rv.strengths)) return null;
+    const list = rv.strengths.map((s) => String(s).trim()).filter(Boolean).slice(0, 3);
+    return list.length ? list : null;
   } catch {
-    /* idem */
+    return null;
   }
-  return parts.length ? parts.join('. ') : null;
 }
 
 // ── Lectures ─────────────────────────────────────────────────────────────────
