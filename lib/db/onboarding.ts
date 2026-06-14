@@ -1,6 +1,7 @@
 import { db } from './index';
-import { coachProfiles, generatedPosts, websites, tenants, users } from './schema';
+import { coachProfiles, coachPhotos, generatedPosts, websites, tenants, users } from './schema';
 import { and, eq, isNull, lt, sql } from 'drizzle-orm';
+import { computeCompletion, type CompletionResult } from '@/lib/completion';
 
 export interface OnboardingProgress {
   profile: boolean; // profil coach rempli
@@ -46,6 +47,41 @@ export async function getOnboardingProgress(tenantId: string): Promise<Onboardin
     total: 4,
     complete: completedCount === 4,
   };
+}
+
+/**
+ * Score de richesse du profil coach (photos, avis, Instagram) — alimente le badge
+ * de complétion. Distinct du parcours setup (getOnboardingProgress) : ici on mesure
+ * la qualité des données injectées dans la génération de contenu, pas les étapes.
+ */
+export async function getProfileCompletion(tenantId: string): Promise<CompletionResult> {
+  const [[prof], [photos]] = await Promise.all([
+    db
+      .select({
+        displayName: coachProfiles.displayName,
+        speciality: coachProfiles.speciality,
+        city: coachProfiles.city,
+        bio: coachProfiles.bio,
+        targetAudience: coachProfiles.targetAudience,
+        instagramUrl: coachProfiles.instagramUrl,
+        reviewsText: coachProfiles.reviewsText,
+      })
+      .from(coachProfiles)
+      .where(eq(coachProfiles.tenantId, tenantId))
+      .limit(1),
+    db.select({ c: sql<number>`count(*)` }).from(coachPhotos).where(eq(coachPhotos.tenantId, tenantId)),
+  ]);
+
+  return computeCompletion({
+    displayName: prof?.displayName,
+    speciality: prof?.speciality,
+    city: prof?.city,
+    bio: prof?.bio,
+    targetAudience: prof?.targetAudience,
+    photosCount: Number(photos?.c ?? 0),
+    hasInstagram: !!prof?.instagramUrl,
+    hasReviews: !!prof?.reviewsText,
+  });
 }
 
 /** Utilisateurs à relancer : non onboardés, inscrits il y a +24h. (cron) */

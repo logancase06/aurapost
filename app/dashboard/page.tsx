@@ -6,7 +6,7 @@ import { users, tenants } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { listPosts, getPostStats, hasGeneratedThisMonth, type PostStatus } from '@/lib/db/posts';
 import { getSmartSuggestions } from '@/lib/db/suggestions';
-import { getOnboardingProgress } from '@/lib/db/onboarding';
+import { getOnboardingProgress, getProfileCompletion } from '@/lib/db/onboarding';
 import { currentMonth } from '@/lib/utils';
 import { XCircle, Mail } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -15,6 +15,7 @@ import DashboardShell from './DashboardShell';
 import GenerateButton from './GenerateButton';
 import CaptionPackButton from './CaptionPackButton';
 import OnboardingStepper from './OnboardingStepper';
+import ProfileCompletion from './ProfileCompletion';
 import PostsBoard from './PostsBoard';
 import StatCards from './StatCards';
 import SmartSuggestions from './SmartSuggestions';
@@ -62,12 +63,13 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
     | undefined;
 
   const month = currentMonth();
-  const [stats, posts, alreadyGenerated, progress, suggestions] = await Promise.all([
+  const [stats, posts, alreadyGenerated, progress, suggestions, completion] = await Promise.all([
     getPostStats(tenantId, month),
     listPosts(tenantId, { status }),
     hasGeneratedThisMonth(tenantId, month),
     getOnboardingProgress(tenantId),
     getSmartSuggestions(tenantId),
+    getProfileCompletion(tenantId),
   ]);
 
   const firstName = (me?.fullName ?? session.user.name ?? '').split(' ')[0] || 'coach';
@@ -96,6 +98,12 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
       )}
 
       <OnboardingStepper progress={progress} />
+
+      {completion.score < 100 && (
+        <div className="mt-6">
+          <ProfileCompletion data={completion} />
+        </div>
+      )}
 
       <SectionBoundary label="Suggestions">
         <SmartSuggestions data={suggestions} />
