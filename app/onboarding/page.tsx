@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm';
 import { Sparkles } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { listPhotos } from '@/lib/db/photos';
+import { parseAnalysis, InstagramAnalysisSchema, ReviewsAnalysisSchema } from '@/lib/validation';
 import OnboardingWizard, { type InitialDraft } from './OnboardingWizard';
 
 export const metadata = { title: 'Configurer mon profil' };
@@ -51,8 +52,8 @@ export default async function OnboardingPage() {
 
   const photos = await listPhotos(tenantId, 10);
 
-  const igAnalysis = safeParse<{ ton_dominant?: string }>(prof?.instagramAnalysis);
-  const rvAnalysis = safeParse<{ strengths?: string[] }>(prof?.reviewsAnalysis);
+  const igAnalysis = parseAnalysis(prof?.instagramAnalysis, InstagramAnalysisSchema);
+  const rvAnalysis = parseAnalysis(prof?.reviewsAnalysis, ReviewsAnalysisSchema);
 
   const initial: InitialDraft = {
     displayName: prof?.displayName ?? '',
@@ -90,13 +91,4 @@ export default async function OnboardingPage() {
       </div>
     </main>
   );
-}
-
-function safeParse<T>(json: string | null | undefined): T | null {
-  if (!json) return null;
-  try {
-    return JSON.parse(json) as T;
-  } catch {
-    return null;
-  }
 }

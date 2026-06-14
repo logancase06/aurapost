@@ -16,6 +16,7 @@ import { enqueueGeneration } from '@/lib/queue';
 import { isGenerationRecorded, recordGeneration } from '@/lib/rate-limit';
 import { currentMonth } from '@/lib/utils';
 import { logError } from '@/lib/logger';
+import { parseAnalysis, InstagramAnalysisSchema, ReviewsAnalysisSchema } from '@/lib/validation';
 
 export type PostStatus = 'draft' | 'approved' | 'rejected';
 
@@ -125,36 +126,21 @@ export async function getProfileInput(tenantId: string): Promise<CoachProfileInp
 
 /** Condense l'analyse Instagram (ton, style, thèmes, phrase) en une consigne texte. */
 function buildInstagramVoice(instagramJson: string | null): string | null {
-  if (!instagramJson) return null;
-  try {
-    const ig = JSON.parse(instagramJson) as {
-      ton_dominant?: string;
-      style_ecriture?: string;
-      themes_recurrents?: string[];
-      phrase_caracteristique?: string;
-    };
-    const parts: string[] = [];
-    if (ig.ton_dominant) parts.push(`ton ${ig.ton_dominant}`);
-    if (ig.style_ecriture) parts.push(ig.style_ecriture);
-    if (ig.themes_recurrents?.length) parts.push(`thèmes : ${ig.themes_recurrents.join(', ')}`);
-    if (ig.phrase_caracteristique) parts.push(`ex. de phrase : « ${ig.phrase_caracteristique} »`);
-    return parts.length ? parts.join(' · ') : null;
-  } catch {
-    return null;
-  }
+  const ig = parseAnalysis(instagramJson, InstagramAnalysisSchema);
+  if (!ig) return null;
+  const parts: string[] = [];
+  if (ig.ton_dominant) parts.push(`ton ${ig.ton_dominant}`);
+  if (ig.style_ecriture) parts.push(ig.style_ecriture);
+  if (ig.themes_recurrents?.length) parts.push(`thèmes : ${ig.themes_recurrents.join(', ')}`);
+  if (ig.phrase_caracteristique) parts.push(`ex. de phrase : « ${ig.phrase_caracteristique} »`);
+  return parts.length ? parts.join(' · ') : null;
 }
 
-/** Extrait les points forts clients de l'analyse d'avis (JSON). */
+/** Extrait les points forts clients de l'analyse d'avis (JSON validé). */
 function parseStrengths(reviewsJson: string | null): string[] | null {
-  if (!reviewsJson) return null;
-  try {
-    const rv = JSON.parse(reviewsJson) as { strengths?: unknown };
-    if (!Array.isArray(rv.strengths)) return null;
-    const list = rv.strengths.map((s) => String(s).trim()).filter(Boolean).slice(0, 3);
-    return list.length ? list : null;
-  } catch {
-    return null;
-  }
+  const rv = parseAnalysis(reviewsJson, ReviewsAnalysisSchema);
+  const list = rv?.strengths?.map((s) => s.trim()).filter(Boolean).slice(0, 3) ?? [];
+  return list.length ? list : null;
 }
 
 // ── Lectures ─────────────────────────────────────────────────────────────────

@@ -48,6 +48,48 @@ export const MagicLinkSchema = z.object({
 });
 export type MagicLinkBody = z.infer<typeof MagicLinkSchema>;
 
+/** Brouillon de profil (autosave wizard onboarding) — bornes de longueur défensives. */
+export const ProfileDraftSchema = z.object({
+  displayName: z.string().max(120),
+  speciality: z.string().max(160),
+  city: z.string().max(120).optional(),
+  contentStyle: z.string().max(80).optional(),
+  tone: z.string().max(20).optional(),
+  bio: z.string().max(1000).optional(),
+  targetAudience: z.string().max(200).optional(),
+  results: z.string().max(500).optional(),
+  linkedinHeadline: z.string().max(220).optional(),
+  linkedinSummary: z.string().max(2000).optional(),
+  language: z.string().max(5).optional(),
+});
+
+/** Analyse Instagram persistée (coach_profiles.instagram_analysis) — validée au parse. */
+export const InstagramAnalysisSchema = z.object({
+  ton_dominant: z.string().optional(),
+  style_ecriture: z.string().optional(),
+  themes_recurrents: z.array(z.string()).optional(),
+  phrase_caracteristique: z.string().optional(),
+  bio_reformulee: z.string().optional(),
+});
+
+/** Analyse des avis persistée (coach_profiles.reviews_analysis) — validée au parse. */
+export const ReviewsAnalysisSchema = z.object({
+  strengths: z.array(z.string()).optional(),
+  testimonial: z.string().optional(),
+  tone: z.string().optional(),
+});
+
+/** Parse + valide un JSON d'analyse stocké en base ; renvoie null si invalide/corrompu. */
+export function parseAnalysis<T>(json: string | null | undefined, schema: z.ZodSchema<T>): T | null {
+  if (!json) return null;
+  try {
+    const res = schema.safeParse(JSON.parse(json));
+    return res.success ? res.data : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Onboarding — création/maj du profil coach (#2). */
 export const CoachProfileSchema = z.object({
   displayName: z.string().min(1, 'Nom public requis').max(120),

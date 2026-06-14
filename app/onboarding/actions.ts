@@ -7,6 +7,7 @@ import { nanoid } from 'nanoid';
 import { auth } from '@/lib/auth';
 import { requireTenantId } from '@/lib/tenant';
 import { sanitizeText } from '@/lib/security';
+import { ProfileDraftSchema } from '@/lib/validation';
 import { logActivity } from '@/lib/db/activity';
 import { logError, logInfo } from '@/lib/logger';
 import { isInstagramUrl, scrapeInstagram, analyzeInstagram, type InstagramAnalysis } from '@/lib/instagram';
@@ -75,6 +76,11 @@ export interface ProfileDraft {
 export async function saveProfileDraft(input: ProfileDraft): Promise<{ ok: boolean; error?: string }> {
   const c = await ctx();
   if ('error' in c) return { ok: false, error: c.error };
+
+  // Validation défensive (bornes de longueur) avant sanitisation/persistance.
+  const parsed = ProfileDraftSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: 'Données invalides.' };
+  input = parsed.data;
 
   const displayName = sanitizeText(input.displayName || '').slice(0, 120);
   const speciality = sanitizeText(input.speciality || '').slice(0, 160);
