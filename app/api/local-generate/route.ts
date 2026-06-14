@@ -1,10 +1,10 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { runClaudeCode } from '@/lib/claude-code';
-import { logError } from '@/lib/logger';
+import { logError, logInfo } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 60;
+export const maxDuration = 180; // Claude Code (mode print) peut être lent pour 12 posts
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Route locale du tunnel Cloudflare (Chemin 2).
@@ -32,6 +32,10 @@ export async function POST(req: NextRequest) {
   if (!expected || !safeEqual(provided, expected)) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }
+
+  // Confirmation que la génération passe bien par le tunnel.
+  console.log('[AuraPost] Local generate appelé via tunnel ✅');
+  logInfo('[local-generate] requête tunnel authentifiée', {});
 
   const body = (await req.json().catch(() => ({}))) as { prompt?: string };
   const prompt = typeof body.prompt === 'string' ? body.prompt : '';

@@ -95,11 +95,12 @@ async function generateViaAnthropic(prompt: string, maxTokens: number): Promise<
   return text;
 }
 
-/** Chemin 2 — tunnel HTTP vers Claude Code local (timeout 30 s). */
-async function generateViaTunnel(prompt: string): Promise<string> {
+/** Chemin 2 — tunnel HTTP vers Claude Code local. Timeout large : Claude Code en
+ *  mode print peut prendre ~15 s/post, donc ~1-2 min pour un mois complet. */
+async function generateViaTunnel(prompt: string, timeoutMs = 150_000): Promise<string> {
   const base = (process.env.CLAUDE_TUNNEL_URL ?? '').replace(/\/$/, '');
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 30_000);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const res = await fetch(`${base}/api/local-generate`, {
       method: 'POST',

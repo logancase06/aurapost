@@ -1,14 +1,18 @@
+import { spawn } from 'node:child_process';
 import { logError, logInfo } from './logger';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Wrapper autour du SDK Claude Code (@anthropic-ai/claude-code, fonction `query()`).
+// Wrapper autour de Claude Code (utilisé par la route locale du tunnel).
 //
-// Aucune ANTHROPIC_API_KEY n'est requise : le SDK s'appuie sur l'installation/auth
-// locale de Claude Code. Si le SDK n'est pas disponible à l'exécution (CLI absente,
-// non connecté, environnement serverless), `runClaudeCode` lève — l'appelant bascule
-// alors proprement sur le générateur mock (cf. lib/content-generator.ts).
+// Deux chemins, dans l'ordre :
+//   1. SDK programmatique `@anthropic-ai/claude-code` (fonction `query()`) — si une
+//      version le ré-expose un jour.
+//   2. CLI `claude -p` (mode print, non interactif) via stdin — chemin actif aujourd'hui,
+//      car la v2.x du package est un binaire CLI sans `query()` importable.
 //
-// Forcer le mock : AURAPOST_USE_MOCK=1 (utile en CI / dev sans Claude Code).
+// Aucune ANTHROPIC_API_KEY requise : Claude Code s'appuie sur l'auth locale de la CLI.
+// Indisponible (CLI absente / non connectée / serverless) → l'appelant bascule sur le mock.
+// Forcer le mock : AURAPOST_USE_MOCK=1.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const SDK_MODULE = '@anthropic-ai/claude-code';
@@ -44,14 +48,61 @@ async function loadQuery(): Promise<QueryFn | null> {
 }
 
 /**
- * Exécute une requête de génération via le SDK Claude Code et retourne le texte final.
- * @throws si le SDK est indisponible ou ne renvoie aucun résultat exploitable.
+ * Exécute Claude Code en mode print (`claude -p`), prompt envoyé sur stdin.
+ * Chemin actif (la v2.x du package n'expose pas de `query()` importable).
+ */
+function runViaCli(prompt: string, timeoutMs: number): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const args = ['-p', '--output-format', 'text'];
+    const model = process.env.ANTHROPIC_MODEL;
+    if (model) args.push('--model', model);
+
+    // shell:true sur Windows pour résoudre le shim `claude` (claude.cmd) sur le PATH.
+    const child = spawn('claude', args, {
+      stdio: ['pipe', 'pipe', 'pipe'],
+      shell: process.platform === 'win32',
+    });
+
+    let out = '';
+    let err = '';
+    const timer = setTimeout(() => {
+      child.kill();
+      reject(new Error('Timeout CLI Claude Code'));
+    }, timeoutMs);
+
+    child.stdout.on('data', (d) => (out += d.toString()));
+    child.stderr.on('data', (d) => (err += d.toString()));
+    child.on('error', (e) => {
+      clearTimeout(timer);
+      reject(e);
+    });
+    child.on('close', (code) => {
+      clearTimeout(timer);
+      if (code === 0 && out.trim()) {
+        logInfo('[claude-code] génération CLI réussie', { length: out.length });
+        resolve(out);
+      } else {
+        reject(new Error(`CLI Claude Code (code=${code}) ${err.slice(0, 200)}`));
+      }
+    });
+
+    child.stdin.write(prompt);
+    child.stdin.end();
+  });
+}
+
+/**
+ * Exécute une requête de génération via Claude Code (SDK si dispo, sinon CLI print).
+ * @throws si aucun chemin n'est disponible ou si la réponse est vide.
  */
 export async function runClaudeCode(prompt: string, timeoutMs = 120_000): Promise<string> {
   if (isMockForced()) throw new Error('AURAPOST_USE_MOCK actif');
 
   const query = await loadQuery();
-  if (!query) throw new Error('SDK Claude Code indisponible');
+  if (!query) {
+    // Pas de SDK importable → on pilote la CLI Claude Code en mode print.
+    return runViaCli(prompt, timeoutMs);
+  }
 
   const collected: string[] = [];
   let resultText = '';
