@@ -336,18 +336,26 @@ Réponds UNIQUEMENT avec un objet JSON : { "posts": [ { ... un seul post ${origi
   return generateMockVariant(profile, original);
 }
 
-/** Un seul post Instagram de démo (mini-générateur public de la landing). */
-export async function generateSingleDemoPost(speciality: string, city?: string): Promise<PostDraft> {
-  const profile: CoachProfileInput = {
-    displayName: 'Coach',
-    speciality: speciality?.trim() || 'coaching sportif',
-    city: city?.trim() || null,
-    tone: 'motivant',
-  };
+/**
+ * Un seul post Instagram d'aperçu, à partir du VRAI profil du coach (ton, voix
+ * Instagram, forces clients) — pour montrer un exemple représentatif dès l'onboarding.
+ * Accepte soit un profil complet, soit (compat) une simple spécialité + ville.
+ */
+export async function generateSingleDemoPost(input: CoachProfileInput | string, city?: string): Promise<PostDraft> {
+  const profile: CoachProfileInput =
+    typeof input === 'string'
+      ? { displayName: 'Coach', speciality: input?.trim() || 'coaching sportif', city: city?.trim() || null, tone: 'motivant' }
+      : input;
+
+  const toneLabel = TONE_LABELS[profile.tone] ?? profile.tone;
+  const seed = `${profile.displayName}|${profile.speciality}|${profile.city ?? ''}`;
 
   if (GENERATION_MODE !== 'mock-enrichi') {
+    const voice = profile.instagramVoice ? `\nTon et style à imiter : ${profile.instagramVoice}.` : '';
+    const strengths = profile.clientStrengths?.length ? `\nForces perçues par ses clients (à intégrer) : ${profile.clientStrengths.join(', ')}.` : '';
     const prompt = `Tu es un expert copywriting Instagram pour coachs sportifs.
 Génère 1 SEUL post Instagram percutant pour un coach « ${profile.speciality} »${profile.city ? ` à ${profile.city}` : ''}.
+Ton souhaité : ${toneLabel}.${voice}${strengths}${profile.bio ? `\nBio : ${profile.bio}.` : ''}
 Première ligne = hook fort. Corps de 3-5 phrases. CTA final. 5 à 8 hashtags (niche + ville).
 Réponds UNIQUEMENT en JSON : { "posts": [ { "network": "instagram", "title": "...", "content": "...", "hashtags": ["..."], "callToAction": "...", "theme": "..." } ] }`;
     for (let attempt = 1; attempt <= 2; attempt++) {
@@ -360,7 +368,7 @@ Réponds UNIQUEMENT en JSON : { "posts": [ { "network": "instagram", "title": ".
       }
     }
   }
-  return generateMockContent(profile, city || speciality)[0];
+  return generateMockContent(profile, seed)[0];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

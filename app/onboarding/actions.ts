@@ -12,6 +12,7 @@ import { logError, logInfo } from '@/lib/logger';
 import { isInstagramUrl, scrapeInstagram, analyzeInstagram, type InstagramAnalysis } from '@/lib/instagram';
 import { analyzeReviews, type ReviewsAnalysis } from '@/lib/reviews';
 import { generateSingleDemoPost, type PostDraft } from '@/lib/content-generator';
+import { getProfileInput } from '@/lib/db/posts';
 
 export type OnboardingState = { error?: string } | null;
 
@@ -177,18 +178,15 @@ export async function analyzeReviewsAction(text: string): Promise<ReviewsImport>
   return { ok: true, analysis };
 }
 
-/** AJOUT 3 — génère 1 post exemple instantané pour l'aperçu avant génération complète. */
+/** AJOUT 3 — génère 1 post exemple instantané, à partir du VRAI profil enrichi
+ *  (ton, voix Instagram, forces clients), pour un aperçu représentatif dès l'étape 2. */
 export async function generateExampleAction(): Promise<{ ok: boolean; error?: string; post?: PostDraft }> {
   const c = await ctx();
   if ('error' in c) return { ok: false, error: c.error };
-  const [prof] = await db
-    .select({ speciality: coachProfiles.speciality, city: coachProfiles.city })
-    .from(coachProfiles)
-    .where(eq(coachProfiles.tenantId, c.tenantId))
-    .limit(1);
-  if (!prof) return { ok: false, error: 'Renseigne d’abord ton profil.' };
+  const profile = await getProfileInput(c.tenantId);
+  if (!profile) return { ok: false, error: 'Renseigne d’abord ton profil.' };
   try {
-    const post = await generateSingleDemoPost(prof.speciality, prof.city ?? undefined);
+    const post = await generateSingleDemoPost(profile);
     return { ok: true, post };
   } catch (err) {
     logError('[onboarding] exemple post échoué', { error: String(err) });

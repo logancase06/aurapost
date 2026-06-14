@@ -151,6 +151,7 @@ export default function OnboardingWizard({ initial }: { initial: InitialDraft })
       setTone(map[res.analysis.ton_dominant] ?? tone);
     }
     toast.success('Profil Instagram analysé ✓');
+    void loadExample(); // aperçu personnalisé immédiat (moment "aha")
   }
 
   async function analyzeRv() {
@@ -168,6 +169,7 @@ export default function OnboardingWizard({ initial }: { initial: InitialDraft })
     setRvStrengths(res.analysis?.strengths ?? []);
     setRvDone(true);
     toast.success('Avis analysés ✓');
+    void loadExample(); // rafraîchit l'aperçu avec les forces clients
   }
 
   async function uploadFiles(files: FileList | File[]) {
@@ -390,6 +392,29 @@ export default function OnboardingWizard({ initial }: { initial: InitialDraft })
                     <TextareaField label="Tes résultats" value={results} onChange={setResults} placeholder="Qu’obtiennent concrètement tes clients ?" />
                   </div>
                 </details>
+
+                {/* Aperçu personnalisé immédiat (moment "aha") — dès qu'on a de la matière */}
+                {(example || exLoading || igDone || rvDone) && (
+                  <div className="rounded-xl border p-4" style={{ borderColor: 'var(--primary, #7C3AED)' }}>
+                    <div className="mb-2 flex items-center justify-between">
+                      <p className="flex items-center gap-2 text-sm font-semibold"><Sparkles className="h-4 w-4 text-primary" /> Aperçu de ton contenu</p>
+                      <button type="button" onClick={loadExample} disabled={exLoading} className="flex items-center gap-1 text-xs text-primary hover:underline disabled:opacity-50">
+                        <RefreshCw className={cn('h-3 w-3', exLoading && 'animate-spin')} /> {example ? 'Régénérer' : 'Générer'}
+                      </button>
+                    </div>
+                    {exLoading && !example ? (
+                      <div className="flex items-center gap-2 py-5 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> On rédige un exemple dans ta voix…</div>
+                    ) : example ? (
+                      <div className="rounded-lg bg-muted/40 p-3">
+                        <p className="text-sm font-bold">{example.title}</p>
+                        <p className="mt-1 whitespace-pre-line text-sm text-muted-foreground">{example.content}</p>
+                        {example.hashtags?.length > 0 && <p className="mt-2 text-xs text-primary">{example.hashtags.map((h) => `#${h}`).join(' ')}</p>}
+                      </div>
+                    ) : (
+                      <p className="py-2 text-xs text-muted-foreground">Génère un exemple pour voir le ton qu’on appliquera à tes 12 posts.</p>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
