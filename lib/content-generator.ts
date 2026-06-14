@@ -25,6 +25,10 @@ export interface CoachProfileInput {
   language?: string; // 'fr' | 'en'
   /** Analyse du ton détecté sur Instagram (JSON sérialisé) — imité par la génération. */
   toneAnalysis?: string | null;
+  /** Titre LinkedIn (saisie manuelle) — utilisé pour les posts LinkedIn uniquement. */
+  linkedinHeadline?: string | null;
+  /** Résumé LinkedIn (saisie manuelle) — utilisé pour les posts LinkedIn uniquement. */
+  linkedinSummary?: string | null;
 }
 
 export type Network = 'instagram' | 'linkedin';
@@ -134,6 +138,10 @@ function buildPrompt(profile: CoachProfileInput): string {
   const toneAnalysisLine = profile.toneAnalysis
     ? `- Ton naturel détecté sur Instagram (À IMITER fidèlement) : ${profile.toneAnalysis}\n`
     : '';
+  const linkedinProfile = [profile.linkedinHeadline, profile.linkedinSummary].filter(Boolean).join(' — ');
+  const linkedinLine = linkedinProfile
+    ? `- Profil LinkedIn du coach (à utiliser pour les posts LinkedIn uniquement) : ${linkedinProfile}\n`
+    : '';
   return `Tu es un expert en copywriting et marketing de contenu pour coachs sportifs.
 
 PROFIL DU COACH :
@@ -144,7 +152,7 @@ PROFIL DU COACH :
 - Style de contenu : ${profile.contentStyle ?? 'naturel'}
 - Ton souhaité : ${toneLabel}
 - Langue de rédaction : ${lang}
-${toneAnalysisLine}${profile.bio ? `- Bio : ${profile.bio}\n` : ''}
+${toneAnalysisLine}${linkedinLine}${profile.bio ? `- Bio : ${profile.bio}\n` : ''}
 MISSION : produis EXACTEMENT 12 posts, TOUS DIFFÉRENTS — aucune répétition d'angle, d'accroche ni de formulation.
 
 8 posts INSTAGRAM, répartis ainsi :

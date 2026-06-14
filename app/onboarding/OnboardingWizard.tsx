@@ -16,7 +16,7 @@ import { computeCompletion } from '@/lib/completion';
 import type { PhotoRow } from '@/lib/db/photos';
 import type { PostDraft } from '@/lib/content-generator';
 import {
-  saveProfileDraft, importInstagramAction, importLinkedinAction, analyzeReviewsAction,
+  saveProfileDraft, importInstagramAction, analyzeReviewsAction,
   generateExampleAction, finishOnboarding, type ProfileDraft,
 } from './actions';
 
@@ -59,8 +59,9 @@ export default function OnboardingWizard({ initial }: { initial: InitialDraft })
   const [igThemes, setIgThemes] = useState<string[]>([]);
   const [igDone, setIgDone] = useState(initial.hasInstagram);
 
-  const [liUrl, setLiUrl] = useState('');
-  const [liLoading, setLiLoading] = useState(false);
+  // LinkedIn : saisie manuelle (pas de scraping — CGU LinkedIn).
+  const [linkedinHeadline, setLinkedinHeadline] = useState(initial.linkedinHeadline ?? '');
+  const [linkedinSummary, setLinkedinSummary] = useState(initial.linkedinSummary ?? '');
 
   const [reviewsText, setReviewsText] = useState('');
   const [rvLoading, setRvLoading] = useState(false);
@@ -85,7 +86,7 @@ export default function OnboardingWizard({ initial }: { initial: InitialDraft })
 
   // ── Autosave debounce (1 s) du profil dès que nom + spécialité sont là ─────
   const draftRef = useRef<ProfileDraft>(null as unknown as ProfileDraft);
-  draftRef.current = { displayName, speciality, city, tone, language, bio, targetAudience, results };
+  draftRef.current = { displayName, speciality, city, tone, language, bio, targetAudience, results, linkedinHeadline, linkedinSummary };
   const firstRun = useRef(true);
   useEffect(() => {
     if (!canAdvance1) return;
@@ -101,7 +102,7 @@ export default function OnboardingWizard({ initial }: { initial: InitialDraft })
     }, 1000);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [displayName, speciality, city, tone, language, bio, targetAudience, results, canAdvance1]);
+  }, [displayName, speciality, city, tone, language, bio, targetAudience, results, linkedinHeadline, linkedinSummary, canAdvance1]);
 
   function go(next: number) {
     setDir(next > step ? 1 : -1);
@@ -150,20 +151,6 @@ export default function OnboardingWizard({ initial }: { initial: InitialDraft })
       setTone(map[res.analysis.ton_dominant] ?? tone);
     }
     toast.success('Profil Instagram analysé ✓');
-  }
-
-  async function importLi() {
-    if (!liUrl.trim()) return;
-    setLiLoading(true);
-    const res = await importLinkedinAction(liUrl.trim());
-    setLiLoading(false);
-    if (!res.ok) {
-      toast.error(res.error || 'Import impossible');
-      return;
-    }
-    const suggested = [res.data?.headline, res.data?.summary].filter(Boolean).join(' — ');
-    if (suggested && !bio.trim()) setBio(suggested.slice(0, 1000));
-    toast.success('LinkedIn importé — bio pré-remplie ✓');
   }
 
   async function analyzeRv() {
@@ -352,14 +339,33 @@ export default function OnboardingWizard({ initial }: { initial: InitialDraft })
                   )}
                 </div>
 
-                {/* LinkedIn */}
+                {/* LinkedIn — saisie manuelle (copie depuis ton profil, pas de scraping) */}
                 <div className="rounded-xl border border-border p-4">
-                  <p className="mb-2 flex items-center gap-2 text-sm font-semibold"><Briefcase className="h-4 w-4" /> LinkedIn</p>
-                  <div className="flex gap-2">
-                    <Input value={liUrl} onChange={(e) => setLiUrl(e.target.value)} placeholder="https://linkedin.com/in/ton-profil" />
-                    <Button type="button" variant="outline" onClick={importLi} disabled={liLoading || !liUrl.trim()}>
-                      {liLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Importer'}
-                    </Button>
+                  <p className="mb-1 flex items-center gap-2 text-sm font-semibold"><Briefcase className="h-4 w-4" /> LinkedIn</p>
+                  <p className="mb-3 text-xs text-muted-foreground">Recopie ton titre et ton résumé depuis ton profil LinkedIn — ils servent à personnaliser tes posts LinkedIn.</p>
+                  <div className="space-y-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="li-headline">Ton titre LinkedIn</Label>
+                      <textarea
+                        id="li-headline"
+                        value={linkedinHeadline}
+                        onChange={(e) => setLinkedinHeadline(e.target.value.slice(0, 220))}
+                        rows={2}
+                        placeholder="ex: Coach sportif certifié · Préparation physique &amp; remise en forme · Lyon"
+                        className="flex w-full rounded-md border border-input bg-background/50 px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="li-summary">Ton résumé LinkedIn</Label>
+                      <textarea
+                        id="li-summary"
+                        value={linkedinSummary}
+                        onChange={(e) => setLinkedinSummary(e.target.value.slice(0, 2000))}
+                        rows={4}
+                        placeholder="ex: J'accompagne des particuliers et sportifs amateurs à Lyon vers leurs objectifs…"
+                        className="flex w-full rounded-md border border-input bg-background/50 px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      />
+                    </div>
                   </div>
                 </div>
 

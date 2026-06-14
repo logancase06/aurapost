@@ -45,6 +45,8 @@ CREATE TABLE IF NOT EXISTS coach_profiles (
   bio TEXT,
   target_audience TEXT,
   results TEXT,
+  linkedin_headline TEXT,
+  linkedin_summary TEXT,
   language TEXT NOT NULL DEFAULT 'fr',
   instagram_url TEXT,
   instagram_data TEXT,

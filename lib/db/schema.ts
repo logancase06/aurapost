@@ -68,6 +68,8 @@ export const coachProfiles = sqliteTable(
     bio: text('bio'),
     targetAudience: text('target_audience'), // ex: "débutants 25-40 ans"
     results: text('results'), // ce que les clients obtiennent concrètement
+    linkedinHeadline: text('linkedin_headline'), // titre LinkedIn (saisie manuelle — pas de scraping)
+    linkedinSummary: text('linkedin_summary'), // résumé LinkedIn (saisie manuelle — pas de scraping)
     language: text('language').notNull().default('fr'), // 'fr' | 'en' — langue des posts générés
     instagramUrl: text('instagram_url'),
     instagramData: text('instagram_data'), // JSON : { name, bio, followers, captions[] } (scrape brut)

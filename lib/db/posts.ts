@@ -95,6 +95,8 @@ export async function getProfileInput(tenantId: string): Promise<CoachProfileInp
       bio: coachProfiles.bio,
       targetAudience: coachProfiles.targetAudience,
       results: coachProfiles.results,
+      linkedinHeadline: coachProfiles.linkedinHeadline,
+      linkedinSummary: coachProfiles.linkedinSummary,
       language: coachProfiles.language,
       instagramAnalysis: coachProfiles.instagramAnalysis,
       reviewsAnalysis: coachProfiles.reviewsAnalysis,
@@ -115,6 +117,8 @@ export async function getProfileInput(tenantId: string): Promise<CoachProfileInp
     targetAudience: row.targetAudience,
     language: row.language ?? 'fr',
     toneAnalysis: buildToneAnalysis(row.instagramAnalysis, row.reviewsAnalysis),
+    linkedinHeadline: row.linkedinHeadline,
+    linkedinSummary: row.linkedinSummary,
   };
 }
 

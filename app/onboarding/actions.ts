@@ -10,7 +10,6 @@ import { sanitizeText } from '@/lib/security';
 import { logActivity } from '@/lib/db/activity';
 import { logError, logInfo } from '@/lib/logger';
 import { isInstagramUrl, scrapeInstagram, analyzeInstagram, type InstagramAnalysis } from '@/lib/instagram';
-import { isLinkedinUrl, scrapeLinkedin, type LinkedinData } from '@/lib/linkedin';
 import { analyzeReviews, type ReviewsAnalysis } from '@/lib/reviews';
 import { generateSingleDemoPost, type PostDraft } from '@/lib/content-generator';
 
@@ -63,6 +62,8 @@ export interface ProfileDraft {
   bio?: string;
   targetAudience?: string;
   results?: string;
+  linkedinHeadline?: string;
+  linkedinSummary?: string;
   language?: string;
 }
 
@@ -92,6 +93,8 @@ export async function saveProfileDraft(input: ProfileDraft): Promise<{ ok: boole
       bio: input.bio != null ? sanitizeText(input.bio).slice(0, 1000) || null : undefined,
       targetAudience: input.targetAudience != null ? sanitizeText(input.targetAudience).slice(0, 200) || null : undefined,
       results: input.results != null ? sanitizeText(input.results).slice(0, 500) || null : undefined,
+      linkedinHeadline: input.linkedinHeadline != null ? sanitizeText(input.linkedinHeadline).slice(0, 220) || null : undefined,
+      linkedinSummary: input.linkedinSummary != null ? sanitizeText(input.linkedinSummary).slice(0, 2000) || null : undefined,
       language: input.language === 'en' || input.language === 'fr' ? input.language : undefined,
       updatedAt: new Date().toISOString(),
     })
@@ -145,22 +148,8 @@ export async function importInstagramAction(url: string): Promise<InstagramImpor
   return { ok: true, followers: scrape.data.followers, analysis };
 }
 
-export interface LinkedinImport {
-  ok: boolean;
-  error?: string;
-  data?: LinkedinData;
-}
-
-/** Import LinkedIn best-effort : renvoie headline + résumé pour pré-remplir la bio. */
-export async function importLinkedinAction(url: string): Promise<LinkedinImport> {
-  const c = await ctx();
-  if ('error' in c) return { ok: false, error: c.error };
-  if (!isLinkedinUrl(url)) return { ok: false, error: 'URL LinkedIn invalide.' };
-
-  const scrape = await scrapeLinkedin(url);
-  if (!scrape.ok) return { ok: false, error: 'Profil LinkedIn illisible. Remplis ta bio à la main.' };
-  return { ok: true, data: scrape.data };
-}
+// LinkedIn : saisie 100 % manuelle (headline + résumé) via saveProfileDraft.
+// Aucun scraping (les CGU LinkedIn l'interdisent) → pas d'action d'import dédiée.
 
 export interface ReviewsImport {
   ok: boolean;
