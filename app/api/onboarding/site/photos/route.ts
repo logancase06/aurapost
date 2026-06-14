@@ -6,10 +6,10 @@ import { uploadCoachPhoto } from '@/lib/r2';
 import { getSiteWizardState, savePhotos } from '@/lib/db/coach-site';
 import { logError } from '@/lib/logger';
 import { csrfGuard, logUnauthorized, MAX_UPLOAD_BYTES } from '@/lib/security';
+import { validateImage, SITE_PHOTO_MIME } from '@/lib/upload';
 
 const MAX_PHOTOS = 3;
-const MAX_SIZE = MAX_UPLOAD_BYTES; // 5 Mo (limite serveur, message clair)
-const ALLOWED = ['image/jpeg', 'image/png', 'image/webp'];
+const MAX_SIZE = MAX_UPLOAD_BYTES; // limite serveur partagée (message clair)
 
 // Upload de 1 à 3 photos (multipart). Resize serveur + R2 (ou data URL en mock).
 export async function POST(req: NextRequest) {
@@ -33,9 +33,6 @@ export async function POST(req: NextRequest) {
 
     const urls: string[] = [];
     for (const file of files.slice(0, room)) {
-      if (!ALLOWED.includes(file.type)) {
-        return NextResponse.json({ error: 'Format non supporté (JPG, PNG ou WebP).' }, { status: 400 });
-      }
       if (file.size > MAX_SIZE) {
         return NextResponse.json(
           { error: `Photo trop lourde. Taille maximale : ${(MAX_SIZE / 1024 / 1024).toFixed(0)} Mo.` },
@@ -43,7 +40,11 @@ export async function POST(req: NextRequest) {
         );
       }
       const buffer = Buffer.from(await file.arrayBuffer());
-      const res = await uploadCoachPhoto(tenantId, file.name, buffer, file.type);
+      // Validation par signature binaire réelle (pas le file.type déclaré).
+      if (!validateImage(buffer, SITE_PHOTO_MIME)) {
+        return NextResponse.json({ error: 'Format non supporté (JPG, PNG ou WebP).' }, { status: 400 });
+      }
+      const res = await uploadCoachPhoto(tenantId, file.name, buffer);
       if (!res.ok) {
         return NextResponse.json({ error: 'Échec de l’upload. Réessayez.' }, { status: 500 });
       }

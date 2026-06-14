@@ -91,8 +91,8 @@ export function logUnauthorized(
   }).catch((err) => logError('[logUnauthorized] échec', { error: String(err) }));
 }
 
-/** Taille maximale d'un upload photo, côté serveur (5 Mo). */
-export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+/** Taille maximale d'un upload photo, côté serveur — source unique (10 Mo). */
+export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 
 export interface UploadSizeResult {
   ok: boolean;

@@ -8,14 +8,12 @@ import { db } from '@/lib/db';
 import { coachProfiles } from '@/lib/db/schema';
 import { listPhotos, savePhoto } from '@/lib/db/photos';
 import { logError } from '@/lib/logger';
-import { csrfGuard, logUnauthorized } from '@/lib/security';
+import { csrfGuard, logUnauthorized, MAX_UPLOAD_BYTES } from '@/lib/security';
+import { validateImage, POST_PHOTO_MIME } from '@/lib/upload';
 
 // Bibliothèque photos pour le dialog d'approbation des posts.
 //   GET  → 3 dernières photos + mini-profil coach (handle + spécialité pour l'aperçu).
-//   POST → upload (jpg/png/heic ≤ 10 Mo) ; resize serveur + R2/mock → ligne coach_photos.
-
-const MAX_POST_PHOTO = 10 * 1024 * 1024; // 10 Mo (le resize sharp réduit ensuite)
-const ALLOWED = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
+//   POST → upload (jpg/png/webp/heic ≤ 10 Mo) ; validation magic bytes + resize sharp + R2/mock.
 
 async function coachMini(tenantId: string): Promise<{ displayName: string; speciality: string } | null> {
   const [row] = await db
@@ -57,21 +55,20 @@ export async function POST(req: NextRequest) {
     const file = form.get('photo');
     if (!(file instanceof File)) return NextResponse.json({ error: 'Aucune photo reçue.' }, { status: 400 });
 
-    // Certaines images HEIC arrivent avec un type vide selon le navigateur : on tolère
-    // si l'extension est .heic/.heif.
-    const heicByName = /\.(heic|heif)$/i.test(file.name);
-    if (file.type && !ALLOWED.includes(file.type) && !heicByName) {
-      return NextResponse.json({ error: 'Format non supporté (JPG, PNG, WebP ou HEIC).' }, { status: 400 });
-    }
-    if (file.size > MAX_POST_PHOTO) {
+    if (file.size > MAX_UPLOAD_BYTES) {
       return NextResponse.json(
-        { error: `Photo trop lourde. Taille maximale : ${(MAX_POST_PHOTO / 1024 / 1024).toFixed(0)} Mo.` },
+        { error: `Photo trop lourde. Taille maximale : ${(MAX_UPLOAD_BYTES / 1024 / 1024).toFixed(0)} Mo.` },
         { status: 413 }
       );
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const res = await uploadCoachPhoto(tenantId, file.name || 'photo.jpg', buffer, file.type || 'image/jpeg');
+    // Validation par signature binaire réelle (pas le file.type déclaré, falsifiable).
+    if (!validateImage(buffer, POST_PHOTO_MIME)) {
+      return NextResponse.json({ error: 'Format non supporté (JPG, PNG, WebP ou HEIC).' }, { status: 400 });
+    }
+
+    const res = await uploadCoachPhoto(tenantId, file.name || 'photo.jpg', buffer);
     if (!res.ok) return NextResponse.json({ error: 'Échec de l’upload. Réessayez.' }, { status: 500 });
 
     const photo = await savePhoto(tenantId, { r2Url: res.url, sizeBytes: file.size });

@@ -1,4 +1,4 @@
-import { logError, logInfo } from './logger';
+import { logError } from './logger';
 
 // Upload de photos coach vers Cloudflare R2 (S3-compatible), côté serveur uniquement.
 // Resize automatique (max 1200px, JPEG qualité 85) via sharp si disponible.
@@ -14,25 +14,32 @@ export const IS_R2_CONFIGURED = !!(
 
 const SIGNED_URL_TTL = 60 * 60 * 24 * 365; // 1 an
 
-async function resize(buffer: Buffer, contentType: string): Promise<{ data: Buffer; contentType: string }> {
-  try {
-    const sharpMod = await import('sharp');
-    const sharp = sharpMod.default;
-    const out = await sharp(buffer).rotate().resize({ width: 1200, withoutEnlargement: true }).jpeg({ quality: 85 }).toBuffer();
-    return { data: out, contentType: 'image/jpeg' };
-  } catch (err) {
-    logInfo('[r2] sharp indisponible — image stockée sans redimensionnement', { error: String(err) });
-    return { data: buffer, contentType };
-  }
+// Re-encode systématiquement l'image en JPEG via sharp. Si sharp échoue (binaire natif
+// absent, image corrompue/malveillante), on LÈVE : pas de fallback "stockage brut" qui
+// laisserait passer un fichier non ré-encodé (sécurité).
+async function resize(buffer: Buffer): Promise<{ data: Buffer; contentType: string }> {
+  const sharpMod = await import('sharp');
+  const sharp = sharpMod.default;
+  const out = await sharp(buffer).rotate().resize({ width: 1200, withoutEnlargement: true }).jpeg({ quality: 85 }).toBuffer();
+  return { data: out, contentType: 'image/jpeg' };
 }
 
 export async function uploadCoachPhoto(
   tenantId: string,
   originalName: string,
-  buffer: Buffer,
-  contentType: string
+  buffer: Buffer
 ): Promise<{ ok: true; url: string } | { ok: false; reason: string }> {
-  const { data, contentType: ct } = await resize(buffer, contentType);
+  let data: Buffer;
+  let ct: string;
+  try {
+    const r = await resize(buffer);
+    data = r.data;
+    ct = r.contentType;
+  } catch (err) {
+    // sharp indisponible ou image illisible → on REFUSE plutôt que stocker du brut.
+    logError('[r2] re-encodage (sharp) échoué — upload refusé', { error: String(err) });
+    return { ok: false, reason: 'resize_failed' };
+  }
   const safeName = originalName.replace(/[^a-zA-Z0-9._-]/g, '_').slice(-40) || 'photo.jpg';
   const key = `coaches/${tenantId}/photos/${Date.now()}-${safeName}`;
 
