@@ -11,14 +11,15 @@ import { uploadCoachPhoto } from '@/lib/r2';
 import { validateImage, POST_PHOTO_MIME } from '@/lib/upload';
 import { MAX_UPLOAD_BYTES } from '@/lib/security';
 import { logError } from '@/lib/logger';
+import { canGenerateSite } from '@/lib/plans';
 
 const StyleSchema = z.enum(['impact', 'clarte', 'authenticite']);
 
-async function ctx(): Promise<{ tenantId: string; userId: string } | { error: string }> {
+async function ctx(): Promise<{ tenantId: string; userId: string; plan: string } | { error: string }> {
   const session = await auth();
   if (!session?.user?.id) return { error: 'Non autorisé' };
   try {
-    return { tenantId: await requireTenantId(), userId: session.user.id };
+    return { tenantId: await requireTenantId(), userId: session.user.id, plan: session.user.plan ?? 'starter' };
   } catch {
     return { error: 'Session invalide' };
   }
@@ -39,6 +40,7 @@ export async function saveSiteContent(content: unknown): Promise<{ ok: boolean; 
   if (!parsed.success) return { ok: false, error: 'Contenu invalide' };
   const c = await ctx();
   if ('error' in c) return { ok: false, error: c.error };
+  if (!canGenerateSite(c.plan)) return { ok: false, error: 'upgrade_required' };
   const res = await saveEditorSiteContent(c.tenantId, c.userId, parsed.data);
   if (!res.ok) return { ok: false, error: res.error === 'no_site' ? 'Génère d’abord ton site.' : 'Action impossible' };
   revalidatePath('/dashboard/website');
@@ -68,6 +70,7 @@ export async function uploadSitePhoto(formData: FormData): Promise<{ ok: boolean
 export async function setSitePublished(published: boolean): Promise<{ ok: boolean; error?: string }> {
   const c = await ctx();
   if ('error' in c) return { ok: false, error: c.error };
+  if (!canGenerateSite(c.plan)) return { ok: false, error: 'upgrade_required' };
   const res = published ? await publishWebsiteDb(c.tenantId, c.userId) : await unpublishWebsite(c.tenantId, c.userId);
   if (!res.ok) return { ok: false, error: 'Action impossible' };
   revalidatePath('/dashboard/website');

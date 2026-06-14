@@ -62,6 +62,51 @@ export const PLANS: PlanDef[] = [
   },
 ];
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Limites par plan — SOURCE UNIQUE de gating (appliqué CÔTÉ SERVEUR).
+// 'starter' = gratuit (hameçon) : 12 posts génériques, mais pas de site, pas
+// d'export, peu de variantes/photos, et profil limité au socle (pas d'analyse
+// IG/avis → posts moins personnalisés). Payer débloque la personnalisation.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type ProfileSection = 'base' | 'presence' | 'photos' | 'results';
+
+export interface PlanLimits {
+  postsPerMonth: number;
+  sitesEnabled: boolean;
+  photosMax: number;
+  variantesMax: number; // par mois
+  exportEnabled: boolean;
+  profileSections: ProfileSection[];
+}
+
+const LIMITS: Record<PlanId, PlanLimits> = {
+  starter: { postsPerMonth: 12, sitesEnabled: false, photosMax: 3, variantesMax: 3, exportEnabled: false, profileSections: ['base'] },
+  content_only: { postsPerMonth: 12, sitesEnabled: false, photosMax: 10, variantesMax: 20, exportEnabled: true, profileSections: ['base', 'presence', 'photos', 'results'] },
+  pack_complet: { postsPerMonth: 12, sitesEnabled: true, photosMax: 10, variantesMax: 50, exportEnabled: true, profileSections: ['base', 'presence', 'photos', 'results'] },
+};
+
+export function getPlanLimits(plan: string | null | undefined): PlanLimits {
+  return LIMITS[(plan as PlanId) in LIMITS ? (plan as PlanId) : 'starter'];
+}
+export function canGenerateSite(plan: string | null | undefined): boolean {
+  return getPlanLimits(plan).sitesEnabled;
+}
+export function canExportPost(plan: string | null | undefined): boolean {
+  return getPlanLimits(plan).exportEnabled;
+}
+
+/** true si le plan a expiré (planExpiresAt dépassé). Sans date = pas d'expiration. */
+function isExpired(planExpiresAt: string | null | undefined): boolean {
+  return !!planExpiresAt && new Date(planExpiresAt) < new Date();
+}
+
+/** Le plan donne-t-il accès au produit ? (gratuit = toujours actif ; payant = non expiré) */
+export function isPlanActive(plan: string | null | undefined, planExpiresAt: string | null | undefined): boolean {
+  if (!plan || plan === 'starter') return true;
+  return !isExpired(planExpiresAt);
+}
+
 export function getPlan(id: string | null | undefined): PlanDef | null {
   return PLANS.find((p) => p.id === id) ?? null;
 }

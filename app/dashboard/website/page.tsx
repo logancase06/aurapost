@@ -4,7 +4,8 @@ import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { coachProfiles, websites } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { Pencil, ExternalLink, CheckCircle2 } from 'lucide-react';
+import { Pencil, ExternalLink, CheckCircle2, Lock } from 'lucide-react';
+import { canGenerateSite } from '@/lib/plans';
 import { getWebsiteForTenant } from '@/lib/db/website';
 import { getCoachSiteData } from '@/lib/db/public';
 import { Card } from '@/components/ui/card';
@@ -27,6 +28,24 @@ export default async function WebsitePage() {
   const session = await auth();
   if (!session?.user?.id) redirect('/login');
   const tenantId = session.user.tenantId!;
+
+  // Le site vitrine est réservé au Pack Complet → écran d'upgrade si plan inférieur.
+  if (!canGenerateSite(session.user.plan)) {
+    return (
+      <DashboardShell active="/dashboard/website">
+        <Card className="mx-auto mt-10 max-w-lg border-primary/30 bg-primary/5 p-8 text-center">
+          <Lock className="mx-auto h-8 w-8 text-primary" />
+          <h1 className="mt-4 text-xl font-bold">Le site vitrine est dans le Pack Complet</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Un site personnalisé sur ton sous-domaine, généré depuis ton profil et partageable à tes clients.
+          </p>
+          <Button asChild variant="gradient" className="mt-5">
+            <Link href="/dashboard/billing">Passer au Pack Complet →</Link>
+          </Button>
+        </Card>
+      </DashboardShell>
+    );
+  }
 
   const site = await getWebsiteForTenant(tenantId);
   const [prof] = await db.select({ tone: coachProfiles.tone }).from(coachProfiles).where(eq(coachProfiles.tenantId, tenantId)).limit(1);

@@ -4,7 +4,8 @@ import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { users, tenants } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { listPosts, getPostStats, hasGeneratedThisMonth, type PostStatus } from '@/lib/db/posts';
+import { listPosts, getPostStats, hasGeneratedThisMonth, getVariantesCount, type PostStatus } from '@/lib/db/posts';
+import { canExportPost, getPlanLimits } from '@/lib/plans';
 import { getSmartSuggestions, getGenerationStreak } from '@/lib/db/suggestions';
 import { getOnboardingProgress, getProfileCompletion } from '@/lib/db/onboarding';
 import { currentMonth } from '@/lib/utils';
@@ -67,7 +68,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
     | undefined;
 
   const month = currentMonth();
-  const [stats, posts, alreadyGenerated, progress, suggestions, completion, streak] = await Promise.all([
+  const [stats, posts, alreadyGenerated, progress, suggestions, completion, streak, variantesUsed] = await Promise.all([
     getPostStats(tenantId, month),
     listPosts(tenantId, { status }),
     hasGeneratedThisMonth(tenantId, month),
@@ -75,7 +76,11 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
     getSmartSuggestions(tenantId),
     getProfileCompletion(tenantId),
     getGenerationStreak(tenantId),
+    getVariantesCount(tenantId, month),
   ]);
+
+  const plan = session.user.plan ?? 'starter';
+  const gating = { canExport: canExportPost(plan), variantesUsed, variantesMax: getPlanLimits(plan).variantesMax };
 
   const firstName = (me?.fullName ?? session.user.name ?? '').split(' ')[0] || 'coach';
   const emailVerified = !!session.user.emailVerifiedAt;
@@ -143,7 +148,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
       </div>
 
       <SectionBoundary label="Posts">
-        {posts.length === 0 ? <EmptyPosts alreadyGenerated={alreadyGenerated} /> : <PostsBoard posts={posts} />}
+        {posts.length === 0 ? <EmptyPosts alreadyGenerated={alreadyGenerated} /> : <PostsBoard posts={posts} gating={gating} />}
       </SectionBoundary>
 
       {/* Améliore ton profil — setup + complétion, repliable (sous les posts) */}

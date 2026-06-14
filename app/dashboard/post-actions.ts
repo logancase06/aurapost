@@ -10,15 +10,17 @@ import {
   incrementCopyCount,
   runCaptionPackGeneration,
   getPostById,
+  getVariantesCount,
   type PostStatus,
 } from '@/lib/db/posts';
 import { getPhoto, linkPhotoToPost } from '@/lib/db/photos';
+import { getPlanLimits, canExportPost } from '@/lib/plans';
 
 async function ctx() {
   const session = await auth();
   if (!session?.user?.id) throw new Error('Non autorisé');
   const tenantId = await requireTenantId();
-  return { tenantId, userId: session.user.id };
+  return { tenantId, userId: session.user.id, plan: session.user.plan ?? 'starter' };
 }
 
 export async function approvePostAction(postId: string): Promise<{ ok: boolean; error?: string }> {
@@ -42,7 +44,9 @@ export async function approveWithPhotoAction(
   opts: { photoId?: string | null; textOverlay?: string | null; scheduleDate?: string | null } = {}
 ): Promise<{ ok: boolean; error?: string }> {
   try {
-    const { tenantId, userId } = await ctx();
+    const { tenantId, userId, plan } = await ctx();
+    // L'export (image + photo) est réservé aux plans payants.
+    if (!canExportPost(plan)) return { ok: false, error: 'upgrade_required' };
 
     const post = await getPostById(tenantId, postId);
     if (!post) return { ok: false, error: 'Post introuvable' };
@@ -83,7 +87,11 @@ export async function rejectPostAction(postId: string): Promise<{ ok: boolean; e
 
 export async function requestVariantAction(postId: string): Promise<{ ok: boolean; error?: string }> {
   try {
-    const { tenantId, userId } = await ctx();
+    const { tenantId, userId, plan } = await ctx();
+    // Limite mensuelle de variantes selon le plan (anti-abus + incitation upgrade).
+    const max = getPlanLimits(plan).variantesMax;
+    const used = await getVariantesCount(tenantId);
+    if (used >= max) return { ok: false, error: `Limite de ${max} variantes atteinte ce mois-ci.` };
     const res = await createVariantForPost(tenantId, userId, postId);
     if (!res.ok) return { ok: false, error: 'Génération de variante impossible' };
     revalidatePath('/dashboard');

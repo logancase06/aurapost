@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
-import { Check, X, RefreshCw, Copy, Camera, Briefcase, Loader2, Maximize2, ImageIcon } from 'lucide-react';
+import { Check, X, RefreshCw, Copy, Camera, Briefcase, Loader2, Maximize2, ImageIcon, Lock } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -19,11 +19,22 @@ const STATUS: Record<string, { label: string; variant: 'warning' | 'success' | '
   rejected: { label: 'Rejeté', variant: 'destructive' },
 };
 
-export default function PostCard({ post }: { post: PostRow }) {
+export default function PostCard({
+  post,
+  canExport = true,
+  variantesUsed = 0,
+  variantesMax = Infinity,
+}: {
+  post: PostRow;
+  canExport?: boolean;
+  variantesUsed?: number;
+  variantesMax?: number;
+}) {
   const [pending, startTransition] = useTransition();
   const [copied, setCopied] = useState(false);
   const [approveOpen, setApproveOpen] = useState(false);
   const status = STATUS[post.status];
+  const variantesLeft = variantesMax === Infinity || variantesUsed < variantesMax;
 
   function run(action: () => Promise<{ ok: boolean; error?: string }>, success: string) {
     startTransition(async () => {
@@ -116,10 +127,16 @@ export default function PostCard({ post }: { post: PostRow }) {
             <Button size="sm" onClick={approveQuick} disabled={pending} className="h-11 bg-success text-white hover:bg-success/90 sm:h-8">
               <Check className="h-3.5 w-3.5" /> Approuver
             </Button>
-            {/* Option : approuver en ajoutant une photo (dialog 3 étapes) */}
-            <Button size="sm" variant="outline" onClick={() => setApproveOpen(true)} disabled={pending} title="Approuver en ajoutant une photo" className="h-11 sm:h-8">
-              <ImageIcon className="h-3.5 w-3.5" /> + photo
-            </Button>
+            {/* Option : approuver avec photo (réservé aux plans payants — export) */}
+            {canExport ? (
+              <Button size="sm" variant="outline" onClick={() => setApproveOpen(true)} disabled={pending} title="Approuver en ajoutant une photo" className="h-11 sm:h-8">
+                <ImageIcon className="h-3.5 w-3.5" /> + photo
+              </Button>
+            ) : (
+              <Button asChild size="sm" variant="outline" title="L'export photo est inclus dans le plan Contenu" className="h-11 sm:h-8 opacity-70">
+                <Link href="/dashboard/billing"><Lock className="h-3.5 w-3.5" /> + photo</Link>
+              </Button>
+            )}
           </>
         )}
         {post.status !== 'rejected' && (
@@ -127,7 +144,7 @@ export default function PostCard({ post }: { post: PostRow }) {
             <X className="h-3.5 w-3.5" /> Rejeter
           </Button>
         )}
-        <Button size="sm" variant="outline" onClick={() => run(() => requestVariantAction(post.id), 'Variante générée ✦')} disabled={pending} className="h-11 sm:h-8">
+        <Button size="sm" variant="outline" onClick={() => run(() => requestVariantAction(post.id), 'Variante générée ✦')} disabled={pending || !variantesLeft} title={variantesLeft ? 'Générer une variante' : 'Limite de variantes atteinte ce mois'} className="h-11 sm:h-8">
           {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />} Variante
         </Button>
         <Button size="sm" variant="ghost" onClick={copy} className="ml-auto h-11 sm:h-8">

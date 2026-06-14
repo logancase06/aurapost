@@ -5,8 +5,14 @@ import { AnimatedTabs } from '@/components/ui/motion-primitives';
 import PostCard from './PostCard';
 import type { PostRow } from '@/lib/db/posts';
 
+export interface PostsBoardGating {
+  canExport?: boolean;
+  variantesUsed?: number;
+  variantesMax?: number;
+}
+
 // Posts avec séparation Instagram / LinkedIn — tabs animés à indicateur glissant.
-export default function PostsBoard({ posts }: { posts: PostRow[] }) {
+export default function PostsBoard({ posts, gating }: { posts: PostRow[]; gating?: PostsBoardGating }) {
   const ig = posts.filter((p) => p.network === 'instagram');
   const li = posts.filter((p) => p.network === 'linkedin');
 
@@ -21,7 +27,7 @@ export default function PostsBoard({ posts }: { posts: PostRow[] }) {
               <LayoutGrid className="h-3.5 w-3.5" /> Tout · {posts.length}
             </>
           ),
-          content: <Grid posts={posts} />,
+          content: <Grid posts={posts} gating={gating} />,
         },
         {
           value: 'instagram',
@@ -30,7 +36,7 @@ export default function PostsBoard({ posts }: { posts: PostRow[] }) {
               <Camera className="h-3.5 w-3.5" /> Instagram · {ig.length}
             </>
           ),
-          content: <Grid posts={ig} />,
+          content: <Grid posts={ig} gating={gating} />,
         },
         {
           value: 'linkedin',
@@ -39,21 +45,21 @@ export default function PostsBoard({ posts }: { posts: PostRow[] }) {
               <Briefcase className="h-3.5 w-3.5" /> LinkedIn · {li.length}
             </>
           ),
-          content: <Grid posts={li} />,
+          content: <Grid posts={li} gating={gating} />,
         },
       ]}
     />
   );
 }
 
-function Grid({ posts }: { posts: PostRow[] }) {
+function Grid({ posts, gating }: { posts: PostRow[]; gating?: PostsBoardGating }) {
   if (posts.length === 0) {
     return <p className="py-12 text-center text-sm text-muted-foreground">Rien dans cette catégorie.</p>;
   }
   return (
     <div className="grid gap-5 lg:grid-cols-2">
       {posts.map((p) => (
-        <PostCard key={p.id} post={p} />
+        <PostCard key={p.id} post={p} canExport={gating?.canExport} variantesUsed={gating?.variantesUsed} variantesMax={gating?.variantesMax} />
       ))}
     </div>
   );

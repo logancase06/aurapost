@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { requireTenantId } from '@/lib/tenant';
 import { runMonthlyGeneration } from '@/lib/db/posts';
+import { isPlanActive } from '@/lib/plans';
 import { checkAuthRateLimit } from '@/lib/auth-rate-limit';
 import { sendMonthlyPostsEmail } from '@/lib/email';
 import { db } from '@/lib/db';
@@ -18,6 +19,9 @@ export async function POST() {
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
+    if (!isPlanActive(session.user.plan, session.user.planExpiresAt)) {
+      return NextResponse.json({ error: 'Abonnement expiré.', upgrade: '/dashboard/billing' }, { status: 403 });
     }
     const tenantId = await requireTenantId();
 

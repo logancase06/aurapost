@@ -1,6 +1,6 @@
 import { db } from './index';
 import { generatedPosts, coachProfiles } from './schema';
-import { and, eq, isNull, desc, sql } from 'drizzle-orm';
+import { and, eq, isNull, isNotNull, desc, sql } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import {
   generateMonthlyContent,
@@ -228,6 +228,15 @@ export async function hasGeneratedThisMonth(tenantId: string, month: string): Pr
       )
     );
   return Number(row?.count ?? 0) > 0;
+}
+
+/** Nombre de variantes générées ce mois par le tenant (pour le gating par plan). */
+export async function getVariantesCount(tenantId: string, month = currentMonth()): Promise<number> {
+  const [row] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(generatedPosts)
+    .where(and(eq(generatedPosts.tenantId, tenantId), eq(generatedPosts.month, month), isNotNull(generatedPosts.variantOfId)));
+  return Number(row?.count ?? 0);
 }
 
 // ── Génération + sauvegarde ──────────────────────────────────────────────────
