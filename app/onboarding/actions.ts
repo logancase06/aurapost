@@ -128,22 +128,21 @@ export async function importInstagramAction(url: string): Promise<InstagramImpor
 
   const analysis = await analyzeInstagram(scrape.data);
 
+  // Sans ligne profil (nom + spécialité manquants), on ne peut RIEN persister :
+  // ne pas prétendre au succès, sinon l'analyse est perdue au rechargement.
   const ok = await ensureProfile(c.tenantId, c.userId);
-  if (ok) {
-    await db
-      .update(coachProfiles)
-      .set({
-        instagramUrl: url.trim().slice(0, 300),
-        instagramData: JSON.stringify(scrape.data),
-        instagramAnalysis: JSON.stringify(analysis),
-        tone: TONE_CANON[analysis.ton_dominant] ?? undefined,
-        updatedAt: new Date().toISOString(),
-      })
-      .where(eq(coachProfiles.tenantId, c.tenantId));
-  } else {
-    // Pas encore de ligne profil : on garde juste l'URL pour persistance au step 1.
-    logInfo('[onboarding] instagram analysé avant création profil', { tenantId: c.tenantId });
-  }
+  if (!ok) return { ok: false, error: 'Renseigne d’abord ton nom et ta spécialité.' };
+
+  await db
+    .update(coachProfiles)
+    .set({
+      instagramUrl: url.trim().slice(0, 300),
+      instagramData: JSON.stringify(scrape.data),
+      instagramAnalysis: JSON.stringify(analysis),
+      tone: TONE_CANON[analysis.ton_dominant] ?? undefined,
+      updatedAt: new Date().toISOString(),
+    })
+    .where(eq(coachProfiles.tenantId, c.tenantId));
 
   return { ok: true, followers: scrape.data.followers, analysis };
 }
@@ -166,13 +165,15 @@ export async function analyzeReviewsAction(text: string): Promise<ReviewsImport>
 
   const analysis = await analyzeReviews(clean);
 
+  // Pas de ligne profil → rien à persister : on le signale au lieu de mentir.
   const ok = await ensureProfile(c.tenantId, c.userId);
-  if (ok) {
-    await db
-      .update(coachProfiles)
-      .set({ reviewsText: clean.slice(0, 4000), reviewsAnalysis: JSON.stringify(analysis), updatedAt: new Date().toISOString() })
-      .where(eq(coachProfiles.tenantId, c.tenantId));
-  }
+  if (!ok) return { ok: false, error: 'Renseigne d’abord ton nom et ta spécialité.' };
+
+  await db
+    .update(coachProfiles)
+    .set({ reviewsText: clean.slice(0, 4000), reviewsAnalysis: JSON.stringify(analysis), updatedAt: new Date().toISOString() })
+    .where(eq(coachProfiles.tenantId, c.tenantId));
+
   return { ok: true, analysis };
 }
 
