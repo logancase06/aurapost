@@ -9,6 +9,9 @@ import { listPhotos } from '@/lib/db/photos';
 import OnboardingWizard, { type InitialDraft } from './OnboardingWizard';
 
 export const metadata = { title: 'Configurer mon profil' };
+// Les Server Actions de cette route (aperçu post, fin d'onboarding) peuvent appeler
+// Claude → on relève le timeout de la fonction.
+export const maxDuration = 60;
 
 export default async function OnboardingPage() {
   const session = await auth();

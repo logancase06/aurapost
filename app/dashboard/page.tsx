@@ -23,6 +23,9 @@ import { SectionBoundary } from '@/components/SectionBoundary';
 import { EmptyPosts } from './EmptyState';
 
 export const metadata = { title: 'Tableau de bord' };
+// Server Actions longues hébergées par cette route (variante, pack de légendes) →
+// appels Claude possibles, on relève le timeout de la fonction.
+export const maxDuration = 60;
 
 type SearchParams = Promise<{ status?: string }>;
 

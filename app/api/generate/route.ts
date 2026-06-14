@@ -9,6 +9,10 @@ import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { logError } from '@/lib/logger';
 
+// Génération des 12 posts en un appel Claude (~20-40 s en mode API) → relève le
+// timeout par défaut de la fonction (~10 s sur Netlify/Vercel) pour éviter les 502.
+export const maxDuration = 60;
+
 export async function POST() {
   try {
     const session = await auth();
