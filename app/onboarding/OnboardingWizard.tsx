@@ -79,8 +79,14 @@ export default function OnboardingWizard({ initial }: { initial: InitialDraft })
   const [exLoading, setExLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
 
-  const [saving, setSaving] = useState(false);
-  const [savedAt, setSavedAt] = useState<number | null>(null);
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Marque le résultat d'une sauvegarde et repasse à 'idle' après 2 s (succès uniquement).
+  function markSaved(ok: boolean) {
+    setSaveState(ok ? 'saved' : 'error');
+    if (resetTimer.current) clearTimeout(resetTimer.current);
+    if (ok) resetTimer.current = setTimeout(() => setSaveState('idle'), 2000);
+  }
 
   const canAdvance1 = displayName.trim().length > 0 && speciality.trim().length > 0;
 
@@ -95,10 +101,9 @@ export default function OnboardingWizard({ initial }: { initial: InitialDraft })
       return;
     }
     const t = setTimeout(async () => {
-      setSaving(true);
+      setSaveState('saving');
       const res = await saveProfileDraft(draftRef.current);
-      setSaving(false);
-      if (res.ok) setSavedAt(Date.now());
+      markSaved(res.ok);
     }, 1000);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -116,18 +121,19 @@ export default function OnboardingWizard({ initial }: { initial: InitialDraft })
         toast.error('Renseigne ton nom et ta spécialité.');
         return;
       }
-      setSaving(true);
+      setSaveState('saving');
       const res = await saveProfileDraft(draftRef.current);
-      setSaving(false);
       if (!res.ok) {
+        markSaved(false);
         toast.error(res.error || 'Sauvegarde impossible');
         return;
       }
-      setSavedAt(Date.now());
+      markSaved(true);
     }
     if (step === 2) {
       // Persiste les champs manuels avant de continuer.
-      await saveProfileDraft(draftRef.current);
+      const res = await saveProfileDraft(draftRef.current);
+      markSaved(res.ok);
     }
     go(Math.min(4, step + 1));
   }
@@ -266,8 +272,10 @@ export default function OnboardingWizard({ initial }: { initial: InitialDraft })
         })}
       </div>
       <Progress value={pct} />
-      <div className="mt-1.5 h-4 text-right text-xs text-muted-foreground">
-        {saving ? 'Enregistrement…' : savedAt ? 'Sauvegardé ✓' : ''}
+      <div className="mt-1.5 h-4 text-right text-xs">
+        {saveState === 'saving' && <span className="text-muted-foreground">Enregistrement…</span>}
+        {saveState === 'saved' && <span className="text-success">Sauvegardé ✓</span>}
+        {saveState === 'error' && <span className="text-destructive">Échec de la sauvegarde — réessaie</span>}
       </div>
 
       <div className="relative mt-3 overflow-hidden">
