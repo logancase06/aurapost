@@ -9,8 +9,10 @@ import {
   schedulePost,
   incrementCopyCount,
   runCaptionPackGeneration,
+  getPostById,
   type PostStatus,
 } from '@/lib/db/posts';
+import { getPhoto, linkPhotoToPost } from '@/lib/db/photos';
 
 async function ctx() {
   const session = await auth();
@@ -24,6 +26,44 @@ export async function approvePostAction(postId: string): Promise<{ ok: boolean; 
     const { tenantId, userId } = await ctx();
     await setPostStatus(tenantId, userId, postId, 'approved' satisfies PostStatus);
     revalidatePath('/dashboard');
+    return { ok: true };
+  } catch {
+    return { ok: false, error: 'Action impossible' };
+  }
+}
+
+/**
+ * Approbation enrichie depuis le dialog photo : associe (optionnellement) une photo
+ * de la bibliothèque au post, le passe en « approuvé », et le programme si une date
+ * est fournie. Tout est scellé au tenant (vérif post + photo).
+ */
+export async function approveWithPhotoAction(
+  postId: string,
+  opts: { photoId?: string | null; textOverlay?: string | null; scheduleDate?: string | null } = {}
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const { tenantId, userId } = await ctx();
+
+    const post = await getPostById(tenantId, postId);
+    if (!post) return { ok: false, error: 'Post introuvable' };
+
+    if (opts.photoId) {
+      const photo = await getPhoto(tenantId, opts.photoId);
+      if (!photo) return { ok: false, error: 'Photo introuvable' };
+      await linkPhotoToPost(postId, opts.photoId, opts.textOverlay ?? undefined);
+    }
+
+    await setPostStatus(tenantId, userId, postId, 'approved' satisfies PostStatus);
+
+    if (opts.scheduleDate) {
+      const iso = new Date(`${opts.scheduleDate}T09:00:00`).toISOString();
+      if (!Number.isNaN(new Date(iso).getTime())) {
+        await schedulePost(tenantId, userId, postId, iso);
+      }
+    }
+
+    revalidatePath('/dashboard');
+    revalidatePath('/dashboard/calendar');
     return { ok: true };
   } catch {
     return { ok: false, error: 'Action impossible' };

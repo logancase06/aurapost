@@ -9,7 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { BorderBeam } from '@/components/ui/border-beam';
-import { approvePostAction, rejectPostAction, requestVariantAction } from './post-actions';
+import { rejectPostAction, requestVariantAction } from './post-actions';
+import ApprovePostDialog from './ApprovePostDialog';
 import type { PostRow } from '@/lib/db/posts';
 
 const STATUS: Record<string, { label: string; variant: 'warning' | 'success' | 'destructive' }> = {
@@ -21,6 +22,7 @@ const STATUS: Record<string, { label: string; variant: 'warning' | 'success' | '
 export default function PostCard({ post }: { post: PostRow }) {
   const [pending, startTransition] = useTransition();
   const [copied, setCopied] = useState(false);
+  const [approveOpen, setApproveOpen] = useState(false);
   const status = STATUS[post.status];
 
   function run(action: () => Promise<{ ok: boolean; error?: string }>, success: string) {
@@ -80,7 +82,7 @@ export default function PostCard({ post }: { post: PostRow }) {
 
       <div className="flex flex-wrap items-center gap-2">
         {post.status !== 'approved' && (
-          <Button size="sm" onClick={() => run(() => approvePostAction(post.id), 'Post approuvé ✓')} disabled={pending} className="bg-success text-white hover:bg-success/90">
+          <Button size="sm" onClick={() => setApproveOpen(true)} disabled={pending} className="bg-success text-white hover:bg-success/90">
             <Check className="h-3.5 w-3.5" /> Approuver
           </Button>
         )}
@@ -96,6 +98,8 @@ export default function PostCard({ post }: { post: PostRow }) {
           <Copy className="h-3.5 w-3.5" /> {copied ? 'Copié' : 'Copier'}
         </Button>
       </div>
+
+      {approveOpen && <ApprovePostDialog post={post} open onOpenChange={setApproveOpen} />}
     </Card>
   );
 }
