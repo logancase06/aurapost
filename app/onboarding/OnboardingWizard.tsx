@@ -325,8 +325,17 @@ export default function OnboardingWizard({ initial }: { initial: InitialDraft })
               <div className="space-y-5">
                 <div>
                   <h2 className="text-lg font-bold">Dis-nous qui tu es — en 1 clic ou à la main</h2>
-                  <p className="text-sm text-muted-foreground">Plus on te connaît, plus le contenu sonne comme toi. Rien n’est obligatoire.</p>
+                  <p className="text-sm text-muted-foreground">Tout est optionnel ici — tu peux compléter plus tard. Plus on te connaît, plus le contenu sonne comme toi.</p>
                 </div>
+
+                {/* Échappatoire visible pour les coachs sans réseaux */}
+                <button
+                  type="button"
+                  onClick={() => go(3)}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+                >
+                  Je n’ai pas de réseaux → passer cette étape <ArrowRight className="h-4 w-4" />
+                </button>
 
                 {/* Instagram */}
                 <div className="rounded-xl border border-border p-4">
