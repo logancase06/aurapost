@@ -198,6 +198,11 @@ RÈGLES PAR POST :
 - Call-to-action clair à la fin.
 - 5 à 8 hashtags : mélange de hashtags de NICHE (${profile.speciality}) et de VILLE (${city}).
 
+UNICITÉ (important) : ce contenu doit être propre à CE coach. Évite les formulations
+génériques interchangeables d'un coach à l'autre. Ancre chaque post dans sa spécialité
+précise (${profile.speciality}), sa ville (${city}), ses forces clients et sa voix —
+pas des banalités de motivation passe-partout.
+
 Réponds UNIQUEMENT avec un objet JSON valide (aucun texte avant ou après) :
 {
   "posts": [
@@ -445,6 +450,9 @@ const IG_MOTIVATION: Tpl[] = [
   (c) => `${c.e} La régularité bat l'intensité. Toujours.\n\nTrois séances tenues valent mieux qu'une séance parfaite suivie de deux semaines d'arrêt. En ${c.specLower}, c'est la constance qui transforme les corps. Tu tiens quoi cette semaine ?`,
   (c) => `${c.e} Ce n'est pas une question de temps, c'est une question de priorité.\n\n"J'ai pas le temps" = "ce n'est pas ma priorité". Et c'est ok. Mais le jour où tu décides que ta santé compte, tout change. ${c.who} est là pour t'y aider.`,
   (c) => `${c.e} Le confort ne t'a jamais rendu plus fort.\n\nLa croissance vit de l'autre côté de la zone de confort. Une rep de plus, un kilo de plus, une excuse de moins. C'est là que ça se joue.`,
+  (c) => `${c.e} Tu n'as pas raté. Tu as appris ce qui ne marche pas.\n\nEn ${c.specLower}, chaque séance « ratée » t'apprend ton corps. Recommence demain, ajusté. La progression, c'est ça : une boucle, pas une ligne droite.`,
+  (c) => `${c.e} 1 % mieux qu'hier. C'est tout.\n\nPas de transformation magique, pas de « avant/après » truqué. Juste 1 % de plus, répété assez longtemps pour que ça devienne toi. On commence quand${c.place} ?`,
+  (c) => `${c.e} Le plus dur, c'est de franchir la porte.\n\nUne fois sur place, ton corps suit. Le vrai combat se gagne dans ta tête, 30 minutes avant la séance. Gagne-le aujourd'hui.`,
 ];
 
 const IG_EDUCATIF: Tpl[] = [
@@ -453,6 +461,9 @@ const IG_EDUCATIF: Tpl[] = [
   () => `📌 Tu progresses moins ? Voici pourquoi.\n\nTon corps s'est adapté. Sans nouvelle stimulation (charge, volume, tempo), il n'a aucune raison d'évoluer. La progression se planifie, elle ne s'improvise pas.`,
   () => `📌 Le mythe qu'il faut arrêter de croire.\n\n"Plus j'en fais, mieux c'est." Faux. Le muscle ne grandit pas à l'entraînement mais au repos. Récupérer, c'est s'entraîner. Note-le quelque part.`,
   (c) => `📌 Avant ta prochaine séance, lis ça.\n\nUn bon mouvement vaut mieux que dix mouvements bâclés. En ${c.specLower}, la qualité prime toujours sur la quantité. Ralentis, ressens, contrôle.`,
+  (c) => `📌 La question à te poser AVANT chaque exercice.\n\n« Est-ce que je sens le bon muscle travailler ? » Si non, baisse la charge et reprends la technique. En ${c.specLower}, sentir > soulever. Toujours.`,
+  () => `📌 Ce chiffre va te surprendre.\n\n80 % des résultats viennent de 20 % des actions : régularité, sommeil, protéines, progression de charge. Le reste, c'est du détail. Concentre-toi sur l'essentiel.`,
+  (c) => `📌 Échauffe-toi comme un pro (en 4 minutes).\n\nMobilité articulaire, activation, montée en charge progressive. C'est court, c'est non négociable, et ça change toute ta séance de ${c.specLower}. Enregistre pour la prochaine fois.`,
 ];
 
 const IG_COULISSES: Tpl[] = [
@@ -461,6 +472,8 @@ const IG_COULISSES: Tpl[] = [
   (c) => `${c.e} J'ai longtemps cru que la force, c'était physique.\n\nAprès des années en ${c.specLower}, j'ai compris : le mental précède toujours le corps. Mon rôle n'est pas de compter tes reps, mais de construire ta discipline.`,
   (c) => `${c.e} Petit moment vrai.\n\nIl y a des jours où moi aussi je n'ai pas envie. La différence ? J'y vais quand même. Pas pour la perfection, pour la promesse que je me suis faite.`,
   (c) => `${c.e} Mon "pourquoi".\n\nVoir quelqu'un retrouver confiance en son corps, repousser une limite qu'il croyait infranchissable${c.place}… c'est pour ça que je me lève. Et toi, c'est quoi ton pourquoi ?`,
+  (c) => `${c.e} On me demande souvent si je m'entraîne aussi.\n\nOui. Et j'ai les mêmes jours sans, les mêmes courbatures, les mêmes doutes. La différence, c'est la méthode — celle que je transmets à mes clients${c.place}.`,
+  (c) => `${c.e} La partie du métier dont personne ne parle.\n\nÉcouter. Avant de programmer quoi que ce soit, je comprends ton quotidien, tes contraintes, ton vécu. Un bon plan part de TA vie, pas d'un modèle générique.`,
 ];
 
 const IG_CTA: Tpl[] = [
@@ -469,26 +482,32 @@ const IG_CTA: Tpl[] = [
   (c) => `${c.e} Première séance offerte.\n\nViens tester, sans engagement. On évalue où tu en es, on définit ton objectif, et tu repars avec un premier plan d'action. Réserve en message.`,
   (c) => `${c.e} Arrête de t'entraîner au hasard.\n\nUn programme structuré te fait gagner des mois. Je construis le tien selon ton niveau et ton emploi du temps${c.place}. On en parle ? Écris-moi.`,
   (c) => `${c.e} Ton objectif mérite mieux que des bonnes résolutions.\n\nTransforme l'intention en résultats avec un suivi sérieux. Réponds à ce post ou envoie-moi un message, je te réponds personnellement.`,
+  (c) => `${c.e} Bilan offert cette semaine.\n\n20 minutes pour faire le point : où tu en es, où tu veux aller, et le 1er plan d'action concret en ${c.specLower}. Sans engagement. Écris-moi « BILAN ».`,
+  (c) => `${c.e} Je prends 2 nouveaux coachés ce mois-ci${c.place}.\n\nSuivi sérieux, programme sur-mesure, ajustements chaque semaine. Si tu veux enfin de la régularité et des résultats, c'est le moment. DM ouvert.`,
 ];
 
 const LI_STORYTELLING: Tpl[] = [
   (c) => `Il y a quelques années, je n'aurais jamais imaginé faire ce métier.\n\nUn déclic, une rencontre, et tout a basculé. Aujourd'hui, accompagner des gens en ${c.specLower}${c.place} est devenu une évidence. Le parcours n'est jamais linéaire — c'est ce qui le rend précieux.`,
   () => `Ma première séance en tant que coach, je tremblais.\n\nDes années plus tard, ce stress s'est transformé en passion tranquille. Ce que j'ai appris : la compétence rassure, mais c'est l'écoute qui crée la confiance. Mon métier, c'est d'abord une histoire humaine.`,
+  (c) => `J'ai failli abandonner ce métier la première année.\n\nPeu de clients, beaucoup de doutes. Ce qui m'a fait tenir : un premier coaché qui m'a dit « tu as changé ma vie ». Aujourd'hui, accompagner en ${c.specLower}${c.place} est une évidence. Persévérer paie.`,
 ];
 
 const LI_EXPERTISE: Tpl[] = [
   (c) => `Pourquoi la plupart des programmes de ${c.specLower} échouent.\n\nManque de progressivité, objectifs flous, zéro suivi. La performance durable repose sur trois piliers : planification, technique, récupération. Tout le reste est secondaire. Voici comment je structure un accompagnement efficace.`,
   (c) => `Le détail technique que 90 % des gens négligent en ${c.specLower}.\n\nLa qualité du mouvement avant la charge. Toujours. Un schéma moteur propre protège des blessures et débloque la progression. C'est moins spectaculaire qu'un record, mais infiniment plus rentable sur le long terme.`,
+  (c) => `« Combien de séances par semaine ? » — la mauvaise question.\n\nLa bonne : « Quelles séances peux-tu tenir 6 mois ? » En ${c.specLower}, un plan réaliste tenu bat un plan parfait abandonné. La régularité est le seul facteur non négociable.`,
 ];
 
 const LI_RESULTAT: Tpl[] = [
   () => `Cas client (anonymisé) : de zéro à finisher en 4 mois.\n\nObjectif clair, méthode structurée, constance. Mois 1 : les bases. Mois 2 : le volume. Mois 3-4 : l'intensité et le mental. Résultat : objectif atteint, zéro blessure, et surtout l'envie de continuer. La méthode bat la motivation.`,
   (c) => `Une cliente m'a dit : "Je ne pensais pas mon corps capable de ça."\n\nSix mois de travail régulier en ${c.specLower}, et une transformation qui dépasse le physique : confiance, énergie, fierté. Mon vrai métier n'est pas de faire transpirer — c'est de faire grandir.`,
+  () => `Cas client : -12 kg, zéro régime restrictif.\n\nLe secret ? Pas de privation. Des habitudes simples, tenues. Plus de force, plus d'énergie, et surtout une relation apaisée avec son corps. La durabilité bat la rapidité, à chaque fois.`,
 ];
 
 const LI_VISION: Tpl[] = [
   () => `Le coaching de demain n'est pas un compteur de répétitions.\n\nC'est un architecte de progression et un créateur de constance. La technologie aide, mais rien ne remplace l'accompagnement humain. Ma conviction : on ne vend pas des séances, on transmet une identité — "je suis quelqu'un qui prend soin de soi".`,
   (c) => `Le mental précède toujours le physique.\n\nLes clients qui progressent ne sont pas les plus doués, mais les plus réguliers. Mon rôle de coach en ${c.specLower}${c.place} : construire cette discipline, séance après séance, jusqu'à ce qu'elle devienne une seconde nature.`,
+  () => `On ne vend pas des séances. On vend une identité.\n\n« Je suis quelqu'un qui prend soin de soi. » Voilà ce qui change vraiment. La perte de poids ou la performance ne sont que des conséquences. Mon métier : aider quelqu'un à devenir cette personne.`,
 ];
 
 const IG_CATEGORIES: { key: string; theme: string; pool: Tpl[] }[] = [
