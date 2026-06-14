@@ -30,7 +30,12 @@ function isMemRateLimited(ip: string): boolean {
 // (le mécanisme nonce n'est pas compatible avec l'architecture Edge+Lambda séparés).
 // connect-src ajoute api.anthropic.com (générateur), Turso, Stripe, Upstash.
 // (Resend est appelé côté serveur uniquement — pas besoin de l'autoriser ici.)
-function buildCSP(): string {
+const APP_DOMAIN = process.env.APP_DOMAIN ?? 'aurapost.fr';
+
+// `framable` : autorise le cadrage par notre propre app (aperçu live du site dans
+// l'éditeur). Réservé aux routes /site/* — restreint à 'self' + nos sous-domaines,
+// jamais ouvert à tous (anti-clickjacking).
+function buildCSP(framable: boolean): string {
   // Next.js en dev (Turbopack/Fast Refresh) exécute des modules via eval() →
   // 'unsafe-eval' est requis EN DÉVELOPPEMENT uniquement, jamais en production.
   const isDev = process.env.NODE_ENV === 'development';
@@ -39,6 +44,9 @@ function buildCSP(): string {
   const connectSrc = isDev
     ? "connect-src 'self' ws: wss: https://*.turso.io wss://*.turso.io https://api.anthropic.com https://api.stripe.com https://*.upstash.io"
     : "connect-src 'self' https://*.turso.io wss://*.turso.io https://api.anthropic.com https://api.stripe.com https://*.upstash.io";
+  const frameAncestors = framable
+    ? `frame-ancestors 'self' https://${APP_DOMAIN} https://*.${APP_DOMAIN}`
+    : "frame-ancestors 'none'";
   return [
     "default-src 'self'",
     scriptSrc,
@@ -48,8 +56,9 @@ function buildCSP(): string {
     connectSrc,
     "object-src 'none'",
     "worker-src 'self' blob:",
-    'frame-src https://js.stripe.com https://hooks.stripe.com',
-    "frame-ancestors 'none'",
+    // 'self' + nos sous-domaines : l'éditeur intègre /site/* en iframe (aperçu live).
+    `frame-src 'self' https://${APP_DOMAIN} https://*.${APP_DOMAIN} https://js.stripe.com https://hooks.stripe.com`,
+    frameAncestors,
     "form-action 'self'",
     "base-uri 'self'",
     // upgrade-insecure-requests casserait http://localhost en dev → prod uniquement.
@@ -57,12 +66,15 @@ function buildCSP(): string {
   ].join('; ');
 }
 
-const CSP = buildCSP();
+const CSP = buildCSP(false);
+const CSP_FRAMABLE = buildCSP(true);
 
-function withSecurityHeaders(response: NextResponse): NextResponse {
-  response.headers.set('Content-Security-Policy', CSP);
+function withSecurityHeaders(response: NextResponse, framable = false): NextResponse {
+  response.headers.set('Content-Security-Policy', framable ? CSP_FRAMABLE : CSP);
   response.headers.set('X-Content-Type-Options', 'nosniff');
-  response.headers.set('X-Frame-Options', 'DENY');
+  // X-Frame-Options ne gère que DENY/SAMEORIGIN : pour le cadrage cross-sous-domaine
+  // (aperçu éditeur), on s'appuie sur CSP frame-ancestors et on retire X-Frame-Options.
+  if (!framable) response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()');
   response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
@@ -81,6 +93,8 @@ function clientIp(req: NextRequest): string {
 
 export default async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  // Le site public peut être cadré par notre app (aperçu live de l'éditeur).
+  const framable = pathname.startsWith('/site/');
 
   // ── Mode maintenance ─────────────────────────────────────────────────
   if (process.env.MAINTENANCE_MODE === 'true' && pathname !== '/maintenance') {
@@ -125,7 +139,7 @@ export default async function proxy(req: NextRequest) {
     pathname === '/api/webhooks/stripe' ||
     pathname === '/api/stripe/create-checkout'
   ) {
-    return withSecurityHeaders(NextResponse.next());
+    return withSecurityHeaders(NextResponse.next(), framable);
   }
 
   // ── Rate limiting des routes API restantes (désactivé en dev local) ──
