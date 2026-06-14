@@ -119,8 +119,8 @@ export default async function proxy(req: NextRequest) {
     return withSecurityHeaders(NextResponse.next());
   }
 
-  // ── Rate limiting des routes API restantes ───────────────────────────
-  if (pathname.startsWith('/api/')) {
+  // ── Rate limiting des routes API restantes (désactivé en dev local) ──
+  if (pathname.startsWith('/api/') && process.env.NODE_ENV !== 'development') {
     if (isMemRateLimited(clientIp(req))) {
       return withSecurityHeaders(
         NextResponse.json({ error: 'Trop de requêtes. Réessayez dans une minute.' }, { status: 429 })

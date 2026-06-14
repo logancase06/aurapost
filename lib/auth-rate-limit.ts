@@ -48,6 +48,12 @@ export async function checkAuthRateLimit(
   maxAttempts: number,
   windowMs: number
 ): Promise<{ allowed: boolean; retryAfterSec: number }> {
+  // En développement local, on ne limite pas l'auth (sinon impossible de tester
+  // l'inscription/connexion en boucle). Le rate limit reste actif en production.
+  if (process.env.NODE_ENV === 'development') {
+    return { allowed: true, retryAfterSec: 0 };
+  }
+
   const count = await redisIncr(`rl:auth:${key}`, windowMs);
   if (count !== null) {
     if (count > maxAttempts) return { allowed: false, retryAfterSec: Math.ceil(windowMs / 1000) };
