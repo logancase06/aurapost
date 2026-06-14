@@ -216,7 +216,8 @@ export async function runMonthlyGeneration(tenantId: string, userId: string): Pr
   let drafts: PostDraft[];
   try {
     // File d'attente : limite la concurrence des générations lourdes.
-    drafts = await enqueueGeneration(() => generateMonthlyContent(profile));
+    // `tenantId` sert de seed au mock enrichi (variété stable, sans répétition).
+    drafts = await enqueueGeneration(() => generateMonthlyContent(profile, tenantId));
   } catch (err) {
     logError('[posts] génération échouée', { tenantId, error: String(err) });
     return { ok: false, error: 'internal' };

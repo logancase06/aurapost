@@ -51,6 +51,40 @@ optionnelle) et indique si un mock prend le relais.
 
 > Absent → **SQLite en mémoire** (démo), données non persistées.
 
+### 1.2bis — Génération de contenu (3 chemins, sélection automatique)
+
+Le générateur (`lib/content-generator.ts`) choisit son chemin **dans cet ordre** et logue le mode
+au démarrage (`[AuraPost] Génération mode: …`) :
+
+| Priorité | Condition | Mode | Usage |
+| --- | --- | --- | --- |
+| 1 | `ANTHROPIC_API_KEY` défini | `anthropic-api` | **Production Netlify** — appel direct à l'API Anthropic (`claude-sonnet-4-6`). |
+| 2 | `CLAUDE_TUNNEL_URL` défini | `cloudflare-tunnel` | Dev/beta — tunnel HTTP vers Claude Code sur ta machine. |
+| 3 | aucune des deux | `mock-enrichi` | Démo — 20 templates IG + 8 LinkedIn par catégorie, seedés par tenant. |
+
+**Chemin 1 — API Anthropic (recommandé en prod)**
+1. Crée une clé sur [console.anthropic.com](https://console.anthropic.com).
+2. `ANTHROPIC_API_KEY=sk-ant-…` sur Netlify. Optionnel : `ANTHROPIC_MODEL` (défaut `claude-sonnet-4-6`).
+
+**Chemin 2 — Tunnel Cloudflare vers Claude Code local**
+1. `npm install -g cloudflared`
+2. Sur ta machine : `npm run dev` (le serveur expose `/api/local-generate`).
+3. Ouvre le tunnel : `cloudflared tunnel --url http://localhost:3000`
+   → copie l'URL générée (ex: `https://aurapost.trycloudflare.com`).
+4. Sur Netlify : `CLAUDE_TUNNEL_URL=<url-du-tunnel>` et `TUNNEL_SECRET=<openssl rand -base64 32>`.
+5. Mets le **même** `TUNNEL_SECRET` dans le `.env.local` de ta machine (le secret authentifie
+   les requêtes Netlify → ta machine ; toute requête sans ce header reçoit un 401).
+6. Le tunnel est gratuit, sans limite de temps. Laisse `npm run dev` + `cloudflared` tourner.
+
+| Variable | Rôle |
+| -------- | ---- |
+| `ANTHROPIC_API_KEY` | Chemin 1 — clé API Anthropic. |
+| `ANTHROPIC_MODEL` | Optionnel — modèle (défaut `claude-sonnet-4-6`). |
+| `CLAUDE_TUNNEL_URL` | Chemin 2 — URL publique du tunnel cloudflared. |
+| `TUNNEL_SECRET` | Chemin 2 — secret partagé (header `X-Tunnel-Secret`). |
+
+> Aucune des deux → **mock enrichi**, toujours fonctionnel, sans clé.
+
 ### 1.3 — Resend (emails transactionnels)
 
 1. Créer un compte sur [resend.com](https://resend.com), vérifier le domaine `aurapost.fr` (DNS).

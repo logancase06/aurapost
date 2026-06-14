@@ -28,7 +28,8 @@ function isMemRateLimited(ip: string): boolean {
 // ── CSP ──────────────────────────────────────────────────────────────────────
 // Approche 'self' + 'unsafe-inline' — standard Next.js App Router sur Netlify
 // (le mécanisme nonce n'est pas compatible avec l'architecture Edge+Lambda séparés).
-// connect-src ajoute api.anthropic.com (générateur), Turso, Stripe, Brevo, Upstash.
+// connect-src ajoute api.anthropic.com (générateur), Turso, Stripe, Upstash.
+// (Resend est appelé côté serveur uniquement — pas besoin de l'autoriser ici.)
 function buildCSP(): string {
   return [
     "default-src 'self'",
@@ -109,6 +110,7 @@ export default async function proxy(req: NextRequest) {
     pathname.startsWith('/blog') ||
     pathname === '/coaches' ||
     pathname.startsWith('/ref/') ||
+    pathname === '/api/local-generate' ||
     pathname === '/sitemap.xml' ||
     pathname === '/robots.txt' ||
     pathname === '/api/webhooks/stripe' ||

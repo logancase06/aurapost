@@ -5,6 +5,7 @@ const nextConfig = {
   // Packages Node.js purs / natifs — jamais bundlés par Turbopack côté navigateur.
   serverExternalPackages: [
     '@anthropic-ai/claude-code',
+    '@anthropic-ai/sdk',
     '@libsql/client',
     'resend',
     'sharp',
