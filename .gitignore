@@ -46,3 +46,6 @@ yarn-error.log*
 .vscode/*
 !.vscode/extensions.json
 .idea
+
+# Base SQLite locale de dev (persistance entre restarts)
+.aurapost-dev.db*

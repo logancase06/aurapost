@@ -28,10 +28,16 @@ const CLIENT_METHODS = new Set(['execute', 'batch', 'executeMultiple', 'sync', '
 class LibsqlMemoryClient {}
 
 function createMemoryClient(): Client {
+  // En dev local : base SQLite sur FICHIER (persiste entre redémarrages → on ne perd
+  // pas son compte à chaque restart). En test/CI : :memory: (isolé, jetable).
+  // En prod sans Turso (ne devrait pas arriver) : :memory: par sécurité.
+  const isDev = process.env.NODE_ENV === 'development';
+  const dbUrl = isDev ? 'file:.aurapost-dev.db' : ':memory:';
+
   // Création + bootstrap asynchrones, mémorisés dans une promesse résolue une seule fois.
   const ready: Promise<Client> = (async () => {
     const { createClient } = await import('@libsql/client');
-    const c = createClient({ url: ':memory:' });
+    const c = createClient({ url: dbUrl });
     await c.executeMultiple(MEMORY_BOOTSTRAP_SQL);
     return c;
   })();

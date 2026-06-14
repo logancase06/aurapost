@@ -31,20 +31,29 @@ function isMemRateLimited(ip: string): boolean {
 // connect-src ajoute api.anthropic.com (générateur), Turso, Stripe, Upstash.
 // (Resend est appelé côté serveur uniquement — pas besoin de l'autoriser ici.)
 function buildCSP(): string {
+  // Next.js en dev (Turbopack/Fast Refresh) exécute des modules via eval() →
+  // 'unsafe-eval' est requis EN DÉVELOPPEMENT uniquement, jamais en production.
+  const isDev = process.env.NODE_ENV === 'development';
+  const scriptSrc = isDev ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'" : "script-src 'self' 'unsafe-inline'";
+  // En dev, autorise aussi les WebSocket du HMR (ws:) dans connect-src.
+  const connectSrc = isDev
+    ? "connect-src 'self' ws: wss: https://*.turso.io wss://*.turso.io https://api.anthropic.com https://api.stripe.com https://*.upstash.io"
+    : "connect-src 'self' https://*.turso.io wss://*.turso.io https://api.anthropic.com https://api.stripe.com https://*.upstash.io";
   return [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline'",
+    scriptSrc,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob: https://images.unsplash.com https://i.pravatar.cc https://picsum.photos",
     "font-src 'self' data:",
-    "connect-src 'self' https://*.turso.io wss://*.turso.io https://api.anthropic.com https://api.stripe.com https://*.upstash.io",
+    connectSrc,
     "object-src 'none'",
     "worker-src 'self' blob:",
     'frame-src https://js.stripe.com https://hooks.stripe.com',
     "frame-ancestors 'none'",
     "form-action 'self'",
     "base-uri 'self'",
-    'upgrade-insecure-requests',
+    // upgrade-insecure-requests casserait http://localhost en dev → prod uniquement.
+    ...(isDev ? [] : ['upgrade-insecure-requests']),
   ].join('; ');
 }
 
