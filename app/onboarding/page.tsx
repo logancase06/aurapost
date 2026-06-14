@@ -23,7 +23,8 @@ export default async function OnboardingPage() {
     .from(users)
     .where(eq(users.id, session.user.id))
     .limit(1);
-  if (me?.onboardingCompleted) redirect('/dashboard');
+  // Déjà onboardé → l'édition du profil se fait via la page dédiée (pas le wizard).
+  if (me?.onboardingCompleted) redirect('/dashboard/profile');
 
   const tenantId = session.user.tenantId!;
 

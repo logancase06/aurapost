@@ -99,6 +99,15 @@ export async function linkPhotoToPost(postId: string, photoId: string, textOverl
   });
 }
 
+/** Supprime une photo de la bibliothèque coach (scellé au tenant) + ses liens posts. */
+export async function deletePhoto(tenantId: string, photoId: string): Promise<boolean> {
+  const photo = await getPhoto(tenantId, photoId);
+  if (!photo) return false;
+  await db.delete(postPhotos).where(eq(postPhotos.photoId, photoId));
+  await db.delete(coachPhotos).where(and(eq(coachPhotos.tenantId, tenantId), eq(coachPhotos.id, photoId)));
+  return true;
+}
+
 /** Photo associée à un post (URL), si présente. */
 export async function getPostPhotoUrl(tenantId: string, postId: string): Promise<string | null> {
   const [link] = await db.select({ photoId: postPhotos.photoId }).from(postPhotos).where(eq(postPhotos.postId, postId)).limit(1);
