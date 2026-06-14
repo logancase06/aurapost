@@ -21,7 +21,7 @@ CREATE INDEX IF NOT EXISTS tenants_owner_idx ON tenants (owner_id);
 
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
-  tenant_id TEXT NOT NULL DEFAULT '',
+  tenant_id TEXT NOT NULL,
   email TEXT NOT NULL UNIQUE,
   password_hash TEXT,
   full_name TEXT NOT NULL,
@@ -35,7 +35,7 @@ CREATE INDEX IF NOT EXISTS users_tenant_idx ON users (tenant_id);
 
 CREATE TABLE IF NOT EXISTS coach_profiles (
   id TEXT PRIMARY KEY,
-  tenant_id TEXT NOT NULL DEFAULT '',
+  tenant_id TEXT NOT NULL,
   user_id TEXT NOT NULL,
   display_name TEXT NOT NULL,
   speciality TEXT NOT NULL,
@@ -58,7 +58,7 @@ CREATE INDEX IF NOT EXISTS coach_profiles_user_idx ON coach_profiles (user_id);
 
 CREATE TABLE IF NOT EXISTS generated_posts (
   id TEXT PRIMARY KEY,
-  tenant_id TEXT NOT NULL DEFAULT '',
+  tenant_id TEXT NOT NULL,
   network TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'draft',
   title TEXT,
@@ -82,7 +82,7 @@ CREATE INDEX IF NOT EXISTS generated_posts_tenant_status_date_idx ON generated_p
 
 CREATE TABLE IF NOT EXISTS subscriptions (
   id TEXT PRIMARY KEY,
-  tenant_id TEXT NOT NULL DEFAULT '',
+  tenant_id TEXT NOT NULL,
   stripe_customer_id TEXT,
   stripe_subscription_id TEXT,
   stripe_price_id TEXT,
@@ -96,7 +96,7 @@ CREATE INDEX IF NOT EXISTS subscriptions_tenant_idx ON subscriptions (tenant_id)
 
 CREATE TABLE IF NOT EXISTS websites (
   id TEXT PRIMARY KEY,
-  tenant_id TEXT NOT NULL DEFAULT '',
+  tenant_id TEXT NOT NULL,
   subdomain TEXT NOT NULL UNIQUE,
   custom_domain TEXT,
   template TEXT NOT NULL DEFAULT 'aura',

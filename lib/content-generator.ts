@@ -58,7 +58,6 @@ export const GENERATION_MODE: GenerationMode = isMockForced()
       : 'mock-enrichi';
 
 // Log explicite du mode actif (une fois par process / cold start).
-// eslint-disable-next-line no-console
 console.log(`[AuraPost] Génération mode: ${GENERATION_MODE}`);
 logInfo('[content-generator] mode de génération actif', { mode: GENERATION_MODE });
 
@@ -390,8 +389,8 @@ const IG_MOTIVATION: Tpl[] = [
 const IG_EDUCATIF: Tpl[] = [
   (c) => `📌 L'erreur n°1 que je vois en ${c.specLower}.\n\nPartir trop vite, trop fort, sans technique. Résultat : blessure ou abandon. La bonne approche ? Maîtrise le mouvement AVANT de chercher la performance. Enregistre ce post.`,
   (c) => `📌 3 choses à corriger dès aujourd'hui.\n\n1. Ton échauffement (non, ce n'est pas une option).\n2. Ta respiration sous l'effort.\n3. Ta récupération entre les séances.\n\nLe détail qui change tout en ${c.specLower}.`,
-  (c) => `📌 Tu progresses moins ? Voici pourquoi.\n\nTon corps s'est adapté. Sans nouvelle stimulation (charge, volume, tempo), il n'a aucune raison d'évoluer. La progression se planifie, elle ne s'improvise pas.`,
-  (c) => `📌 Le mythe qu'il faut arrêter de croire.\n\n"Plus j'en fais, mieux c'est." Faux. Le muscle ne grandit pas à l'entraînement mais au repos. Récupérer, c'est s'entraîner. Note-le quelque part.`,
+  () => `📌 Tu progresses moins ? Voici pourquoi.\n\nTon corps s'est adapté. Sans nouvelle stimulation (charge, volume, tempo), il n'a aucune raison d'évoluer. La progression se planifie, elle ne s'improvise pas.`,
+  () => `📌 Le mythe qu'il faut arrêter de croire.\n\n"Plus j'en fais, mieux c'est." Faux. Le muscle ne grandit pas à l'entraînement mais au repos. Récupérer, c'est s'entraîner. Note-le quelque part.`,
   (c) => `📌 Avant ta prochaine séance, lis ça.\n\nUn bon mouvement vaut mieux que dix mouvements bâclés. En ${c.specLower}, la qualité prime toujours sur la quantité. Ralentis, ressens, contrôle.`,
 ];
 
@@ -413,7 +412,7 @@ const IG_CTA: Tpl[] = [
 
 const LI_STORYTELLING: Tpl[] = [
   (c) => `Il y a quelques années, je n'aurais jamais imaginé faire ce métier.\n\nUn déclic, une rencontre, et tout a basculé. Aujourd'hui, accompagner des gens en ${c.specLower}${c.place} est devenu une évidence. Le parcours n'est jamais linéaire — c'est ce qui le rend précieux.`,
-  (c) => `Ma première séance en tant que coach, je tremblais.\n\nDes années plus tard, ce stress s'est transformé en passion tranquille. Ce que j'ai appris : la compétence rassure, mais c'est l'écoute qui crée la confiance. Mon métier, c'est d'abord une histoire humaine.`,
+  () => `Ma première séance en tant que coach, je tremblais.\n\nDes années plus tard, ce stress s'est transformé en passion tranquille. Ce que j'ai appris : la compétence rassure, mais c'est l'écoute qui crée la confiance. Mon métier, c'est d'abord une histoire humaine.`,
 ];
 
 const LI_EXPERTISE: Tpl[] = [
@@ -422,12 +421,12 @@ const LI_EXPERTISE: Tpl[] = [
 ];
 
 const LI_RESULTAT: Tpl[] = [
-  (c) => `Cas client (anonymisé) : de zéro à finisher en 4 mois.\n\nObjectif clair, méthode structurée, constance. Mois 1 : les bases. Mois 2 : le volume. Mois 3-4 : l'intensité et le mental. Résultat : objectif atteint, zéro blessure, et surtout l'envie de continuer. La méthode bat la motivation.`,
+  () => `Cas client (anonymisé) : de zéro à finisher en 4 mois.\n\nObjectif clair, méthode structurée, constance. Mois 1 : les bases. Mois 2 : le volume. Mois 3-4 : l'intensité et le mental. Résultat : objectif atteint, zéro blessure, et surtout l'envie de continuer. La méthode bat la motivation.`,
   (c) => `Une cliente m'a dit : "Je ne pensais pas mon corps capable de ça."\n\nSix mois de travail régulier en ${c.specLower}, et une transformation qui dépasse le physique : confiance, énergie, fierté. Mon vrai métier n'est pas de faire transpirer — c'est de faire grandir.`,
 ];
 
 const LI_VISION: Tpl[] = [
-  (c) => `Le coaching de demain n'est pas un compteur de répétitions.\n\nC'est un architecte de progression et un créateur de constance. La technologie aide, mais rien ne remplace l'accompagnement humain. Ma conviction : on ne vend pas des séances, on transmet une identité — "je suis quelqu'un qui prend soin de soi".`,
+  () => `Le coaching de demain n'est pas un compteur de répétitions.\n\nC'est un architecte de progression et un créateur de constance. La technologie aide, mais rien ne remplace l'accompagnement humain. Ma conviction : on ne vend pas des séances, on transmet une identité — "je suis quelqu'un qui prend soin de soi".`,
   (c) => `Le mental précède toujours le physique.\n\nLes clients qui progressent ne sont pas les plus doués, mais les plus réguliers. Mon rôle de coach en ${c.specLower}${c.place} : construire cette discipline, séance après séance, jusqu'à ce qu'elle devienne une seconde nature.`,
 ];
 

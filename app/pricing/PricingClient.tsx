@@ -8,40 +8,7 @@ import { ShimmerButton } from '@/components/ui/shimmer-button';
 import { MovingBorderCard } from '@/components/ui/moving-border';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-
-// Prix indicatifs (les Price IDs Stripe réels surchargent à la configuration).
-const PRICING = [
-  {
-    id: 'content_only',
-    name: 'Content Only',
-    monthly: 29,
-    tagline: 'Le contenu social, en pilote automatique.',
-    features: [
-      '12 posts / mois (8 Instagram + 4 LinkedIn)',
-      'Calibrés sur ta spécialité et ton ton',
-      'Approbation, rejet & variantes illimitées',
-      'Pack de 30 légendes (stories)',
-      'Calendrier éditorial + export iCal',
-      'Export Buffer / Later',
-    ],
-    featured: false,
-  },
-  {
-    id: 'pack_complet',
-    name: 'Pack Complet',
-    monthly: 49,
-    tagline: 'Le contenu ET le site. Tout-en-un.',
-    features: [
-      'Tout le plan Content Only',
-      'Site vitrine loué sur sous-domaine',
-      'Généré par l’IA depuis ton profil',
-      'Portail public partageable à tes clients',
-      'Badge « Certifié AuraPost »',
-      'Support prioritaire',
-    ],
-    featured: true,
-  },
-];
+import { PLANS, formatPrice, formatAnnualMonthly, ANNUAL_DISCOUNT, FREE_TRIAL_LABEL, type PlanDef } from '@/lib/plans';
 
 const FAQ = [
   {
@@ -66,18 +33,22 @@ const FAQ = [
   },
 ];
 
-function PriceTag({ monthly, annual }: { monthly: number; annual: boolean }) {
-  const value = annual ? Math.round(monthly * 0.8) : monthly;
+function PriceTag({ plan, annual }: { plan: PlanDef; annual: boolean }) {
   return (
     <p className="mt-3 flex items-baseline gap-1">
-      <span className="text-4xl font-black">{value}€</span>
+      <span className="text-4xl font-black">{annual ? formatAnnualMonthly(plan) : formatPrice(plan)}</span>
       <span className="text-sm font-normal text-muted-foreground">/ mois</span>
-      {annual && <span className="ml-2 rounded bg-[hsl(var(--success))]/15 px-1.5 py-0.5 text-xs font-bold text-[hsl(var(--success))]">-20%</span>}
+      {annual && (
+        <span className="ml-2 rounded bg-[hsl(var(--success))]/15 px-1.5 py-0.5 text-xs font-bold text-[hsl(var(--success))]">
+          -{Math.round(ANNUAL_DISCOUNT * 100)}%
+        </span>
+      )}
     </p>
   );
 }
 
-function PlanCard({ plan, annual }: { plan: (typeof PRICING)[number]; annual: boolean }) {
+function PlanCard({ plan, annual }: { plan: PlanDef; annual: boolean }) {
+  const annualTotal = Math.round((plan.amount * (1 - ANNUAL_DISCOUNT) * 12) / 100);
   const inner = (
     <div className="flex h-full flex-col p-8">
       {plan.featured && (
@@ -87,8 +58,8 @@ function PlanCard({ plan, annual }: { plan: (typeof PRICING)[number]; annual: bo
       )}
       <h2 className="text-2xl font-black uppercase tracking-tight">{plan.name}</h2>
       <p className="mt-1 text-sm text-muted-foreground">{plan.tagline}</p>
-      <PriceTag monthly={plan.monthly} annual={annual} />
-      {annual && <p className="mt-1 text-xs text-muted-foreground">soit {Math.round(plan.monthly * 0.8 * 12)}€ / an</p>}
+      <PriceTag plan={plan} annual={annual} />
+      {annual && <p className="mt-1 text-xs text-muted-foreground">soit {annualTotal} € / an</p>}
       <ul className="mt-6 flex-1 space-y-3">
         {plan.features.map((f) => (
           <li key={f} className="flex items-start gap-2.5 text-sm text-muted-foreground">
@@ -163,6 +134,9 @@ export default function PricingClient() {
           <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
             Deux offres claires, sans engagement. Annule ou mets en pause quand tu veux.
           </p>
+          <p className="mt-3 inline-flex items-center gap-2 rounded-full border border-[hsl(var(--success))]/30 bg-[hsl(var(--success))]/10 px-4 py-1 text-sm font-semibold text-[hsl(var(--success))]">
+            ✦ {FREE_TRIAL_LABEL} · sans carte bancaire
+          </p>
 
           {/* Toggle mensuel / annuel */}
           <div className="mt-8 inline-flex items-center gap-3 rounded-full border border-border bg-card p-1">
@@ -182,7 +156,7 @@ export default function PricingClient() {
         </div>
 
         <div className="mt-12 grid gap-6 sm:grid-cols-2">
-          {PRICING.map((p) => (
+          {PLANS.map((p) => (
             <PlanCard key={p.id} plan={p} annual={annual} />
           ))}
         </div>

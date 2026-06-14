@@ -13,6 +13,7 @@ import {
 import { logActivity } from './activity';
 import { createNotification } from './notifications';
 import { enqueueGeneration } from '@/lib/queue';
+import { isGenerationRecorded, recordGeneration } from '@/lib/rate-limit';
 import { currentMonth } from '@/lib/utils';
 import { logError } from '@/lib/logger';
 
@@ -209,7 +210,8 @@ export async function runMonthlyGeneration(tenantId: string, userId: string): Pr
   if (!profile) return { ok: false, error: 'no_profile' };
 
   const month = currentMonth();
-  if (await hasGeneratedThisMonth(tenantId, month)) {
+  // Garde distribué (Redis, multi-lambda) puis vérité en base.
+  if ((await isGenerationRecorded(tenantId, month)) || (await hasGeneratedThisMonth(tenantId, month))) {
     return { ok: false, error: 'already_generated' };
   }
 
@@ -242,6 +244,7 @@ export async function runMonthlyGeneration(tenantId: string, userId: string): Pr
   }));
 
   await db.insert(generatedPosts).values(values);
+  await recordGeneration(tenantId, month); // marque le garde distribué
   await logActivity(tenantId, userId, 'content_generated', null, { month, count: values.length });
   await createNotification({
     tenantId,

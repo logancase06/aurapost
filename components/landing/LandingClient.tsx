@@ -18,6 +18,7 @@ import { unsplash, FITNESS_PHOTO_IDS } from '@/lib/stock-images';
 import LiveCounter from './LiveCounter';
 import TrustWidget from './TrustWidget';
 import HeroMockup from './HeroMockup';
+import { PhoneFrame } from '@/components/ui/device-frames';
 import InstagramGridBackground from './InstagramGridBackground';
 
 // Effets lourds chargés en dynamic import (bundle initial allégé), désactivés sur mobile.
@@ -115,9 +116,14 @@ export default function LandingClient({ heroCopy = HERO_VARIANTS.a }: { heroCopy
             <div className="mt-6 flex justify-center lg:justify-start">
               <TrustWidget />
             </div>
+
+            {/* Mockup produit mobile (iPhone) — sous le texte, < lg uniquement */}
+            <div className="mt-10 flex justify-center lg:hidden">
+              <PhoneFrame src="/mockups/phone-posts.png" alt="Le tableau de bord AuraPost de Vincent sur mobile" className="max-w-[180px]" />
+            </div>
           </div>
 
-          {/* Colonne mockup produit (MacBook) — masqué sur très petit écran */}
+          {/* Colonne mockup produit (MacBook) — desktop ≥ lg */}
           <div className="hidden lg:block">
             <HeroMockup />
           </div>
@@ -225,7 +231,7 @@ export default function LandingClient({ heroCopy = HERO_VARIANTS.a }: { heroCopy
         {isDesktop && <Meteors number={10} className="bg-white before:from-white" />}
         <ScrollReveal className="relative z-10 mx-auto max-w-3xl px-6 text-center">
           <h2 className="text-4xl font-black uppercase tracking-tighter text-white sm:text-5xl">Arrête de procrastiner sur tes posts.</h2>
-          <p className="mt-3 text-white/80">Ton premier mois de contenu t’attend. Gratuit.</p>
+          <p className="mt-3 text-white/80">Essaie gratuitement pendant 14 jours. Sans carte bancaire.</p>
           <div className="mt-8 flex justify-center">
             <Button asChild size="lg" className="hover-lift bg-white text-primary hover:bg-white/90">
               <Link href="/register">

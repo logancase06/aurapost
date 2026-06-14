@@ -1,24 +1,25 @@
 import { HERO_GRID } from '@/lib/stock-images';
 
 /**
- * Filigrane du hero : grille de miniatures de vrais posts fitness, en très faible
- * opacité + flou — montre le produit en arrière-plan sans distraire du texte.
- * Plain <img> (nombreuses petites images externes) + masque radial pour fondre les bords.
+ * Filigrane du hero : grille de miniatures fitness en très faible opacité + flou.
+ * Perf : seulement 6 images UNIQUES (le navigateur ne fait que 6 requêtes réseau),
+ * réutilisées pour densifier la grille. Chargement lazy + faible priorité.
  */
 export default function InstagramGridBackground() {
-  // On répète la liste pour densifier la grille.
-  const tiles = [...HERO_GRID, ...HERO_GRID, ...HERO_GRID];
+  // 6 tuiles uniques, répétées pour remplir la grille sans multiplier les requêtes.
+  const unique = HERO_GRID.slice(0, 6);
+  const tiles = Array.from({ length: 30 }, (_, i) => unique[i % unique.length]);
 
   return (
     <div
       aria-hidden
-      className="pointer-events-none absolute inset-0 -z-10 overflow-hidden opacity-[0.10] blur-[2px]"
+      className="pointer-events-none absolute inset-0 -z-10 hidden overflow-hidden opacity-[0.10] blur-[2px] sm:block"
       style={{
         maskImage: 'radial-gradient(120% 90% at 50% 35%, #000 30%, transparent 75%)',
         WebkitMaskImage: 'radial-gradient(120% 90% at 50% 35%, #000 30%, transparent 75%)',
       }}
     >
-      <div className="grid grid-cols-6 gap-2 p-2 sm:grid-cols-8 md:grid-cols-10">
+      <div className="grid grid-cols-6 gap-2 p-2 md:grid-cols-10">
         {tiles.map((src, i) => (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -27,6 +28,8 @@ export default function InstagramGridBackground() {
             alt=""
             loading="lazy"
             decoding="async"
+            // @ts-expect-error fetchpriority est valide en HTML, types React en retard
+            fetchpriority="low"
             className="aspect-square w-full rounded-sm object-cover grayscale"
           />
         ))}

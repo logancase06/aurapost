@@ -9,11 +9,11 @@ import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core';
 // AuraPost dispose d'une table `tenants` EXPLICITE : un tenant porte le plan, l'abonnement
 // Stripe et le site loué, indépendamment de l'utilisateur fondateur.
 //
-// ⚠ Le .default('') sur tenant_id est intentionnel : SQLite exige un DEFAULT sur toute
-// colonne NOT NULL ajoutée via ALTER TABLE ADD COLUMN (migration Drizzle). L'isolation
-// est garantie à la couche applicative :
-//   - getTenantId()     → null si absent (lib/tenant.ts)
-//   - requireTenantId() → throw si absent (toute mutation passe par là)
+// tenant_id est NOT NULL SANS default : aucune ligne ne doit jamais tomber dans un
+// "tenant vide" partagé. L'isolation est garantie à deux niveaux :
+//   - schéma : NOT NULL (la base refuse un tenant_id manquant)
+//   - applicatif : requireTenantId() (toute mutation passe par là)
+// (migration drizzle/0002_fix_tenant_id.sql pour les bases existantes)
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const tenants = sqliteTable(
@@ -39,7 +39,7 @@ export const users = sqliteTable(
   'users',
   {
     id: text('id').primaryKey(),
-    tenantId: text('tenant_id').notNull().default(''),
+    tenantId: text('tenant_id').notNull(),
     email: text('email').notNull().unique(),
     passwordHash: text('password_hash'), // null pour les comptes magic-link uniquement
     fullName: text('full_name').notNull(),
@@ -58,7 +58,7 @@ export const coachProfiles = sqliteTable(
   'coach_profiles',
   {
     id: text('id').primaryKey(),
-    tenantId: text('tenant_id').notNull().default(''),
+    tenantId: text('tenant_id').notNull(),
     userId: text('user_id').notNull(),
     displayName: text('display_name').notNull(), // nom public affiché
     speciality: text('speciality').notNull(), // ex: "Préparation physique CrossFit"
@@ -86,7 +86,7 @@ export const generatedPosts = sqliteTable(
   'generated_posts',
   {
     id: text('id').primaryKey(),
-    tenantId: text('tenant_id').notNull().default(''),
+    tenantId: text('tenant_id').notNull(),
     network: text('network').notNull(), // 'instagram' | 'linkedin'
     status: text('status').notNull().default('draft'), // 'draft' | 'approved' | 'rejected'
     title: text('title'), // accroche / titre court du post
@@ -120,7 +120,7 @@ export const subscriptions = sqliteTable(
   'subscriptions',
   {
     id: text('id').primaryKey(),
-    tenantId: text('tenant_id').notNull().default(''),
+    tenantId: text('tenant_id').notNull(),
     stripeCustomerId: text('stripe_customer_id'),
     stripeSubscriptionId: text('stripe_subscription_id'),
     stripePriceId: text('stripe_price_id'),
@@ -139,7 +139,7 @@ export const websites = sqliteTable(
   'websites',
   {
     id: text('id').primaryKey(),
-    tenantId: text('tenant_id').notNull().default(''),
+    tenantId: text('tenant_id').notNull(),
     subdomain: text('subdomain').notNull().unique(), // <subdomain>.aurapost.fr
     customDomain: text('custom_domain'),
     template: text('template').notNull().default('aura'), // 'aura' | 'momentum' | 'minimal'
