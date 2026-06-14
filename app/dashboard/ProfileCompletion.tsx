@@ -7,13 +7,23 @@ import type { CompletionResult } from '@/lib/completion';
 
 // Badge de richesse du profil : plus il est complet, meilleur est le contenu généré.
 // Affiché dans le dashboard ET réutilisable dans l'onboarding (résumé final).
+// Chaque item du score pointe vers la bonne section de la page profil.
+const SECTION_FOR: Record<string, string> = {
+  identity: 'base',
+  city: 'base',
+  bio: 'results',
+  photos: 'photos',
+  reviews: 'presence',
+  instagram: 'presence',
+};
+
 export default function ProfileCompletion({
   data,
-  href = '/onboarding',
+  href = '/dashboard/profile',
   className,
 }: {
   data: CompletionResult;
-  /** Lien d'action pour compléter (onboarding par défaut). */
+  /** Lien d'action pour compléter (page profil par défaut). */
   href?: string;
   className?: string;
 }) {
@@ -42,14 +52,19 @@ export default function ProfileCompletion({
         <div className="mt-4">
           <p className="rounded-lg bg-primary/10 p-2.5 text-xs text-foreground">✦ {data.benefit}</p>
           <p className="mt-3 text-xs text-muted-foreground">Pour un meilleur contenu, ajoute :</p>
-          <ul className="mt-2 space-y-1.5">
+          <ul className="mt-2 space-y-1">
             {missing.map((it) => (
-              <li key={it.key} className="flex items-center justify-between gap-3 text-sm">
-                <span className="flex items-center gap-2 text-foreground">
-                  <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-border" />
-                  {it.label}
-                </span>
-                <span className="shrink-0 text-xs font-semibold text-primary">+{it.points}%</span>
+              <li key={it.key}>
+                <Link
+                  href={`${href}?section=${SECTION_FOR[it.key] ?? 'base'}`}
+                  className="flex items-center justify-between gap-3 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-primary/5"
+                >
+                  <span className="flex items-center gap-2 text-foreground">
+                    <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-border" />
+                    {it.label}
+                  </span>
+                  <span className="shrink-0 text-xs font-semibold text-primary">+{it.points}% →</span>
+                </Link>
               </li>
             ))}
           </ul>
