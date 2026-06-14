@@ -1,11 +1,15 @@
 import { db } from './index';
-import { websites, coachProfiles, generatedPosts, users as usersTable } from './schema';
+import { websites, coachProfiles, coachPhotos, generatedPosts, users as usersTable } from './schema';
 import { and, eq, desc } from 'drizzle-orm';
 import {
   defaultServices,
   defaultTestimonials,
+  styleForTone,
   type CoachSiteData,
+  type SiteStyle,
 } from '@/templates/coach-site/CoachSite';
+
+const SITE_STYLES: SiteStyle[] = ['impact', 'clarte', 'authenticite'];
 
 interface StoredSiteContent {
   hero_title?: string;
@@ -30,6 +34,7 @@ export async function getCoachSiteData(subdomain: string, opts?: { requireActive
       themeColor: websites.themeColor,
       status: websites.status,
       subdomain: websites.subdomain,
+      template: websites.template,
       content: websites.content,
       seoDescription: websites.seoDescription,
     })
@@ -45,14 +50,34 @@ export async function getCoachSiteData(subdomain: string, opts?: { requireActive
       speciality: coachProfiles.speciality,
       city: coachProfiles.city,
       bio: coachProfiles.bio,
+      tone: coachProfiles.tone,
       photos: coachProfiles.photos,
+      instagramUrl: coachProfiles.instagramUrl,
+      reviewsAnalysis: coachProfiles.reviewsAnalysis,
     })
     .from(coachProfiles)
     .where(eq(coachProfiles.tenantId, site.tenantId))
     .limit(1);
   if (!profile) return null;
 
-  const photos = parseTags(profile.photos);
+  // Photo hero : bibliothèque coach_photos (récente) en priorité, sinon photos legacy.
+  let photoUrl = parseTags(profile.photos)[0] ?? null;
+  if (!photoUrl) {
+    const [p] = await db
+      .select({ url: coachPhotos.r2Url })
+      .from(coachPhotos)
+      .where(eq(coachPhotos.tenantId, site.tenantId))
+      .orderBy(desc(coachPhotos.createdAt))
+      .limit(1);
+    photoUrl = p?.url ?? null;
+  }
+
+  const [contact] = await db
+    .select({ email: usersTable.email })
+    .from(usersTable)
+    .where(eq(usersTable.tenantId, site.tenantId))
+    .limit(1);
+
   let content: StoredSiteContent | null = null;
   if (site.content) {
     try {
@@ -62,6 +87,13 @@ export async function getCoachSiteData(subdomain: string, opts?: { requireActive
     }
   }
 
+  // Style : valeur explicite (choix coach) sinon recommandé selon le ton.
+  const style: SiteStyle = SITE_STYLES.includes(site.template as SiteStyle)
+    ? (site.template as SiteStyle)
+    : styleForTone(profile.tone);
+
+  const strengths = parseStrengths(profile.reviewsAnalysis);
+
   return {
     subdomain: site.subdomain,
     displayName: profile.displayName,
@@ -69,8 +101,12 @@ export async function getCoachSiteData(subdomain: string, opts?: { requireActive
     city: profile.city,
     bio: profile.bio,
     themeColor: site.themeColor ?? '#7c3aed',
+    style,
     accentColor: content?.accent_color ?? null,
-    photoUrl: photos[0] ?? null,
+    photoUrl,
+    contactEmail: contact?.email ?? null,
+    instagramUrl: profile.instagramUrl,
+    strengths: strengths ?? undefined,
     heroTitle: content?.hero_title,
     heroSubtitle: content?.hero_subtitle,
     heroTagline: content?.hero_tagline,
@@ -92,6 +128,18 @@ export async function getCoachSiteData(subdomain: string, opts?: { requireActive
         ? content.results.map((r) => ({ result: r.result, name: r.name, city: r.city }))
         : undefined,
   };
+}
+
+function parseStrengths(json: string | null): string[] | null {
+  if (!json) return null;
+  try {
+    const o = JSON.parse(json) as { strengths?: unknown };
+    if (!Array.isArray(o.strengths)) return null;
+    const list = o.strengths.map((s) => String(s).trim()).filter(Boolean).slice(0, 3);
+    return list.length ? list : null;
+  } catch {
+    return null;
+  }
 }
 
 export interface PublicCoach {
