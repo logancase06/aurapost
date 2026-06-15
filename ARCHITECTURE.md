@@ -435,7 +435,8 @@ absent). Templates HTML aux couleurs AuraPost : bienvenue, magic link, vérif em
 
 ### 12.4 Plans & billing
 
-`lib/plans.ts` : deux plans **`content_only`** / **`pack_complet`** (prix placeholder 0).
+`lib/plans.ts` : deux plans **`content_only`** (149 €/mois) / **`pack_complet`** (209 €/mois),
+essai **14 jours gratuits**. `lib/plans.ts` est la **source unique de vérité** des prix.
 Webhook `/api/webhooks/stripe` (checkout.session.completed, customer.subscription.updated/
 deleted) → `subscriptions` + `tenants.plan`. Mock propre si Stripe absent (checkout
 désactivé, historique simulé). `isPro` = tout plan non-starter ; `hasWebsiteAccess` = pack complet.

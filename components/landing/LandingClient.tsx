@@ -173,7 +173,7 @@ export default function LandingClient({ heroCopy = HERO_VARIANTS.a }: { heroCopy
         <div className="mx-auto max-w-4xl px-6">
           <ScrollReveal className="text-center">
             <h2 className="text-4xl font-black uppercase tracking-tighter sm:text-5xl">Choisis ton arme</h2>
-            <p className="mt-3 text-muted-foreground">Deux offres. Zéro friction. Prix annoncés bientôt.</p>
+            <p className="mt-3 text-muted-foreground">Deux offres. Zéro friction. 14 jours gratuits, sans carte.</p>
           </ScrollReveal>
 
           <div className="mt-14 grid gap-6 sm:grid-cols-2">
