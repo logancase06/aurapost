@@ -82,54 +82,141 @@ export default function HeroSection({ data, style, accent, t }: { data: CoachSit
     );
   }
 
-  // ── Styles CLARTÉ & AUTHENTICITÉ (rendu actuel — redesign en G.2) ────────────
-  const heroBig = 'clamp(2.4rem, 7vw, 4.8rem)';
-  return (
-    <section id="accueil" style={{ position: 'relative', background: t.heroDark ? '#0A0A0A' : t.bg, color: t.heroDark ? '#fff' : t.ink, overflow: 'hidden' }}>
-      {data.photoUrl && t.heroDark && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={data.photoUrl} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: style === 'authenticite' ? 0.5 : 0.38 }} />
-      )}
-      {data.photoUrl && t.heroDark && <div style={{ position: 'absolute', inset: 0, background: 'rgba(8,8,8,0.62)' }} />}
-      {style === 'authenticite' && (
-        <div aria-hidden style={{ position: 'absolute', inset: 0, backgroundImage: `url("${GRAIN}")`, backgroundSize: '180px', opacity: 0.07, mixBlendMode: 'overlay' }} />
-      )}
-
-      <div style={{ position: 'relative', maxWidth: 1080, margin: '0 auto', padding: '116px 24px 92px', display: 'grid', gridTemplateColumns: style === 'clarte' && data.photoUrl ? 'minmax(0,1.2fr) minmax(0,0.8fr)' : '1fr', gap: 48, alignItems: 'center' }}>
-        <div>
-          <p style={{ margin: 0, fontSize: 13, fontWeight: 700, letterSpacing: '0.28em', textTransform: 'uppercase', color: accent }}>
-            {data.displayName}{meta ? ` — ${meta}` : ''}
-          </p>
-          <h1 style={{ ...headFont, margin: '20px 0 0', fontSize: heroBig, lineHeight: 1.05 }}>{accroche}</h1>
-          {(data.heroSubtitle || data.bio) && (
-            <p style={{ margin: '26px 0 0', fontSize: 'clamp(1.05rem, 2.2vw, 1.4rem)', maxWidth: 560, lineHeight: 1.5, color: t.heroDark ? 'rgba(255,255,255,0.82)' : t.muted }}>
-              {data.heroSubtitle || data.bio}
+  // ── Style CLARTÉ : titre souligné, photo « polaroid », clair et aéré ─────────
+  if (style === 'clarte') {
+    const { head, last } = splitLastWord(accroche);
+    const headline = (data.storyQuote || '').trim();
+    return (
+      <section id="accueil" className="cs-hero-clarte" style={{ position: 'relative', background: t.bg, color: t.ink, overflow: 'hidden' }}>
+        <div className="cs-hero-clarte-grid" style={{ maxWidth: 1080, margin: '0 auto', padding: '120px 24px', display: 'grid', gridTemplateColumns: 'minmax(0,1.1fr) minmax(0,0.9fr)', gap: 60, alignItems: 'center' }}>
+          <div>
+            <p style={{ margin: 0, fontSize: 13, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: accent }}>
+              {data.displayName}{meta ? ` — ${meta}` : ''}
             </p>
-          )}
-          <div style={{ marginTop: 38, display: 'flex', flexWrap: 'wrap', gap: 14, alignItems: 'center' }}>
-            <a href={ctaHref} className="cs-cta" style={{ display: 'inline-block', padding: '16px 38px', background: accent, color: '#fff', fontWeight: 700, fontSize: 15, textDecoration: 'none', borderRadius: style === 'clarte' ? 10 : 2 }}>
-              {ctaLabel}
-            </a>
-            {data.city && (
-              <span style={{ fontSize: 13, fontWeight: 600, color: t.heroDark ? 'rgba(255,255,255,0.6)' : t.muted, letterSpacing: '0.04em' }}>
-                Coach à {data.city}
-              </span>
+            <h1 style={{ ...headFont, margin: '18px 0 0', fontSize: 'clamp(38px, 5vw, 78px)', lineHeight: 1.05, letterSpacing: '-0.03em' }}>
+              {head ? <>{head} </> : null}
+              <span style={{ textDecoration: 'underline', textDecorationColor: accent, textDecorationThickness: '4px', textUnderlineOffset: '8px', textDecorationSkipInk: 'none' }}>{last}</span>
+            </h1>
+            {(data.heroSubtitle || data.bio) && (
+              <p style={{ margin: '24px 0 0', fontSize: 'clamp(1.05rem, 2.2vw, 1.3rem)', maxWidth: 520, lineHeight: 1.6, color: t.muted }}>
+                {data.heroSubtitle || data.bio}
+              </p>
+            )}
+            <div style={{ marginTop: 34, display: 'flex', flexWrap: 'wrap', gap: 14, alignItems: 'center' }}>
+              <a href={ctaHref} className="cs-cta" style={{ display: 'inline-flex', alignItems: 'center', minHeight: 52, padding: '0 28px', background: accent, color: '#fff', fontWeight: 700, fontSize: 15, textDecoration: 'none', borderRadius: 12 }}>
+                {ctaLabel}
+              </a>
+              {data.city && <span style={{ fontSize: 13, fontWeight: 600, color: t.muted, letterSpacing: '0.04em' }}>Coach à {data.city}</span>}
+            </div>
+          </div>
+
+          <div className="cs-hero-clarte-media" style={{ position: 'relative' }}>
+            {data.photoUrl ? (
+              <div className="cs-hero-clarte-frame" style={{ position: 'relative', maxWidth: 460, marginLeft: 'auto', border: '8px solid #fff', borderRadius: 20, overflow: 'hidden', boxShadow: '0 32px 80px rgba(0,0,0,0.14)' }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={data.photoUrl} alt={data.displayName} style={{ display: 'block', width: '100%', aspectRatio: '4/5', objectFit: 'cover' }} />
+                {headline && (
+                  <span className="cs-hero-clarte-badge" style={{ position: 'absolute', bottom: 16, left: -20, background: '#fff', borderRadius: 9999, padding: '8px 16px', boxShadow: '0 8px 24px rgba(0,0,0,0.12)', fontSize: 13, fontWeight: 600, color: t.ink }}>
+                    ✓ {headline.length > 30 ? `${headline.slice(0, 30)}…` : headline}
+                  </span>
+                )}
+              </div>
+            ) : (
+              <svg viewBox="0 0 460 520" width="100%" style={{ maxWidth: 460, marginLeft: 'auto', display: 'block' }} aria-hidden>
+                <rect x="40" y="40" width="380" height="440" rx="24" fill={accent} opacity="0.05" />
+                <circle cx="150" cy="190" r="110" fill={accent} opacity="0.12" />
+                <circle cx="320" cy="330" r="80" fill={accent} opacity="0.18" />
+                <rect x="250" y="120" width="120" height="120" rx="20" fill={accent} opacity="0.1" />
+                <circle cx="360" cy="170" r="28" fill={accent} opacity="0.25" />
+              </svg>
             )}
           </div>
         </div>
+        <div id="hero-sentinel" aria-hidden style={{ position: 'absolute', bottom: 0, left: 0, width: 1, height: 1 }} />
+        <style>{`
+          @media (max-width:768px){
+            .cs-hero-clarte-grid{grid-template-columns:1fr!important;gap:28px!important;padding:88px 24px 56px!important}
+            .cs-hero-clarte-media{order:-1}
+            .cs-hero-clarte-frame{max-width:100%!important;border:none!important;border-radius:16px!important}
+            .cs-hero-clarte-frame img{height:280px!important;aspect-ratio:auto!important}
+            .cs-hero-clarte-badge{display:none!important}
+          }
+        `}</style>
+      </section>
+    );
+  }
 
-        {style === 'clarte' && data.photoUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={data.photoUrl} alt={data.displayName} style={{ width: '100%', aspectRatio: '4/5', objectFit: 'cover', borderRadius: 16, boxShadow: '0 24px 60px -20px rgba(0,0,0,0.25)' }} />
-        )}
-        {style === 'clarte' && !data.photoUrl && (
-          <div style={{ width: '100%', aspectRatio: '4/5', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', background: `linear-gradient(135deg, ${accent}, ${accent}99)`, color: '#fff', ...headFont, fontSize: 'clamp(3rem,10vw,6rem)' }}>
-            {initials(data.displayName)}
+  // ── Style AUTHENTICITÉ : photo plein cadre + overlay, titre serif + mot italique ─
+  const words = accroche.trim().split(/\s+/);
+  let italicIdx = words.findIndex((w, i) => i > 0 && w.replace(/[^\p{L}]/gu, '').length >= 4);
+  if (italicIdx === -1) italicIdx = words.length - 1;
+  const onPhoto = !!data.photoUrl;
+  const titleColor = onPhoto ? '#fff' : t.ink;
+
+  return (
+    <section id="accueil" className="cs-hero-auth" style={{ position: 'relative', overflow: 'hidden', background: onPhoto ? '#0A0A0A' : t.bg }}>
+      {onPhoto ? (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={data.photoUrl!} alt="" className="cs-hero-auth-photo" style={{ display: 'block', width: '100%', height: 'clamp(380px, 58vh, 680px)', objectFit: 'cover', objectPosition: 'center top' }} />
+          <div aria-hidden style={{ position: 'absolute', inset: 0, backgroundImage: `url("${GRAIN}")`, backgroundSize: '180px', opacity: 0.07, mixBlendMode: 'overlay', pointerEvents: 'none' }} />
+          <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.35) 45%, transparent 72%)' }} />
+          <div className="cs-hero-auth-text" style={{ position: 'absolute', left: 48, right: 48, bottom: 48 }}>
+            <HeroAuthContent words={words} italicIdx={italicIdx} headFont={headFont} titleColor={titleColor} accent={accent} data={data} meta={meta} ctaHref={ctaHref} ctaLabel={ctaLabel} onPhoto />
           </div>
-        )}
-      </div>
-      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 4, background: accent }} />
+        </>
+      ) : (
+        <div style={{ position: 'relative', maxWidth: 760, margin: '0 auto', padding: '100px 24px', textAlign: 'center' }}>
+          <div aria-hidden style={{ position: 'absolute', inset: 0, backgroundImage: `radial-gradient(${accent}14 1.4px, transparent 1.4px)`, backgroundSize: '20px 20px', opacity: 1, pointerEvents: 'none' }} />
+          <div style={{ position: 'relative' }}>
+            <HeroAuthContent words={words} italicIdx={italicIdx} headFont={headFont} titleColor={titleColor} accent={accent} data={data} meta={meta} ctaHref={ctaHref} ctaLabel={ctaLabel} onPhoto={false} />
+          </div>
+        </div>
+      )}
       <div id="hero-sentinel" aria-hidden style={{ position: 'absolute', bottom: 0, left: 0, width: 1, height: 1 }} />
+      <style>{`
+        .cs-cta-auth:hover{background:${accent}!important;color:#fff!important}
+        @media (max-width:768px){
+          .cs-hero-auth-photo{height:clamp(300px,50vh,500px)!important}
+          .cs-hero-auth-text{left:24px!important;right:24px!important;bottom:28px!important}
+        }
+      `}</style>
     </section>
+  );
+}
+
+/** Contenu textuel du hero Authenticité (réutilisé avec/sans photo). */
+function HeroAuthContent({
+  words, italicIdx, headFont, titleColor, accent, data, meta, ctaHref, ctaLabel, onPhoto,
+}: {
+  words: string[]; italicIdx: number; headFont: React.CSSProperties; titleColor: string; accent: string;
+  data: CoachSiteData; meta: string; ctaHref: string; ctaLabel: string; onPhoto: boolean;
+}) {
+  const subColor = onPhoto ? 'rgba(255,255,255,0.85)' : '#78716C';
+  return (
+    <>
+      <p style={{ margin: 0, fontSize: 12, fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: onPhoto ? '#fff' : accent }}>
+        {data.displayName}{meta ? ` — ${meta}` : ''}
+      </p>
+      <h1 style={{ ...headFont, margin: '14px 0 0', fontSize: 'clamp(34px, 4.5vw, 70px)', lineHeight: 1.15, letterSpacing: '-0.01em', color: titleColor }}>
+        {words.map((w, i) =>
+          i === italicIdx ? (
+            <em key={i} style={{ fontStyle: 'italic', color: accent }}>{w} </em>
+          ) : (
+            <span key={i}>{w} </span>
+          )
+        )}
+      </h1>
+      {(data.heroSubtitle || data.bio) && (
+        <p style={{ margin: '20px 0 0', fontSize: 'clamp(1.05rem, 2.2vw, 1.35rem)', maxWidth: 560, lineHeight: 1.6, color: subColor }}>
+          {data.heroSubtitle || data.bio}
+        </p>
+      )}
+      <div style={{ marginTop: 30 }}>
+        <a href={ctaHref} className="cs-cta-auth" style={{ display: 'inline-flex', alignItems: 'center', minHeight: 50, padding: '0 28px', border: `2px solid ${accent}`, background: 'transparent', color: onPhoto ? '#fff' : accent, fontWeight: 700, fontSize: 15, textDecoration: 'none', borderRadius: 8, transition: 'all 200ms ease-out' }}>
+          {ctaLabel}
+        </a>
+      </div>
+    </>
   );
 }
