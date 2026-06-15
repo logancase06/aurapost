@@ -4,7 +4,7 @@ import { auth } from '@/lib/auth';
 import { isAdminSession } from '@/lib/admin';
 import {
   getAdminStats, listCoaches, recentSignups,
-  getBusinessMetrics, listInactiveCoaches, listSupportTickets,
+  getBusinessMetrics, listInactiveCoaches, listSupportTickets, getLaunchMetrics,
 } from '@/lib/db/admin';
 import { formatDate } from '@/lib/utils';
 import { Sparkles, ShieldCheck, ArrowLeft } from 'lucide-react';
@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import TenantToggle from './TenantToggle';
 import AdminInsights from './AdminInsights';
+import LaunchMetrics from './LaunchMetrics';
 
 export const metadata = { title: 'Administration' };
 
@@ -21,13 +22,14 @@ export default async function AdminPage() {
   if (!session?.user?.id) redirect('/login');
   if (!isAdminSession(session)) redirect('/dashboard');
 
-  const [stats, coaches, signups, metrics, inactive, tickets] = await Promise.all([
+  const [stats, coaches, signups, metrics, inactive, tickets, launch] = await Promise.all([
     getAdminStats(),
     listCoaches(),
     recentSignups(),
     getBusinessMetrics(),
     listInactiveCoaches(),
     listSupportTickets(),
+    getLaunchMetrics(),
   ]);
 
   return (
@@ -58,6 +60,8 @@ export default async function AdminPage() {
           <Stat label="Abonnements actifs" value={String(stats.activeSubscriptions)} />
           <Stat label="Revenu (mock)" value={stats.mockRevenue} />
         </div>
+
+        <LaunchMetrics data={launch} />
 
         <AdminInsights metrics={metrics} inactive={inactive} tickets={tickets} />
 
