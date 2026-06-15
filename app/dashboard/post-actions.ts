@@ -15,6 +15,7 @@ import {
 } from '@/lib/db/posts';
 import { getPhoto, linkPhotoToPost } from '@/lib/db/photos';
 import { getPlanLimits, canExportPost } from '@/lib/plans';
+import { logEvent } from '@/lib/logger';
 
 async function ctx() {
   const session = await auth();
@@ -27,6 +28,7 @@ export async function approvePostAction(postId: string): Promise<{ ok: boolean; 
   try {
     const { tenantId, userId } = await ctx();
     await setPostStatus(tenantId, userId, postId, 'approved' satisfies PostStatus);
+    logEvent('post.approved', tenantId, { postId });
     revalidatePath('/dashboard');
     return { ok: true };
   } catch {
@@ -94,6 +96,7 @@ export async function requestVariantAction(postId: string): Promise<{ ok: boolea
     if (used >= max) return { ok: false, error: `Limite de ${max} variantes atteinte ce mois-ci.` };
     const res = await createVariantForPost(tenantId, userId, postId);
     if (!res.ok) return { ok: false, error: 'Génération de variante impossible' };
+    logEvent('post.variant_created', tenantId, { postId, used: used + 1, max });
     revalidatePath('/dashboard');
     return { ok: true };
   } catch {

@@ -104,6 +104,7 @@ export const generatedPosts = sqliteTable(
     variantOfId: text('variant_of_id'), // null = original ; sinon id du post source
     generatedBy: text('generated_by'), // userId déclencheur
     format: text('format').notNull().default('post'), // 'post' | 'story_caption' (pack de légendes)
+    generatedMode: text('generated_mode'), // 'api' | 'mock' — mode de génération réel
     scheduledFor: text('scheduled_for'), // ISO date — planification calendrier éditorial
     copyCount: integer('copy_count').notNull().default(0), // nb de fois copié (stat post)
     createdAt: text('created_at').notNull(),

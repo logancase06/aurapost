@@ -10,7 +10,7 @@ import { SiteContentSchema } from '@/lib/db/site';
 import { uploadCoachPhoto } from '@/lib/r2';
 import { validateImage, POST_PHOTO_MIME } from '@/lib/upload';
 import { MAX_UPLOAD_BYTES } from '@/lib/security';
-import { logError } from '@/lib/logger';
+import { logError, logEvent } from '@/lib/logger';
 import { canGenerateSite } from '@/lib/plans';
 
 const StyleSchema = z.enum(['impact', 'clarte', 'authenticite']);
@@ -73,6 +73,7 @@ export async function setSitePublished(published: boolean): Promise<{ ok: boolea
   if (!canGenerateSite(c.plan)) return { ok: false, error: 'upgrade_required' };
   const res = published ? await publishWebsiteDb(c.tenantId, c.userId) : await unpublishWebsite(c.tenantId, c.userId);
   if (!res.ok) return { ok: false, error: 'Action impossible' };
+  logEvent(published ? 'site.published' : 'site.unpublished', c.tenantId, {});
   revalidatePath('/dashboard/website');
   return { ok: true };
 }

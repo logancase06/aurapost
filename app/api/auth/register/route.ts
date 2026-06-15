@@ -13,7 +13,7 @@ import { parseBody, RegisterSchema } from '@/lib/validation';
 import { csrfGuard } from '@/lib/security';
 import { recordReferral, notifyReferrerByEmail } from '@/lib/db/referrals';
 import { createNotification } from '@/lib/db/notifications';
-import { logError, logInfo } from '@/lib/logger';
+import { logError, logInfo, logEvent } from '@/lib/logger';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
 
@@ -135,6 +135,7 @@ export async function POST(req: NextRequest) {
     })();
 
     logInfo('[register] Compte créé', { userId, tenantId });
+    logEvent('auth.register', tenantId, { userId });
     return NextResponse.json({ message: 'Compte créé avec succès' }, { status: 201 });
   } catch (err) {
     logError('[register] Erreur interne', { error: String(err) });

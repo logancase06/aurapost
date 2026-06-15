@@ -76,6 +76,7 @@ CREATE TABLE IF NOT EXISTS generated_posts (
   variant_of_id TEXT,
   generated_by TEXT,
   format TEXT NOT NULL DEFAULT 'post',
+  generated_mode TEXT,
   scheduled_for TEXT,
   copy_count INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL,

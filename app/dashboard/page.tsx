@@ -4,7 +4,7 @@ import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { users, tenants } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { listPosts, getPostStats, hasGeneratedThisMonth, getVariantesCount, type PostStatus } from '@/lib/db/posts';
+import { listPosts, getPostStats, hasGeneratedThisMonth, getVariantesCount, getLatestGenerationMode, type PostStatus } from '@/lib/db/posts';
 import { canExportPost, getPlanLimits } from '@/lib/plans';
 import { getSmartSuggestions, getGenerationStreak } from '@/lib/db/suggestions';
 import { getOnboardingProgress, getProfileCompletion } from '@/lib/db/onboarding';
@@ -83,6 +83,10 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
   const plan = session.user.plan ?? 'starter';
   const gating = { canExport: canExportPost(plan), variantesUsed, variantesMax: getPlanLimits(plan).variantesMax };
 
+  // Dégradation silencieuse : posts en mode mock alors qu'une IA est configurée.
+  const apiConfigured = !!(process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_TUNNEL_URL);
+  const fallbackMock = apiConfigured && alreadyGenerated ? (await getLatestGenerationMode(tenantId, month)) === 'mock' : false;
+
   const firstName = (me?.fullName ?? session.user.name ?? '').split(' ')[0] || 'coach';
   const emailVerified = !!session.user.emailVerifiedAt;
 
@@ -114,6 +118,15 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
       </div>
 
       {!emailVerified && <VerifyEmailBanner />}
+
+      {fallbackMock && (
+        <Alert variant="warning" className="mt-6">
+          <XCircle />
+          <AlertDescription>
+            Ces posts ont été générés en mode simplifié (l&apos;IA était momentanément indisponible). La qualité sera meilleure à la prochaine génération mensuelle.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Bandeau « nouveau mois » — action principale du mois, en haut */}
       {showNewMonth && (

@@ -15,7 +15,7 @@ import { createNotification } from './notifications';
 import { enqueueGeneration } from '@/lib/queue';
 import { isGenerationRecorded, recordGeneration } from '@/lib/rate-limit';
 import { currentMonth } from '@/lib/utils';
-import { logError } from '@/lib/logger';
+import { logError, logEvent } from '@/lib/logger';
 import { parseAnalysis, InstagramAnalysisSchema, ReviewsAnalysisSchema } from '@/lib/validation';
 
 export type PostStatus = 'draft' | 'approved' | 'rejected';
@@ -230,6 +230,17 @@ export async function hasGeneratedThisMonth(tenantId: string, month: string): Pr
   return Number(row?.count ?? 0) > 0;
 }
 
+/** Mode du dernier lot généré ce mois ('api' | 'mock' | null) — pour la bannière fallback. */
+export async function getLatestGenerationMode(tenantId: string, month = currentMonth()): Promise<'api' | 'mock' | null> {
+  const [row] = await db
+    .select({ mode: generatedPosts.generatedMode })
+    .from(generatedPosts)
+    .where(and(eq(generatedPosts.tenantId, tenantId), eq(generatedPosts.month, month), isNull(generatedPosts.variantOfId)))
+    .orderBy(desc(generatedPosts.createdAt))
+    .limit(1);
+  return (row?.mode as 'api' | 'mock' | null) ?? null;
+}
+
 /** Nombre de variantes générées ce mois par le tenant (pour le gating par plan). */
 export async function getVariantesCount(tenantId: string, month = currentMonth()): Promise<number> {
   const [row] = await db
@@ -255,15 +266,21 @@ export async function runMonthlyGeneration(tenantId: string, userId: string): Pr
     return { ok: false, error: 'already_generated' };
   }
 
+  logEvent('generation.started', tenantId, { month });
   let drafts: PostDraft[];
+  let mode: 'api' | 'mock';
   try {
     // File d'attente : limite la concurrence des générations lourdes.
     // `tenantId` sert de seed au mock enrichi (variété stable, sans répétition).
-    drafts = await enqueueGeneration(() => generateMonthlyContent(profile, tenantId));
+    const res = await enqueueGeneration(() => generateMonthlyContent(profile, tenantId));
+    drafts = res.posts;
+    mode = res.mode;
   } catch (err) {
     logError('[posts] génération échouée', { tenantId, error: String(err) });
+    logEvent('generation.failed', tenantId, { month, error: String(err) });
     return { ok: false, error: 'internal' };
   }
+  if (mode === 'mock') logEvent('generation.fallback_mock', tenantId, { month });
 
   const now = new Date().toISOString();
   const values = drafts.map((d) => ({
@@ -279,6 +296,7 @@ export async function runMonthlyGeneration(tenantId: string, userId: string): Pr
     month,
     variantOfId: null,
     generatedBy: userId,
+    generatedMode: mode,
     createdAt: now,
     updatedAt: now,
   }));
@@ -286,6 +304,7 @@ export async function runMonthlyGeneration(tenantId: string, userId: string): Pr
   await db.insert(generatedPosts).values(values);
   await recordGeneration(tenantId, month); // marque le garde distribué
   await logActivity(tenantId, userId, 'content_generated', null, { month, count: values.length });
+  logEvent('generation.success', tenantId, { month, count: values.length, mode });
   await createNotification({
     tenantId,
     userId,

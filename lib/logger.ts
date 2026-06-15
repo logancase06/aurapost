@@ -11,3 +11,15 @@ export function logInfo(message: string, context?: LogContext) {
 export function logError(message: string, context?: LogContext) {
   console.error(`[ERROR] ${message}`, context ?? '');
 }
+
+/**
+ * Log structuré d'un évènement métier (analytics/observabilité). JSON en une ligne
+ * → capturé tel quel par Netlify/Logtail. Ne lève JAMAIS (le logging ne casse pas le flux).
+ */
+export function logEvent(event: string, tenantId: string | null, metadata?: LogContext): void {
+  try {
+    console.log(JSON.stringify({ type: 'event', event, tenantId, ts: new Date().toISOString(), ...(metadata ?? {}) }));
+  } catch {
+    /* logging best-effort */
+  }
+}

@@ -295,8 +295,15 @@ function trimToTarget(posts: PostDraft[]): PostDraft[] {
  * backoff et déduplication. Bascule sur le mock enrichi en dernier recours.
  * `seed` (tenantId) garantit un mock varié et stable par coach.
  */
-export async function generateMonthlyContent(profile: CoachProfileInput, seed?: string): Promise<PostDraft[]> {
-  if (GENERATION_MODE === 'mock-enrichi') return generateMockContent(profile, seed);
+export type GenMode = 'api' | 'mock';
+export interface MonthlyContentResult {
+  posts: PostDraft[];
+  /** 'api' = généré par l'IA ; 'mock' = templates (mode mock OU repli après échec API). */
+  mode: GenMode;
+}
+
+export async function generateMonthlyContent(profile: CoachProfileInput, seed?: string): Promise<MonthlyContentResult> {
+  if (GENERATION_MODE === 'mock-enrichi') return { posts: generateMockContent(profile, seed), mode: 'mock' };
 
   const prompt = buildPrompt(profile);
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
@@ -305,7 +312,7 @@ export async function generateMonthlyContent(profile: CoachProfileInput, seed?: 
       const posts = dedupePosts(normalizePosts(extractJson(text), profile));
       if (isComplete(posts)) {
         logInfo('[content-generator] génération complète', { mode: GENERATION_MODE, attempt, count: posts.length });
-        return trimToTarget(posts);
+        return { posts: trimToTarget(posts), mode: 'api' };
       }
       logError('[content-generator] incomplète/doublons, retry', { attempt, count: posts.length });
     } catch (err) {
@@ -314,8 +321,9 @@ export async function generateMonthlyContent(profile: CoachProfileInput, seed?: 
     if (attempt < MAX_RETRIES) await sleep(backoffDelay(attempt));
   }
 
+  // Repli mock alors qu'un mode API était configuré = dégradation silencieuse à signaler.
   logInfo('[content-generator] fallback mock enrichi', {});
-  return generateMockContent(profile, seed);
+  return { posts: generateMockContent(profile, seed), mode: 'mock' };
 }
 
 /** Régénère UN seul post (variante) — même réseau/thème, angle différent. */
