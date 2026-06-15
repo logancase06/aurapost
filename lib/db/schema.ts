@@ -292,6 +292,62 @@ export const supportTickets = sqliteTable(
   })
 );
 
+// ── Couche organisation / réseau (agences, franchises, MLM) ──────────────────
+// Une organisation chapeaute N tenants (distributeurs). Le brand kit et les templates
+// validés sont imposés/hérités par les membres. Isolation : tout reste scellé au tenant ;
+// l'org ajoute une vue d'ensemble et des contraintes de marque.
+export const organizations = sqliteTable(
+  'organizations',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    slug: text('slug').notNull().unique(),
+    logoUrl: text('logo_url'),
+    brandColor: text('brand_color').default('#7c3aed'),
+    brandTone: text('brand_tone'),
+    /** tenant fondateur (org owner). */
+    ownerTenantId: text('owner_tenant_id').notNull(),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => ({ slugIdx: index('organizations_slug_idx').on(t.slug), ownerIdx: index('organizations_owner_idx').on(t.ownerTenantId) })
+);
+
+export const orgTenants = sqliteTable(
+  'org_tenants',
+  {
+    orgId: text('org_id').notNull(),
+    tenantId: text('tenant_id').notNull(),
+    role: text('role').notNull().default('member'), // 'owner' | 'member'
+    invitedAt: text('invited_at'),
+    joinedAt: text('joined_at'),
+  },
+  (t) => ({ orgIdx: index('org_tenants_org_idx').on(t.orgId), tenantIdx: index('org_tenants_tenant_idx').on(t.tenantId) })
+);
+
+export const orgTemplates = sqliteTable(
+  'org_templates',
+  {
+    id: text('id').primaryKey(),
+    orgId: text('org_id').notNull(),
+    name: text('name').notNull(),
+    content: text('content').notNull(),
+    category: text('category'),
+    isLocked: integer('is_locked', { mode: 'boolean' }).notNull().default(true),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => ({ orgIdx: index('org_templates_org_idx').on(t.orgId) })
+);
+
+export const orgBrandKit = sqliteTable('org_brand_kit', {
+  orgId: text('org_id').primaryKey(),
+  logoUrl: text('logo_url'),
+  primaryColor: text('primary_color').default('#7c3aed'),
+  secondaryColor: text('secondary_color').default('#a855f7'),
+  toneGuidelines: text('tone_guidelines'),
+  forbiddenWords: text('forbidden_words'), // JSON: string[]
+  updatedAt: text('updated_at').notNull(),
+});
+
 // Prospects agence / réseau (formulaire /agency-demo → /api/agency-contact).
 export const agencyLeads = sqliteTable(
   'agency_leads',
