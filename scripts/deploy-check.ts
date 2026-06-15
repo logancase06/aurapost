@@ -44,11 +44,28 @@ function main() {
     console.log(`   [${tag}] ${it.label} ${C.dim('— ' + it.detail)}`);
   }
 
+  // 2b) Variables OBLIGATOIRES en production (gate dur) — quel que soit le classement env.
+  const REQUIRED_IN_PROD = ['TURSO_DATABASE_URL', 'ANTHROPIC_API_KEY', 'NEXTAUTH_SECRET'];
+  const hardMissing = REQUIRED_IN_PROD.filter((k) => !process.env[k] && !(k === 'NEXTAUTH_SECRET' && process.env.AUTH_SECRET));
+  console.log(`\n${C.bold('3. Obligatoires en production')}`);
+  if (hardMissing.length === 0) {
+    console.log(`   ${C.green('✓')} ${REQUIRED_IN_PROD.join(', ')} présentes.`);
+  } else {
+    for (const k of hardMissing) console.log(`   ${C.red('✗ BLOQUANT')} — ${k} manquante.`);
+  }
+  if (!process.env.UPSTASH_REDIS_REST_URL) {
+    console.log(`   ${C.yellow('!')} UPSTASH_REDIS_REST_URL absente — rate-limit en mémoire par instance (non distribué).`);
+  }
+
   // 3) Verdict
   const liveCount = integrations.filter((i) => i.mode === 'live').length;
   console.log(`\n${C.bold('Verdict')}`);
   console.log(`   ${liveCount}/${integrations.length} intégrations en production.`);
 
+  if (hardMissing.length > 0) {
+    console.log(`\n   ${C.red('✗ Déploiement BLOQUÉ : ' + hardMissing.join(', ') + ' obligatoire(s) en production.')}\n`);
+    return 1;
+  }
   if (env.missingCritical.length > 0) {
     console.log(`\n   ${C.red('✗ Déploiement déconseillé : variables critiques manquantes.')}\n`);
     return 1;

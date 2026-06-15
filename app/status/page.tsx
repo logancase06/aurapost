@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { CheckCircle2, CircleDashed, Activity } from 'lucide-react';
+import { CheckCircle2, CircleDashed, Activity, AlertTriangle } from 'lucide-react';
 import { getIntegrationStatuses, getIntegrationsSummary } from '@/lib/integrations';
 
 export const dynamic = 'force-dynamic';
@@ -18,9 +18,20 @@ export const metadata: Metadata = {
 export default function StatusPage() {
   const integrations = getIntegrationStatuses();
   const summary = getIntegrationsSummary();
+  // Alerte rouge : production tournant sur une base en mémoire (perte de données).
+  const prodMock = process.env.NODE_ENV === 'production' && !process.env.TURSO_DATABASE_URL;
 
   return (
     <main className="mx-auto min-h-screen max-w-3xl px-6 py-16">
+      {prodMock && (
+        <div className="mb-8 flex items-start gap-3 rounded-lg border border-destructive bg-destructive/10 p-4 text-destructive">
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
+          <div>
+            <p className="font-bold">⚠ Mode dégradé en production</p>
+            <p className="text-sm">La base de données n’est pas configurée (TURSO_DATABASE_URL absente). Les données ne sont pas persistées. Action requise immédiatement.</p>
+          </div>
+        </div>
+      )}
       <div className="mb-10 flex items-center gap-3">
         <span className="flex h-10 w-10 items-center justify-center rounded-md bg-gradient-to-br from-primary to-accent">
           <Activity className="h-5 w-5 text-white" />

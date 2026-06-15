@@ -28,6 +28,21 @@ npm run type-check && npm run build # doivent être verts
 `check-env.ts` logue chaque variable manquante avec sa sévérité (critique / recommandée /
 optionnelle) et indique si un mock prend le relais.
 
+### Checklist pré-déploiement (à cocher)
+
+- [ ] `TURSO_DATABASE_URL` **+** `TURSO_AUTH_TOKEN` définies (sinon l'app refuse de démarrer)
+- [ ] `ANTHROPIC_API_KEY` définie (sinon génération en mock — **bloquant** via `deploy-check`)
+- [ ] `NEXTAUTH_SECRET` (ou `AUTH_SECRET`) définie
+- [ ] `UPSTASH_REDIS_REST_URL` + token (rate-limit distribué ; sinon mémoire par instance)
+- [ ] `RESEND_API_KEY` + `RESEND_FROM` (emails réels)
+- [ ] `STRIPE_SECRET_KEY` + `STRIPE_PRICE_CONTENT_ONLY` + `STRIPE_PRICE_PACK_COMPLET` + webhook secret
+- [ ] `R2_*` (upload photos) · `APP_DOMAIN` · `NEXT_PUBLIC_APP_URL`
+- [ ] `npm run deploy-check` → **vert** (exit 0)
+- [ ] `npm run type-check && npm run build && npm test` → verts
+- [ ] `GET /api/health/detailed` → `mode: "production"` (PAS `PROD-MOCK`), `database.status: "ok"`
+- [ ] `/status` ne montre **aucune** alerte rouge
+- [ ] `npm run seed:demo` (si environnement de démonstration)
+
 ---
 
 ## 1. Variables d'environnement (dans l'ordre de configuration)

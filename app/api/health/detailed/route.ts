@@ -90,10 +90,16 @@ export async function GET() {
   const probes = [database, redis, storage];
   const anyDown = probes.some((p) => p.status === 'down');
 
+  const dbMock = !process.env.TURSO_DATABASE_URL;
+  const mode = process.env.NODE_ENV === 'production' ? (dbMock ? 'PROD-MOCK' : 'production') : 'development';
+
   return NextResponse.json(
     {
       service: 'aurapost',
       status: anyDown ? 'degraded' : 'ok',
+      mode, // 'production' | 'PROD-MOCK' (alerte rouge : prod sur base mémoire) | 'development'
+      version: process.env.NEXT_PUBLIC_BUILD_VERSION ?? process.env.npm_package_version ?? 'dev',
+      deployedAt: process.env.BUILD_TIME ?? null,
       time: new Date().toISOString(),
       uptimeSeconds: Math.round(process.uptime()),
       probes,
