@@ -199,7 +199,7 @@ export function monthlyPostsHtml(name: string, count: number, month: string, cta
       <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1e1b4b">Vos ${count} posts du mois sont prêts ✦</h1>
       <p style="margin:0 0 24px;color:#6b7280;font-size:15px;line-height:1.6">
         Bonjour ${escHtml(name)}, votre contenu pour <strong>${escHtml(month)}</strong> vient d'être généré :
-        8 posts Instagram et 4 posts LinkedIn vous attendent. Relisez, approuvez et publiez !
+        ${count} posts Instagram &amp; LinkedIn vous attendent. Relisez, approuvez et publiez !
       </p>
       ${button(ctaUrl, 'Voir mes posts →')}
     </td></tr>`);

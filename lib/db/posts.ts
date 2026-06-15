@@ -6,10 +6,14 @@ import {
   generateMonthlyContent,
   generateVariant,
   generateCaptionPack,
+  GENERATION_MODE,
   type CoachProfileInput,
   type PostDraft,
   type Network,
 } from '@/lib/content-generator';
+
+// Mode de génération configuré, normalisé au domaine stocké ('api' | 'mock').
+const CONFIGURED_GEN_MODE: 'api' | 'mock' = GENERATION_MODE === 'mock-enrichi' ? 'mock' : 'api';
 import { logActivity } from './activity';
 import { createNotification } from './notifications';
 import { enqueueGeneration } from '@/lib/queue';
@@ -355,6 +359,7 @@ export async function createVariantForPost(
       month: original.month,
       variantOfId: postId,
       generatedBy: userId,
+      generatedMode: CONFIGURED_GEN_MODE,
       createdAt: now,
       updatedAt: now,
     });
@@ -499,6 +504,7 @@ export async function runCaptionPackGeneration(
       variantOfId: null,
       format: 'story_caption' as const,
       generatedBy: userId,
+      generatedMode: CONFIGURED_GEN_MODE,
       createdAt: now,
       updatedAt: now,
     }));
