@@ -4,8 +4,9 @@ import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { auth } from '@/lib/auth';
 import { requireTenantId } from '@/lib/tenant';
-import { createOrganization, getOrgForTenant, upsertBrandKit, addOrgTemplate } from '@/lib/db/organizations';
+import { createOrganization, getOrgForTenant, upsertBrandKit, addOrgTemplate, listOrgMembersWithStats } from '@/lib/db/organizations';
 import { inviteDistributor } from '@/lib/db/org-invite';
+import { sendDistributorNudgeEmail } from '@/lib/email';
 import { sanitizeText } from '@/lib/security';
 
 async function ownerCtx(): Promise<{ tenantId: string; orgId: string; orgName: string } | { error: string }> {
@@ -93,6 +94,22 @@ const TemplateSchema = z.object({
   content: z.string().min(5).max(4000),
   category: z.string().max(80).optional(),
 });
+
+/** Relance par email tous les distributeurs inactifs depuis ≥ 7 jours. */
+export async function relanceInactiveAction(): Promise<{ ok: boolean; sent?: number; error?: string }> {
+  const c = await ownerCtx();
+  if ('error' in c) return { ok: false, error: c.error };
+  const members = await listOrgMembersWithStats(c.orgId);
+  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const inactive = members.filter((m) => !m.lastActivity || new Date(m.lastActivity).getTime() < weekAgo);
+  let sent = 0;
+  for (const m of inactive) {
+    if (m.email === '—') continue;
+    const res = await sendDistributorNudgeEmail({ email: m.email, name: m.name.split(' ')[0] || 'coach' }, c.orgName);
+    if (res.success) sent++;
+  }
+  return { ok: true, sent };
+}
 
 /** Ajoute un template de contenu validé par la marque. */
 export async function addTemplateAction(input: unknown): Promise<{ ok: boolean; error?: string }> {

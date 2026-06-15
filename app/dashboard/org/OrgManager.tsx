@@ -9,8 +9,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { inviteMemberAction, saveBrandKitAction, addTemplateAction } from './actions';
+import { inviteMemberAction, saveBrandKitAction, addTemplateAction, relanceInactiveAction } from './actions';
 import type { OrgMemberStats, BrandKit, OrgTemplate } from '@/lib/db/organizations';
+
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+function isInactive(lastActivity: string | null): boolean {
+  return !lastActivity || Date.now() - new Date(lastActivity).getTime() > WEEK_MS;
+}
 
 interface Props {
   orgName: string;
@@ -77,7 +82,23 @@ export default function OrgManager({ orgName, members, brandKit, templates }: Pr
 
       {/* Membres */}
       <Card className="overflow-hidden">
-        <div className="border-b border-border p-4 font-bold">Distributeurs</div>
+        <div className="flex items-center justify-between border-b border-border p-4">
+          <span className="font-bold">Distributeurs</span>
+          {members.some((m) => isInactive(m.lastActivity)) && (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={pending}
+              onClick={() => start(async () => {
+                const res = await relanceInactiveAction();
+                if (res.ok) toast.success(`${res.sent ?? 0} relance(s) envoyée(s)`);
+                else toast.error(res.error || 'Action impossible');
+              })}
+            >
+              {pending && <Loader2 className="h-4 w-4 animate-spin" />} Relancer les inactifs
+            </Button>
+          )}
+        </div>
         {members.length === 0 ? (
           <p className="p-6 text-sm text-muted-foreground">Aucun distributeur. Invitez-en un ci-dessous.</p>
         ) : (
@@ -91,6 +112,7 @@ export default function OrgManager({ orgName, members, brandKit, templates }: Pr
                 <div className="flex items-center gap-4 text-xs text-muted-foreground">
                   <span>{m.postsThisMonth} posts/mois</span>
                   <span>{m.approvalRate}% approuvés</span>
+                  {isInactive(m.lastActivity) && <Badge variant="destructive">Inactif 7j+</Badge>}
                   <Badge variant={m.siteActive ? 'success' : 'secondary'}>{m.siteActive ? 'Site publié' : 'Pas de site'}</Badge>
                 </div>
               </div>

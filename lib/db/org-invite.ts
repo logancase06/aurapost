@@ -4,6 +4,7 @@ import { eq, and, isNull } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { createTenantAndOwner, hashPassword } from './users-actions';
 import { addTenantToOrg } from './organizations';
+import { runMonthlyGeneration } from './posts';
 import { sendEmail, shell, button, escHtml } from '@/lib/email';
 import { sanitizeText } from '@/lib/security';
 import { logError } from '@/lib/logger';
@@ -46,10 +47,10 @@ function welcomeHtml(name: string, orgName: string, link: string): string {
       <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1e1b4b">Votre espace AuraPost est prêt ✦</h1>
       <p style="margin:0 0 24px;color:#6b7280;font-size:15px;line-height:1.6">
         Bonjour ${escHtml(name)}, <strong>${escHtml(orgName)}</strong> vous a créé un espace AuraPost.
-        Connectez-vous en un clic pour générer votre premier mois de contenu Instagram &amp; LinkedIn,
-        déjà calibré sur la charte de votre réseau.
+        Bonne nouvelle : <strong>votre premier mois de contenu est déjà prêt</strong>, calibré sur la
+        charte de votre réseau. Connectez-vous en un clic pour le relire et le publier.
       </p>
-      ${button(link, 'Accéder à mon espace →')}
+      ${button(link, 'Voir mes 12 posts →')}
     </td></tr>`);
 }
 
@@ -95,6 +96,17 @@ export async function inviteDistributor(orgId: string, orgName: string, input: D
     }
 
     await addTenantToOrg(orgId, tenantId, 'member');
+
+    // Adoption : on génère le premier mois AVANT que le distributeur se connecte (best-effort,
+    // non bloquant). Pour les nouveaux comptes uniquement, et seulement s'il n'a rien encore.
+    if (created) {
+      try {
+        await runMonthlyGeneration(tenantId, tenantId);
+      } catch (err) {
+        logError('[org-invite] génération 1er mois échouée', { email, error: String(err) });
+      }
+    }
+
     const link = await createMagicLink(email);
     await sendEmail({ email, name: displayName }, `Votre espace AuraPost (${orgName}) est prêt ✦`, welcomeHtml(displayName.split(' ')[0] || 'là', orgName, link));
     return { ok: true, created, email };

@@ -319,6 +319,20 @@ export function sendTrialEndingEmail(to: { email: string; name: string }, daysLe
   return sendEmail(to, `Ton essai se termine dans ${daysLeft} jours`, html);
 }
 
+/** Relance d'un distributeur inactif (déclenchée par le manager de l'organisation). */
+export function sendDistributorNudgeEmail(to: { email: string; name: string }, orgName: string) {
+  const html = shell(`
+    <tr><td style="padding:32px">
+      <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1e1b4b">Vos 12 posts vous attendent ✦</h1>
+      <p style="margin:0 0 24px;color:#6b7280;font-size:15px;line-height:1.6">
+        Bonjour ${escHtml(to.name)}, votre contenu du mois (déjà calibré sur la charte ${escHtml(orgName)})
+        est prêt dans votre espace AuraPost. 5 minutes pour relire et publier — vos collègues l'ont déjà fait.
+      </p>
+      ${button(`${APP_URL()}/dashboard`, 'Voir mes posts →')}
+    </td></tr>`);
+  return sendEmail(to, 'Vos 12 posts du mois vous attendent ✦', html);
+}
+
 /** Analyse de profil prête (onboarding) — 3 points à améliorer + lien dashboard. */
 export function sendAnalysisReadyEmail(to: { email: string; name: string }, score: number, points: string[]) {
   const list = points.slice(0, 3).map((p) => `<li style="margin:0 0 6px">${escHtml(p)}</li>`).join('');
