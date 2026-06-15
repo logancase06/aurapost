@@ -20,7 +20,7 @@ export default function AdminInsights({
   tickets: SupportTicketRow[];
 }) {
   const [pending, startTransition] = useTransition();
-  const maxMrr = Math.max(...metrics.mrrSeries.map((m) => m.mrr), 1);
+  const maxPosts = Math.max(...metrics.postsByMonth.map((m) => m.count), 1);
   const maxHeat = Math.max(...metrics.heatmap, 1);
 
   function relance(tenantId: string) {
@@ -40,14 +40,15 @@ export default function AdminInsights({
 
   const kpis = [
     { label: 'Taux d’approbation', value: `${metrics.approvalRate}%`, icon: CheckCircle2 },
-    { label: 'Conversion démo → inscription', value: `${metrics.demoConversion}%`, icon: TrendingUp },
-    { label: 'NPS', value: `+${metrics.nps}`, icon: TrendingUp },
+    { label: 'Conversion → payant', value: `${metrics.conversionRate}%`, icon: TrendingUp },
+    { label: 'MRR estimé', value: `${metrics.mrr} €`, icon: TrendingUp },
+    { label: 'Coachs actifs', value: `${metrics.activeCoaches}`, icon: CheckCircle2 },
   ];
 
   return (
     <div className="mt-10 space-y-8">
       {/* KPIs */}
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {kpis.map((k) => (
           <Card key={k.label} className="flex items-center gap-4 p-5">
             <span className="flex h-11 w-11 items-center justify-center rounded-md bg-primary/15 text-primary">
@@ -62,25 +63,29 @@ export default function AdminInsights({
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* MRR */}
+        {/* Posts générés par mois (réel) */}
         <Card className="p-6">
           <h3 className="flex items-center gap-2 font-bold">
-            <TrendingUp className="h-4 w-4 text-primary" /> Croissance du MRR (simulée)
+            <TrendingUp className="h-4 w-4 text-primary" /> Posts générés par mois
           </h3>
-          <div className="mt-6 flex items-end gap-1.5" style={{ height: 160 }}>
-            {metrics.mrrSeries.map((m) => (
-              <div key={m.month} className="flex flex-1 flex-col items-center gap-1">
-                <div className="flex w-full items-end justify-center" style={{ height: 130 }}>
-                  <div
-                    className="w-full rounded-t bg-gradient-to-t from-primary to-accent"
-                    style={{ height: `${(m.mrr / maxMrr) * 100}%` }}
-                    title={`${m.mrr} €`}
-                  />
+          {metrics.postsByMonth.length === 0 ? (
+            <p className="mt-6 text-sm text-muted-foreground">En attente des premières données.</p>
+          ) : (
+            <div className="mt-6 flex items-end gap-1.5" style={{ height: 160 }}>
+              {metrics.postsByMonth.map((m) => (
+                <div key={m.month} className="flex flex-1 flex-col items-center gap-1">
+                  <div className="flex w-full items-end justify-center" style={{ height: 130 }}>
+                    <div
+                      className="w-full rounded-t bg-gradient-to-t from-primary to-accent"
+                      style={{ height: `${(m.count / maxPosts) * 100}%` }}
+                      title={`${m.count} post(s)`}
+                    />
+                  </div>
+                  <span className="text-[9px] text-muted-foreground">{m.month.slice(5)}</span>
                 </div>
-                <span className="text-[9px] text-muted-foreground">{m.month}</span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </Card>
 
         {/* Heatmap horaire */}

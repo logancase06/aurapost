@@ -210,30 +210,43 @@ export async function getApprovalRate(): Promise<number> {
 }
 
 export interface BusinessMetrics {
-  mrrSeries: { month: string; mrr: number }[];
-  approvalRate: number;
-  demoConversion: number; // % (simulé)
-  nps: number; // simulé
-  heatmap: number[];
+  /** Posts réellement générés par mois (12 derniers) — données réelles, jamais simulées. */
+  postsByMonth: { month: string; count: number }[];
+  approvalRate: number; // réel
+  conversionRate: number; // réel — % de coachs sur un plan payant actif
+  mrr: number; // réel — € mensuels estimés depuis les plans payants actifs
+  activeCoaches: number; // réel — coachs ayant généré ≥ 1 fois
+  heatmap: number[]; // réel — répartition horaire des générations
 }
 
-/** Métriques business agrégées (MRR seedé, conversion/NPS simulés, reste réel). */
+/**
+ * Métriques business agrégées — 100 % RÉELLES (aucune valeur inventée).
+ * Quand la base est vide, les compteurs valent 0 et l'UI affiche un état « en attente ».
+ */
 export async function getBusinessMetrics(): Promise<BusinessMetrics> {
-  const [approvalRate, heatmap, [{ c: activeSubs } = { c: 0 }]] = await Promise.all([
+  const [approvalRate, heatmap, monthRows, tenantRows, activeRows] = await Promise.all([
     getApprovalRate(),
     getGenerationHeatmap(),
-    db.select({ c: sql<number>`count(*)` }).from(subscriptions).where(eq(subscriptions.status, 'active')),
+    db.select({ month: generatedPosts.month, c: count() }).from(generatedPosts).groupBy(generatedPosts.month),
+    db.select({ plan: tenants.plan, planExpiresAt: tenants.planExpiresAt }).from(tenants).limit(5000),
+    db.select({ c: countDistinct(generatedPosts.tenantId) }).from(generatedPosts),
   ]);
 
-  // Série MRR simulée et croissante (12 mois), ancrée sur le nb d'abonnements actifs.
-  const months = ['Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc', 'Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin'];
-  const anchor = Math.max(8, Number(activeSubs) || 0);
-  const mrrSeries = months.map((month, i) => ({
-    month,
-    mrr: Math.round((anchor * 39 * (i + 1)) / 4 + (i % 3) * 120),
-  }));
+  const postsByMonth = monthRows
+    .filter((r) => r.month)
+    .map((r) => ({ month: r.month, count: Number(r.c) }))
+    .sort((a, b) => a.month.localeCompare(b.month))
+    .slice(-12);
 
-  return { mrrSeries, approvalRate, demoConversion: 32, nps: 58, heatmap };
+  const total = tenantRows.length;
+  const paid = tenantRows.filter((t) => PLAN_PRICE[t.plan] && isPlanActive(t.plan, t.planExpiresAt)).length;
+  const conversionRate = total > 0 ? Math.round((paid / total) * 100) : 0;
+  const mrr = tenantRows
+    .filter((t) => isPlanActive(t.plan, t.planExpiresAt))
+    .reduce((s, t) => s + (PLAN_PRICE[t.plan] ?? 0), 0);
+  const activeCoaches = Number(activeRows[0]?.c ?? 0);
+
+  return { postsByMonth, approvalRate, conversionRate, mrr, activeCoaches, heatmap };
 }
 
 export async function setTicketStatus(adminUserId: string, ticketId: string, status: 'open' | 'closed'): Promise<void> {
