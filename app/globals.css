@@ -151,3 +151,48 @@
   letter-spacing: -0.05em;
   color: hsl(0 0% 100% / 0.04);
 }
+
+/* ── Site vitrine public ─────────────────────────────────────────────────── */
+/* Défilement doux pour les ancres (désactivé si l'utilisateur préfère réduire). */
+html {
+  scroll-behavior: smooth;
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+/* Décalage des cibles d'ancre pour ne pas passer sous la navbar sticky (64px). */
+:where(#accueil, #forces, #apropos, #temoignages, #contact, #footer) {
+  scroll-margin-top: 76px;
+}
+/* Lien de nav : soulignement qui se déploie au survol (couleur d'accent du site). */
+.site-nav-link {
+  position: relative;
+  padding-bottom: 2px;
+}
+.site-nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--site-accent, #8b5cf6);
+  transition: width 200ms ease-out;
+}
+.site-nav-link:hover::after {
+  width: 100%;
+}
+/* Zoom subtil des images de section (jamais le hero ; désactivé sur tactile). */
+.site-image-zoom {
+  overflow: hidden;
+}
+.site-image-zoom img {
+  transition: transform 350ms ease-out;
+}
+@media (hover: hover) {
+  .site-image-zoom:hover img {
+    transform: scale(1.04);
+  }
+}

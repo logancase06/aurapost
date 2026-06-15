@@ -1,5 +1,6 @@
 import { themeFor, accentForSpeciality } from './theme';
 import type { CoachSiteData, SiteStyle } from './types';
+import SiteNav from './components/SiteNav';
 import HeroSection from './components/HeroSection';
 import ForcesSection from './components/ForcesSection';
 import AProposSection from './components/AProposSection';
@@ -26,9 +27,12 @@ export default function CoachSite({ data }: { data: CoachSiteData }) {
   const style: SiteStyle = data.style ?? 'impact';
   const t = themeFor(style);
   const accent = data.accentColor || accentForSpeciality(data.speciality);
+  const hasApropos = !!(data.story || data.about || data.bio);
+  const hasTemoignages = (data.testimonials?.length ?? 0) > 0;
 
   return (
     <div style={{ fontFamily: t.fontBody, color: t.ink, background: t.bg, '--site-accent': accent } as React.CSSProperties}>
+      <SiteNav name={data.displayName} accent={accent} hasApropos={hasApropos} hasTemoignages={hasTemoignages} />
       <HeroSection data={data} style={style} accent={accent} t={t} />
       <ForcesSection data={data} style={style} accent={accent} t={t} />
       <AProposSection data={data} style={style} accent={accent} t={t} />
