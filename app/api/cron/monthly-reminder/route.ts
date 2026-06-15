@@ -25,8 +25,9 @@ async function handle(req: NextRequest) {
     const coaches = await coachesToRemindMonthly(monthIso);
     let sent = 0;
     for (const c of coaches) {
-      const res = await sendMonthlyReminderEmail({ email: c.email, name: c.name }, label).catch(() => ({ success: false }));
-      if (res.success) sent++;
+      const res = await sendMonthlyReminderEmail(c.tenantId, { email: c.email, name: c.name }, label).catch(() => ({ success: false, skipped: false }));
+      // skipped = désabonné (compté à part du total réellement envoyé).
+      if (res.success && !('skipped' in res && res.skipped)) sent++;
     }
     logInfo('[cron:monthly-reminder] relances envoyées', { month: monthIso, total: coaches.length, sent });
     return NextResponse.json({ ok: true, month: monthIso, total: coaches.length, sent });

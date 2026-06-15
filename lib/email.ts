@@ -1,4 +1,5 @@
-import { logError, logInfo } from './logger';
+import { logError, logInfo, logEvent } from './logger';
+import { isUnsubscribed, getUnsubscribeUrl } from './unsubscribe';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Email transactionnel via Resend. Mock propre si RESEND_API_KEY est absent :
@@ -20,6 +21,23 @@ export function escHtml(s: unknown): string {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;')
     .replace(/`/g, '&#96;');
+}
+
+/**
+ * Garde RGPD/LCEN pour les emails MARKETING : ne pas envoyer si le tenant s'est désabonné.
+ * Les emails transactionnels (auth, paiement, posts prêts) appellent `sendEmail` directement.
+ */
+export async function sendMarketingEmail(
+  tenantId: string,
+  to: { email: string; name?: string },
+  subject: string,
+  html: string
+): Promise<{ success: boolean; skipped?: boolean; mocked?: boolean; reason?: string }> {
+  if (await isUnsubscribed(tenantId)) {
+    logEvent('email.suppressed.unsubscribed', tenantId, { email: to.email });
+    return { success: true, skipped: true };
+  }
+  return sendEmail(to, subject, html);
 }
 
 /**
@@ -56,8 +74,18 @@ export async function sendEmail(
 
 // ── Templates HTML ───────────────────────────────────────────────────────────
 
-export function shell(inner: string): string {
+/**
+ * Coque HTML partagée. `unsubscribeUrl` (emails marketing uniquement) ajoute la mention
+ * légale de désabonnement (RGPD/LCEN). Les emails transactionnels l'omettent.
+ */
+export function shell(inner: string, unsubscribeUrl?: string): string {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://aurapost.fr';
+  const unsub = unsubscribeUrl
+    ? `<p style="margin:10px 0 0;color:#9ca3af;font-size:11px;line-height:1.5">
+        Tu reçois cet email car tu as un compte AuraPost.
+        <a href="${unsubscribeUrl}" style="color:#9ca3af;text-decoration:underline">Se désabonner</a> de ces emails.
+      </p>`
+    : '';
   return `<!DOCTYPE html>
 <html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#f5f3ff;font-family:Inter,system-ui,sans-serif">
@@ -70,6 +98,7 @@ export function shell(inner: string): string {
       ${inner}
       <tr><td style="padding:20px 32px;border-top:1px solid #ede9fe;text-align:center">
         <p style="margin:0;color:#a78bfa;font-size:12px">AuraPost · contact@aurapost.fr · <a href="${appUrl}" style="color:#7c3aed;text-decoration:none">${appUrl}</a></p>
+        ${unsub}
       </td></tr>
     </table>
   </td></tr></table>
@@ -226,7 +255,8 @@ export function sendCancellationEmail(to: { email: string; name: string }) {
   return sendEmail(to, 'Ton abonnement AuraPost est annulé', html);
 }
 
-export function sendMonthlyReminderEmail(to: { email: string; name: string }, month: string) {
+// Email MARKETING (relance mensuelle) → garde de désabonnement + lien dans le pied.
+export function sendMonthlyReminderEmail(tenantId: string, to: { email: string; name: string }, month: string) {
   const html = shell(`
     <tr><td style="padding:32px">
       <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1e1b4b">${escHtml(month)} est là 📅</h1>
@@ -235,8 +265,8 @@ export function sendMonthlyReminderEmail(to: { email: string; name: string }, mo
         Pense à mettre à jour ton profil si tu as de nouveaux résultats clients, puis génère ton contenu.
       </p>
       ${button(`${APP_URL()}/dashboard`, 'Générer mes posts →')}
-    </td></tr>`);
-  return sendEmail(to, `${to.name.split(' ')[0] || 'Coach'}, tes posts de ${month} t'attendent 📅`, html);
+    </td></tr>`, getUnsubscribeUrl(tenantId));
+  return sendMarketingEmail(tenantId, to, `${to.name.split(' ')[0] || 'Coach'}, tes posts de ${month} t'attendent 📅`, html);
 }
 
 export function sendTrialEndingEmail(to: { email: string; name: string }, daysLeft: number) {

@@ -1,7 +1,8 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { db } from './db';
 import { users, generatedPosts, activityLogs } from './db/schema';
-import { shell, button, escHtml, sendEmail } from './email';
+import { shell, button, escHtml, sendEmail, sendMarketingEmail } from './email';
+import { getUnsubscribeUrl } from './unsubscribe';
 import { logActivity } from './db/activity';
 import { logError, logInfo } from './logger';
 
@@ -33,7 +34,7 @@ export function seqWelcomeHtml(name: string): string {
     </td></tr>`);
 }
 
-export function seqProfileIncompleteHtml(name: string): string {
+export function seqProfileIncompleteHtml(name: string, unsubscribeUrl?: string): string {
   return shell(`
     <tr><td style="padding:32px">
       <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1e1b4b">Ton premier contenu t'attend, ${escHtml(name)}</h1>
@@ -45,10 +46,10 @@ export function seqProfileIncompleteHtml(name: string): string {
         Dans 2 minutes, tu auras 12 posts prêts à relire. Promis.
       </p>
       ${button(`${APP_URL()}/onboarding`, 'Terminer mon profil →')}
-    </td></tr>`);
+    </td></tr>`, unsubscribeUrl);
 }
 
-export function seqExamplesHtml(name: string): string {
+export function seqExamplesHtml(name: string, unsubscribeUrl?: string): string {
   const example = (theme: string, text: string) => `
     <div style="background:#f5f3ff;border-left:3px solid #7c3aed;border-radius:8px;padding:14px 16px;margin:0 0 12px">
       <p style="margin:0 0 4px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#7c3aed">${escHtml(theme)}</p>
@@ -64,10 +65,10 @@ export function seqExamplesHtml(name: string): string {
       ${example('Motivation', '💪 Ton seul adversaire, c\'est le toi d\'hier. Concentre-toi sur ton prochain pas, pas sur celui des autres.')}
       ${example('Expertise (LinkedIn)', 'Le mental précède toujours le physique. Les clients qui progressent ne sont pas les plus doués — ce sont les plus constants.')}
       <div style="margin-top:8px">${button(`${APP_URL()}/dashboard`, 'Générer les miens →')}</div>
-    </td></tr>`);
+    </td></tr>`, unsubscribeUrl);
 }
 
-export function seqPostsReadyHtml(name: string): string {
+export function seqPostsReadyHtml(name: string, unsubscribeUrl?: string): string {
   return shell(`
     <tr><td style="padding:32px">
       <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1e1b4b">Tes 12 posts sont prêts ✦</h1>
@@ -80,10 +81,10 @@ export function seqPostsReadyHtml(name: string): string {
         <li>Programme-les dans le calendrier éditorial, ou copie-les en un clic.</li>
       </ol>
       ${button(`${APP_URL()}/dashboard`, 'Relire mes posts →')}
-    </td></tr>`);
+    </td></tr>`, unsubscribeUrl);
 }
 
-export function seqRenewalHtml(name: string): string {
+export function seqRenewalHtml(name: string, unsubscribeUrl?: string): string {
   return shell(`
     <tr><td style="padding:32px">
       <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1e1b4b">Un nouveau mois, du nouveau contenu</h1>
@@ -92,7 +93,7 @@ export function seqRenewalHtml(name: string): string {
         garder une présence régulière — et la régularité, c'est ce qui fait grandir une audience.
       </p>
       ${button(`${APP_URL()}/dashboard`, 'Générer mon mois →')}
-    </td></tr>`);
+    </td></tr>`, unsubscribeUrl);
 }
 
 // ── Définition de la séquence ────────────────────────────────────────────────
@@ -103,7 +104,7 @@ interface StepConfig {
   step: SequenceStep;
   day: number;
   subject: string;
-  build: (name: string) => string;
+  build: (name: string, unsubscribeUrl?: string) => string;
   /** Condition d'envoi évaluée sur l'état du coach. */
   condition: (s: CoachState) => boolean;
 }
@@ -173,8 +174,16 @@ export async function runEmailSequences(): Promise<SequenceRunResult> {
     if (!due) continue;
     if (await alreadySent(c.id, due.step)) continue;
 
+    const firstName = c.name.split(' ')[0] || 'coach';
+    // J0 (bienvenue) = transactionnel ; J1/J3/J7/J30 = marketing → garde de désabonnement + lien.
+    const isMarketing = due.step !== 'J0';
+
     try {
-      const res = await sendEmail({ email: c.email, name: c.name }, due.subject, due.build(c.name.split(' ')[0] || 'coach'));
+      const res = isMarketing
+        ? await sendMarketingEmail(c.tenantId, { email: c.email, name: c.name }, due.subject, due.build(firstName, getUnsubscribeUrl(c.tenantId)))
+        : await sendEmail({ email: c.email, name: c.name }, due.subject, due.build(firstName));
+      // skipped = désabonné : on ne journalise pas comme envoyé → la séquence reprend en cas de réabonnement.
+      if ('skipped' in res && res.skipped) continue;
       if (res.success) {
         await logActivity(c.tenantId, c.id, `email_seq_${due.step}`, null, { mocked: res.mocked ?? false });
         result.sent.push({ step: due.step, email: c.email });
