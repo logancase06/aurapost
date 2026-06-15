@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { websites } from '@/lib/db/schema';
+import { unstable_noStore as noStore } from 'next/cache';
 import { getCoachSiteData } from '@/lib/db/public';
 import { safeJsonLd } from '@/lib/utils';
 import CoachSite, { type CoachSiteData } from '@/templates/coach-site/CoachSite';
@@ -11,6 +12,9 @@ import CoachSite, { type CoachSiteData } from '@/templates/coach-site/CoachSite'
 type SP = Promise<{ preview?: string }>;
 
 const APP_DOMAIN = process.env.APP_DOMAIN ?? 'aurapost.fr';
+
+// ISR : le site publié est revalidé au plus toutes les heures (l'aperçu reste dynamique).
+export const revalidate = 3600;
 
 /** L'aperçu (site non publié) n'est autorisé qu'au propriétaire connecté du site. */
 async function canPreview(subdomain: string): Promise<boolean> {
@@ -76,6 +80,8 @@ export default async function PublicSitePage({ params, searchParams }: { params:
   const { subdomain } = await params;
   // ?preview=1 n'est honoré que pour le propriétaire connecté (sinon site publié only).
   const isPreview = (await searchParams)?.preview === '1' && (await canPreview(subdomain));
+  // L'aperçu (brouillon) ne doit JAMAIS être mis en cache → rendu dynamique forcé.
+  if (isPreview) noStore();
   const data = await getCoachSiteData(subdomain, { requireActive: !isPreview });
   if (!data) notFound();
   return (

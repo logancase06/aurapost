@@ -1,3 +1,14 @@
+// Domaine public R2 (R2_PUBLIC_URL) → motif remotePatterns, si défini et valide.
+function r2PublicPattern() {
+  try {
+    if (!process.env.R2_PUBLIC_URL) return [];
+    const { hostname } = new URL(process.env.R2_PUBLIC_URL);
+    return [{ protocol: 'https', hostname, pathname: '/**' }];
+  } catch {
+    return [];
+  }
+}
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -16,12 +27,16 @@ const nextConfig = {
   compress: true,
   poweredByHeader: false,
 
-  // Hôtes d'images externes autorisés (photos fitness Unsplash, avatars pravatar).
+  // Hôtes d'images externes autorisés (photos coach R2 + démo Unsplash/pravatar).
+  // R2 : domaine public (R2_PUBLIC_URL), *.r2.dev, et l'endpoint S3 signé.
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'images.unsplash.com' },
       { protocol: 'https', hostname: 'i.pravatar.cc' },
       { protocol: 'https', hostname: 'picsum.photos' },
+      { protocol: 'https', hostname: '*.r2.dev', pathname: '/**' },
+      { protocol: 'https', hostname: '*.r2.cloudflarestorage.com', pathname: '/**' },
+      ...r2PublicPattern(),
     ],
   },
 
