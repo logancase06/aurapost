@@ -31,13 +31,14 @@ export async function sendMarketingEmail(
   tenantId: string,
   to: { email: string; name?: string },
   subject: string,
-  html: string
+  html: string,
+  text?: string
 ): Promise<{ success: boolean; skipped?: boolean; mocked?: boolean; reason?: string }> {
   if (await isUnsubscribed(tenantId)) {
     logEvent('email.suppressed.unsubscribed', tenantId, { email: to.email });
     return { success: true, skipped: true };
   }
-  return sendEmail(to, subject, html);
+  return sendEmail(to, subject, html, text);
 }
 
 /**
@@ -46,8 +47,11 @@ export async function sendMarketingEmail(
 export async function sendEmail(
   to: { email: string; name?: string },
   subject: string,
-  html: string
+  html: string,
+  text?: string
 ): Promise<{ success: boolean; mocked?: boolean; reason?: string }> {
+  // Repli texte brut systématique (dérivé du HTML si non fourni) → délivrabilité + clients sans HTML.
+  const plain = (text ?? htmlToText(html)) || subject;
   if (isEmailMock()) {
     logInfo('[email:mock] email simulé', { to: to.email, subject });
     return { success: true, mocked: true };
@@ -60,6 +64,7 @@ export async function sendEmail(
       to: [to.email],
       subject,
       html,
+      text: plain,
     });
     if (error) {
       logError('[email] Resend error', { to: to.email, error: String(error) });
@@ -105,10 +110,42 @@ export function shell(inner: string, unsubscribeUrl?: string): string {
 </body></html>`;
 }
 
+/**
+ * CTA « bulletproof » : table + cellule colorée (Outlook ignore le padding sur <a>).
+ * Cible tactile ≥ 44px : padding vertical 16px + line-height 1.2 sur 16px ≈ 51px de haut.
+ */
 export function button(href: string, label: string): string {
-  return `<div style="text-align:center;margin-top:8px">
-    <a href="${href}" style="display:inline-block;padding:14px 32px;background:#7c3aed;color:#fff;font-size:15px;font-weight:600;border-radius:10px;text-decoration:none">${label}</a>
-  </div>`;
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:8px auto">
+    <tr><td align="center" style="border-radius:10px;background:#7c3aed">
+      <a href="${href}" style="display:inline-block;padding:16px 36px;background:#7c3aed;color:#fff;font-size:16px;font-weight:700;line-height:1.2;border-radius:10px;text-decoration:none">${label}</a>
+    </td></tr>
+  </table>`;
+}
+
+/**
+ * Version texte brut d'un email HTML (champ `text` de Resend) : améliore la délivrabilité
+ * et la lisibilité sur les clients sans HTML. Préserve le lien des CTA (« label : URL »).
+ */
+export function htmlToText(html: string): string {
+  return html
+    .replace(/<a\b[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi, (_m, href, label) => {
+      const text = label.replace(/<[^>]+>/g, '').trim();
+      return !text || text === href ? href : `${text} : ${href}`;
+    })
+    .replace(/<\/(p|h1|h2|h3|li|tr|div)>/gi, '\n')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#96;/g, '`')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .split('\n').map((l) => l.trim()).join('\n')
+    .trim();
 }
 
 export function welcomeEmail(name: string, ctaUrl?: string, locale: 'fr' | 'en' = 'fr'): string {
