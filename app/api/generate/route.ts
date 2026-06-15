@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import { auth } from '@/lib/auth';
 import { requireTenantId } from '@/lib/tenant';
 import { runMonthlyGeneration } from '@/lib/db/posts';
@@ -13,9 +13,11 @@ import { logError } from '@/lib/logger';
 // Au-delà de ce délai, un verrou est considéré périmé (génération crashée).
 const LOCK_STALE_MS = 5 * 60 * 1000;
 
-// Génération des 12 posts en un appel Claude (~20-40 s en mode API) → relève le
-// timeout par défaut de la fonction (~10 s sur Netlify/Vercel) pour éviter les 502.
-export const maxDuration = 60;
+// Génération des 12 posts en un appel Claude (~20-40 s en mode API). Netlify plafonne
+// les fonctions à 26 s (plan gratuit) / 30 s (Pro) : on s'aligne sur 26 s. En mode
+// API sur plan gratuit, une génération longue peut être coupée → privilégier le mode
+// cloudflare-tunnel ou un plan supérieur (cf. AUDIT_ROADMAP.md, item 0.4).
+export const maxDuration = 26;
 
 export async function POST() {
   try {
@@ -63,15 +65,22 @@ export async function POST() {
       return NextResponse.json({ error: e.msg }, { status: e.status });
     }
 
-    // Email « vos posts du mois sont prêts » — fire-and-forget.
-    (async () => {
-      const [u] = await db
-        .select({ email: users.email, fullName: users.fullName })
-        .from(users)
-        .where(eq(users.id, session.user.id))
-        .limit(1);
-      if (u) await sendMonthlyPostsEmail({ email: u.email, name: u.fullName }, result.count, result.month);
-    })().catch((err) => logError('[generate] email mensuel', { error: String(err) }));
+    // Email « vos posts du mois sont prêts ». `after()` (Next 16) garantit l'exécution
+    // APRÈS l'envoi de la réponse, sans être tué par le gel du lambda serverless — le
+    // runtime maintient la fonction vivante (contrairement à un fire-and-forget classique).
+    const userId = session.user.id;
+    after(async () => {
+      try {
+        const [u] = await db
+          .select({ email: users.email, fullName: users.fullName })
+          .from(users)
+          .where(eq(users.id, userId))
+          .limit(1);
+        if (u) await sendMonthlyPostsEmail({ email: u.email, name: u.fullName }, result.count, result.month);
+      } catch (err) {
+        logError('[generate] email mensuel', { error: String(err) });
+      }
+    });
 
     return NextResponse.json({ ok: true, count: result.count, month: result.month }, { status: 201 });
   } catch (err) {
