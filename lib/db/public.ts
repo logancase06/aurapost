@@ -106,6 +106,7 @@ export async function getCoachSiteData(subdomain: string, opts?: { requireActive
     speciality: profile.speciality,
     city: profile.city,
     bio: profile.bio,
+    tone: profile.tone,
     themeColor: site.themeColor ?? '#7c3aed',
     style,
     accentColor: null,
