@@ -1,4 +1,4 @@
-import { and, eq, sql } from 'drizzle-orm';
+import { count, like } from 'drizzle-orm';
 import { db } from './db';
 import { users, generatedPosts, activityLogs } from './db/schema';
 import { shell, button, escHtml, sendEmail, sendMarketingEmail } from './email';
@@ -126,15 +126,6 @@ function daysSince(iso: string): number {
   return Math.floor((Date.now() - new Date(iso).getTime()) / (24 * 60 * 60 * 1000));
 }
 
-async function alreadySent(userId: string, step: SequenceStep): Promise<boolean> {
-  const rows = await db
-    .select({ id: activityLogs.id })
-    .from(activityLogs)
-    .where(and(eq(activityLogs.userId, userId), eq(activityLogs.action, `email_seq_${step}`)))
-    .limit(1);
-  return rows.length > 0;
-}
-
 export interface SequenceRunResult {
   processed: number;
   sent: { step: SequenceStep; email: string }[];
@@ -159,20 +150,30 @@ export async function runEmailSequences(): Promise<SequenceRunResult> {
     .from(users)
     .limit(2000);
 
+  // Batch (anti N+1) : un seul GROUP BY pour les comptes de posts, une seule lecture des
+  // emails déjà envoyés — au lieu de 2 requêtes par coach.
+  const postCountRows = await db
+    .select({ tenantId: generatedPosts.tenantId, n: count() })
+    .from(generatedPosts)
+    .groupBy(generatedPosts.tenantId);
+  const postCounts = new Map(postCountRows.map((r) => [r.tenantId, Number(r.n)]));
+
+  const sentRows = await db
+    .select({ userId: activityLogs.userId, action: activityLogs.action })
+    .from(activityLogs)
+    .where(like(activityLogs.action, 'email_seq_%'));
+  const sentSet = new Set(sentRows.map((r) => `${r.userId}|${r.action}`));
+
   for (const c of coaches) {
     result.processed++;
     const age = daysSince(c.createdAt);
 
-    const [{ n } = { n: 0 }] = await db
-      .select({ n: sql<number>`count(*)` })
-      .from(generatedPosts)
-      .where(eq(generatedPosts.tenantId, c.tenantId));
-    const state: CoachState = { onboardingCompleted: !!c.onboardingCompleted, hasPosts: Number(n) > 0 };
+    const state: CoachState = { onboardingCompleted: !!c.onboardingCompleted, hasPosts: (postCounts.get(c.tenantId) ?? 0) > 0 };
 
     // Étape due = la plus avancée dont le jour est atteint, la condition remplie, non encore envoyée.
     const due = [...SEQUENCE].reverse().find((step) => age >= step.day && step.condition(state));
     if (!due) continue;
-    if (await alreadySent(c.id, due.step)) continue;
+    if (sentSet.has(`${c.id}|email_seq_${due.step}`)) continue;
 
     const firstName = c.name.split(' ')[0] || 'coach';
     // J0 (bienvenue) = transactionnel ; J1/J3/J7/J30 = marketing → garde de désabonnement + lien.
