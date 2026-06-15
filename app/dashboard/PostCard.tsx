@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { BorderBeam } from '@/components/ui/border-beam';
 import { approvePostAction, rejectPostAction, requestVariantAction } from './post-actions';
 import ApprovePostDialog from './ApprovePostDialog';
+import { WATERMARK_TEXT } from '@/lib/plans';
 import type { PostRow } from '@/lib/db/posts';
 
 const STATUS: Record<string, { label: string; variant: 'warning' | 'success' | 'destructive' }> = {
@@ -24,11 +25,13 @@ export default function PostCard({
   canExport = true,
   variantesUsed = 0,
   variantesMax = Infinity,
+  watermark = false,
 }: {
   post: PostRow;
   canExport?: boolean;
   variantesUsed?: number;
   variantesMax?: number;
+  watermark?: boolean;
 }) {
   const [pending, startTransition] = useTransition();
   const [copied, setCopied] = useState(false);
@@ -73,7 +76,8 @@ export default function PostCard({
   }
 
   async function copy() {
-    const text = `${post.content}\n\n${post.hashtags.map((h) => `#${h}`).join(' ')}`.trim();
+    const base = `${post.content}\n\n${post.hashtags.map((h) => `#${h}`).join(' ')}`.trim();
+    const text = watermark ? `${base}\n\n${WATERMARK_TEXT}` : base;
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);

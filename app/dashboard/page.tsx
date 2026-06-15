@@ -83,7 +83,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
   ]);
 
   const plan = session.user.plan ?? 'starter';
-  const gating = { canExport: canExportPost(plan), variantesUsed, variantesMax: getPlanLimits(plan).variantesMax };
+  const planLimits = getPlanLimits(plan);
+  const gating = { canExport: canExportPost(plan), variantesUsed, variantesMax: planLimits.variantesMax, watermark: planLimits.watermark };
 
   // Dégradation silencieuse : posts en mode mock alors qu'une IA est configurée.
   const apiConfigured = !!(process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_TUNNEL_URL);

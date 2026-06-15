@@ -267,7 +267,11 @@ export type GenerateResult =
   | { ok: true; count: number; month: string }
   | { ok: false; error: 'no_profile' | 'already_generated' | 'internal' };
 
-export async function runMonthlyGeneration(tenantId: string, userId: string): Promise<GenerateResult> {
+export async function runMonthlyGeneration(
+  tenantId: string,
+  userId: string,
+  opts?: { maxPosts?: number; instagramOnly?: boolean }
+): Promise<GenerateResult> {
   const profile = await getProfileInput(tenantId);
   if (!profile) return { ok: false, error: 'no_profile' };
 
@@ -292,6 +296,10 @@ export async function runMonthlyGeneration(tenantId: string, userId: string): Pr
     return { ok: false, error: 'internal' };
   }
   if (mode === 'mock') logEvent('generation.fallback_mock', tenantId, { month });
+
+  // Limites du plan (ex. offre Découverte = 4 posts Instagram uniquement).
+  if (opts?.instagramOnly) drafts = drafts.filter((d) => d.network === 'instagram');
+  if (opts?.maxPosts && drafts.length > opts.maxPosts) drafts = drafts.slice(0, opts.maxPosts);
 
   const now = new Date().toISOString();
   const values = drafts.map((d) => ({

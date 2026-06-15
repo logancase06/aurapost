@@ -8,7 +8,7 @@ import { ShimmerButton } from '@/components/ui/shimmer-button';
 import { MovingBorderCard } from '@/components/ui/moving-border';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import { PLANS, formatPrice, formatAnnualMonthly, ANNUAL_DISCOUNT, FREE_TRIAL_LABEL, type PlanDef } from '@/lib/plans';
+import { PLANS, FREE_PLAN, formatPrice, formatAnnualMonthly, ANNUAL_DISCOUNT, FREE_TRIAL_LABEL, type PlanDef } from '@/lib/plans';
 
 const FAQ = [
   {
@@ -21,7 +21,7 @@ const FAQ = [
   },
   {
     q: 'C’est quoi le site vitrine “loué” ?',
-    a: 'Avec le Pack Complet, AuraPost génère et héberge un vrai site vitrine sur ton-nom.aurapost.fr, rédigé par l’IA à partir de ton profil. Tu le partages à tes prospects.',
+    a: 'Avec l’offre Coach+Site, AuraPost génère et héberge un vrai site vitrine sur ton-nom.aurapost.fr, rédigé par l’IA à partir de ton profil. Tu le partages à tes prospects.',
   },
   {
     q: 'Je peux annuler quand je veux ?',
@@ -136,7 +136,7 @@ export default function PricingClient() {
         <div className="text-center">
           <h1 className="text-5xl font-black uppercase tracking-tighter sm:text-6xl">Choisis ton arme</h1>
           <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
-            Deux offres claires, sans engagement. Annule ou mets en pause quand tu veux.
+            Commence gratuitement, passe à l’offre payante quand tu es convaincu. Sans engagement.
           </p>
           <p className="mt-3 inline-flex items-center gap-2 rounded-full border border-[hsl(var(--success))]/30 bg-[hsl(var(--success))]/10 px-4 py-1 text-sm font-semibold text-[hsl(var(--success))]">
             ✦ {FREE_TRIAL_LABEL} · sans carte bancaire
@@ -159,7 +159,19 @@ export default function PricingClient() {
           </div>
         </div>
 
-        <div className="mt-12 grid gap-6 sm:grid-cols-2">
+        <div className="mt-12 grid gap-6 lg:grid-cols-3">
+          {/* Offre gratuite (hameçon) */}
+          <div className="hover-lift flex h-full flex-col rounded-lg border border-border bg-card p-8">
+            <h2 className="text-2xl font-black uppercase tracking-tight">{FREE_PLAN.name}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{FREE_PLAN.tagline}</p>
+            <p className="mt-3 flex items-baseline gap-1"><span className="text-4xl font-black">0 €</span><span className="text-sm font-normal text-muted-foreground">/ mois</span></p>
+            <ul className="mt-6 flex-1 space-y-3">
+              {FREE_PLAN.features.map((f) => (
+                <li key={f} className="flex items-start gap-2.5 text-sm text-muted-foreground"><Check className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" /> {f}</li>
+              ))}
+            </ul>
+            <Button asChild variant="outline" className="mt-8 w-full"><Link href="/register">Commencer gratuitement</Link></Button>
+          </div>
           {PLANS.map((p) => (
             <PlanCard key={p.id} plan={p} annual={annual} />
           ))}

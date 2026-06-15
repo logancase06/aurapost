@@ -2,7 +2,7 @@ import { NextResponse, after } from 'next/server';
 import { auth } from '@/lib/auth';
 import { requireTenantId } from '@/lib/tenant';
 import { runMonthlyGeneration } from '@/lib/db/posts';
-import { isPlanActive } from '@/lib/plans';
+import { isPlanActive, getPlanLimits } from '@/lib/plans';
 import { checkAuthRateLimit } from '@/lib/auth-rate-limit';
 import { sendMonthlyPostsEmail } from '@/lib/email';
 import { db } from '@/lib/db';
@@ -48,9 +48,10 @@ export async function POST() {
       return NextResponse.json({ error: 'Génération déjà en cours.' }, { status: 429 });
     }
 
+    const limits = getPlanLimits(session.user.plan);
     let result: Awaited<ReturnType<typeof runMonthlyGeneration>>;
     try {
-      result = await runMonthlyGeneration(tenantId, session.user.id);
+      result = await runMonthlyGeneration(tenantId, session.user.id, { maxPosts: limits.postsPerMonth, instagramOnly: limits.instagramOnly });
     } finally {
       await db.update(tenants).set({ generatingAt: null }).where(eq(tenants.id, tenantId));
     }

@@ -9,6 +9,7 @@ export interface PostsBoardGating {
   canExport?: boolean;
   variantesUsed?: number;
   variantesMax?: number;
+  watermark?: boolean;
 }
 
 // Posts avec séparation Instagram / LinkedIn — tabs animés à indicateur glissant.
@@ -59,7 +60,7 @@ function Grid({ posts, gating }: { posts: PostRow[]; gating?: PostsBoardGating }
   return (
     <div className="grid gap-5 lg:grid-cols-2">
       {posts.map((p) => (
-        <PostCard key={p.id} post={p} canExport={gating?.canExport} variantesUsed={gating?.variantesUsed} variantesMax={gating?.variantesMax} />
+        <PostCard key={p.id} post={p} canExport={gating?.canExport} variantesUsed={gating?.variantesUsed} variantesMax={gating?.variantesMax} watermark={gating?.watermark} />
       ))}
     </div>
   );

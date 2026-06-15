@@ -274,7 +274,7 @@ export interface LaunchMetrics {
 }
 
 /** Prix mensuel (€) par plan payant — pour l'estimation MRR. */
-const PLAN_PRICE: Record<string, number> = { content_only: 149, pack_complet: 209 };
+const PLAN_PRICE: Record<string, number> = { content_only: 39, pack_complet: 79 };
 
 function pct(part: number, total: number): number {
   return total > 0 ? Math.round((part / total) * 100) : 0;

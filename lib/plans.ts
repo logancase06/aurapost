@@ -29,38 +29,63 @@ export interface PlanDef {
 export const PLANS: PlanDef[] = [
   {
     id: 'content_only',
-    name: 'Content Only',
+    name: 'Coach',
     tagline: 'Le contenu social, en pilote automatique.',
     priceId: process.env.STRIPE_PRICE_CONTENT_ONLY,
-    amount: 14900, // 149 € / mois
+    amount: 3900, // 39 € / mois
     currency: 'eur',
     features: [
       '12 posts / mois (8 Instagram + 4 LinkedIn)',
       'Calibrés sur ta spécialité et ton ton',
-      'Approbation, rejet & variantes illimitées',
-      'Pack de 30 légendes (stories)',
+      'Variantes illimitées + pack de 30 légendes',
       'Calendrier éditorial + export iCal',
-      'Export Buffer / Later',
+      'Export en 1 clic (Buffer / Later)',
+      'Analyse de profil Instagram & LinkedIn',
     ],
   },
   {
     id: 'pack_complet',
-    name: 'Pack Complet',
+    name: 'Coach+Site',
     tagline: 'Le contenu ET le site. Tout-en-un.',
     priceId: process.env.STRIPE_PRICE_PACK_COMPLET,
-    amount: 20900, // 209 € / mois
+    amount: 7900, // 79 € / mois
     currency: 'eur',
     featured: true,
     features: [
-      'Tout le plan Content Only',
+      'Tout le plan Coach',
       'Site vitrine loué sur sous-domaine',
       'Généré par l’IA depuis ton profil',
-      'Portail public partageable à tes clients',
+      'Planning de réservations + portail public',
       'Badge « Certifié AuraPost »',
       'Support prioritaire',
     ],
   },
 ];
+
+/** Offre gratuite (hameçon) — affichée séparément, non « achetable ». */
+export const FREE_PLAN = {
+  id: 'starter' as const,
+  name: 'Découverte',
+  tagline: 'Teste AuraPost, gratuitement.',
+  amount: 0,
+  currency: 'eur',
+  features: [
+    '4 posts Instagram / mois',
+    'Calibrés sur ta spécialité',
+    'Watermark « Créé avec AuraPost »',
+    'Sans site ni export',
+  ],
+};
+
+/** Texte de watermark appliqué aux posts exportés/copiés des comptes gratuits. */
+export const WATERMARK_TEXT = '— Créé avec AuraPost · aurapost.fr';
+
+/** Plans réseau / agence (source unique ; cohérent avec /agency-pricing). */
+export const TEAMS_PLANS = [
+  { id: 'teams_starter', name: 'Teams Starter', limit: 'jusqu’à 50 distributeurs', amount: 49000 },
+  { id: 'teams_growth', name: 'Teams Growth', limit: 'jusqu’à 200 distributeurs', amount: 190000 },
+  { id: 'teams_enterprise', name: 'Enterprise', limit: '500+ distributeurs', amount: null },
+] as const;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Limites par plan — SOURCE UNIQUE de gating (appliqué CÔTÉ SERVEUR).
@@ -73,17 +98,23 @@ export type ProfileSection = 'base' | 'presence' | 'photos' | 'results';
 
 export interface PlanLimits {
   postsPerMonth: number;
+  /** Génère uniquement des posts Instagram (offre gratuite). */
+  instagramOnly: boolean;
   sitesEnabled: boolean;
   photosMax: number;
   variantesMax: number; // par mois
   exportEnabled: boolean;
+  /** Ajoute un watermark « Créé avec AuraPost » aux posts copiés/exportés. */
+  watermark: boolean;
   profileSections: ProfileSection[];
 }
 
+// 'starter' = Découverte (gratuit, hameçon) : 4 posts Instagram avec watermark, pas de
+// site, pas d'export, pas de variantes. Payer débloque le volume, LinkedIn, l'export, le site.
 const LIMITS: Record<PlanId, PlanLimits> = {
-  starter: { postsPerMonth: 12, sitesEnabled: false, photosMax: 3, variantesMax: 3, exportEnabled: false, profileSections: ['base'] },
-  content_only: { postsPerMonth: 12, sitesEnabled: false, photosMax: 10, variantesMax: 20, exportEnabled: true, profileSections: ['base', 'presence', 'photos', 'results'] },
-  pack_complet: { postsPerMonth: 12, sitesEnabled: true, photosMax: 10, variantesMax: 50, exportEnabled: true, profileSections: ['base', 'presence', 'photos', 'results'] },
+  starter: { postsPerMonth: 4, instagramOnly: true, sitesEnabled: false, photosMax: 1, variantesMax: 0, exportEnabled: false, watermark: true, profileSections: ['base'] },
+  content_only: { postsPerMonth: 12, instagramOnly: false, sitesEnabled: false, photosMax: 10, variantesMax: 999, exportEnabled: true, watermark: false, profileSections: ['base', 'presence', 'photos', 'results'] },
+  pack_complet: { postsPerMonth: 12, instagramOnly: false, sitesEnabled: true, photosMax: 10, variantesMax: 999, exportEnabled: true, watermark: false, profileSections: ['base', 'presence', 'photos', 'results'] },
 };
 
 export function getPlanLimits(plan: string | null | undefined): PlanLimits {
@@ -118,7 +149,7 @@ export function planIdForPrice(priceId: string | null | undefined): PlanId | nul
   return match ? match.id : null;
 }
 
-/** Prix mensuel formaté (ex: "149 €"). */
+/** Prix mensuel formaté (ex: "39 €"). */
 export function formatPrice(plan: PlanDef): string {
   return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: plan.currency, maximumFractionDigits: 0 }).format(
     plan.amount / 100
