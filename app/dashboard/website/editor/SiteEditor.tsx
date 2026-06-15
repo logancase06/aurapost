@@ -187,6 +187,17 @@ export default function SiteEditor({ initial, appDomain }: { initial: SiteEditor
           placeholder="@ton_compte ou URL"
         />
         <FieldText label="Lien de réservation" type="url" inputMode="url" value={content.contact.calendly ?? ''} onChange={(v) => setContact({ calendly: v })} placeholder="https://calendly.com/votre-lien" helper="Calendly, Cal.com… → devient le bouton principal de ton site" />
+        {/* Domaine personnalisé — préparation (DNS = intervention manuelle). */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <Label className="text-xs">Domaine personnalisé</Label>
+            <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary">Bientôt</span>
+          </div>
+          <Input value="" disabled placeholder="moncoach.fr" />
+          <p className="text-[10px] text-muted-foreground">
+            Connecte ton propre domaine — <a href="mailto:support@aurapost.fr" className="text-primary hover:underline">contacte-nous</a>.
+          </p>
+        </div>
       </Panel>
     </div>
   );
