@@ -111,6 +111,29 @@ Backlog     ▸ Phase 4 (v1.x) + Phase 5 (dette)       → en continu
 
 ---
 
+# Run nocturne autonome (P0 → P2) — 2026-06-16
+
+> Référentiel des priorités : `ROADMAP_DEFAUTS_SOLUTIONS.md`. Gate vert (tsc + build + 38 tests) après chaque item.
+
+## P0 — Survie & premier revenu
+- ✅ **C1 Qualité du contenu** : prompt de production refait (voix imitée, clichés bannis, spécificité obligatoire, variété de structure, few-shot) ; mock enrichi réécrit sans clichés (éval Vincent : ~10/12 publiables, 0 cliché). Génération du site : partiellement (posts traités ; copy site = à itérer).
+- ✅ **B1 Pricing** : Découverte 0 € (4 posts IG + watermark), Coach 39 €, Coach+Site 79 €, Teams (source unique). `getPlanLimits` applique le Free tier ; génération respecte les limites ; watermark à la copie ; `/pricing` à 3 offres ; MRR recalculé. Tests ajoutés.
+- ✅ **P0.3 Analyse profil** (feature complète) : `/dashboard/analyze`, scores + reco + réécriture bio/hashtags + créneaux + action ; table `profile_analyses` ; routes (3/j, mock) ; carte dashboard + nav ; analyse auto onboarding + email.
+- ✅ **G4 Déploiement** : `deploy-check` bloquant (Turso/Anthropic/NextAuth), health `mode/version`, alerte `/status` PROD-MOCK, checklist DEPLOY.md.
+
+## P1 — Croissance
+- ✅ **D2 Adoption distributeurs** : 1er mois auto à l'invitation (garde coût/timeout), badge « Inactif 7j+ » + relance en masse. Crons J+1/3/7 : ⚠️ différés (suivi de connexion manquant).
+- ✅ **G1 RGPD sous-traitance** : `/legal/sous-traitants`, `/legal/registre` (admin), opt-out + base légale dans l'email distributeur.
+- ❌ **A1 Publication LinkedIn native** : non faite (OAuth XL, non testable sans credentials LinkedIn — risque/vérifiabilité). Reste prioritaire.
+- ❌ **D1 Conformité MLM (file de validation)** : non faite (la base — blacklist + badge + page — existe déjà depuis la session précédente).
+- ❌ **E1 Acquisition** (blog, /coaches/[ville], /partenaires) : non faite.
+
+## P2 — Scale
+- ❌ Non traitées ce run : F1 onboarding court, H3 jobs async, H1 schéma source unique, H2 tests org/E2E CI, F2 reduced-motion, F3 ton B2B, G2 CSP nonces, G3 GDPR delete gating.
+- ✅ **Auto-eval** : risque coût/timeout de la génération inline à l'import CSV détecté et corrigé (mock-only / invitation unitaire).
+
+---
+
 # Journal d'implémentation (run autonome)
 
 ## ✅ Phase 0 — Bloquants production

@@ -2,6 +2,25 @@
 
 Toutes les évolutions notables du projet. Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/).
 
+## [1.1.0] — 2026-06-16 — Qualité contenu, pricing, analyse de profil & durcissement
+
+### Produit (P0)
+- **Qualité de génération refondue** : prompt de production avec voix imitée, **clichés bannis** (« repousse tes limites », « la régularité bat l'intensité »…), spécificité obligatoire (exercice/chiffre/situation), variété de structure, few-shot. Mock enrichi réécrit (éval : ~10/12 posts publiables, 0 cliché).
+- **Nouveau pricing** : Découverte **0 €** (4 posts Instagram + watermark « Créé avec AuraPost »), **Coach 39 €**, **Coach+Site 79 €**, Teams (source unique `lib/plans.ts`). Limites Free appliquées côté serveur ; watermark à la copie ; `/pricing` à 3 offres.
+- **Feature « Analyse & Recommandations »** : `/dashboard/analyze` — score Instagram/LinkedIn, scores détaillés, problèmes par impact, réécriture bio/titre (copier + appliquer), hashtags, créneaux, action prioritaire, historique. Analyse auto à l'onboarding + email. Table `profile_analyses`.
+
+### Réseau / RGPD (P1)
+- **Adoption distributeurs** : 1ᵉʳ mois généré automatiquement à l'invitation (garde coût/timeout), badge « Inactif 7j+ » + relance en masse.
+- **RGPD** : `/legal/sous-traitants` (art. 28) + `/legal/registre` (art. 30) + opt-out & base légale dans l'email d'invitation distributeur.
+
+### Ops & durcissement
+- `deploy-check` **bloquant** (Turso/Anthropic/NextAuth) ; `/api/health/detailed` expose `mode`/`version` ; **alerte rouge `/status`** si production sur base mémoire ; checklist de déploiement.
+
+### Correctifs
+- Garde coût/timeout sur la génération inline à l'import CSV massif (auto-revue).
+
+> Build vert · tsc 0 erreur · 38 tests Jest verts.
+
 ## [0.8.0] — 2026-06-15 — Durcissement prod & AuraPost for Teams (réseaux/MLM)
 
 ### Bloquants production
