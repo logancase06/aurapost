@@ -1,10 +1,10 @@
 'use server';
 
 import { z } from 'zod';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, updateTag } from 'next/cache';
 import { auth } from '@/lib/auth';
 import { requireTenantId } from '@/lib/tenant';
-import { setSiteStyle } from '@/lib/db/website';
+import { setSiteStyle, getSubdomainForTenant } from '@/lib/db/website';
 import { getSiteEditorData, saveEditorSiteContent, publishWebsite as publishWebsiteDb, unpublishWebsite, type SiteEditorData } from '@/lib/db/coach-site';
 import { SiteContentSchema, parseSiteContent, mergeSiteContent, type SiteContent } from '@/lib/db/site';
 import { uploadCoachPhoto } from '@/lib/r2';
@@ -16,6 +16,16 @@ import { checkAuthRateLimit } from '@/lib/auth-rate-limit';
 import { extractJson } from '@/lib/parse-json';
 
 const StyleSchema = z.enum(['impact', 'clarte', 'authenticite']);
+
+/**
+ * Invalide le cache du site public du tenant (tag `site-<sub>`) → changement visible immédiatement.
+ * `updateTag` (Next 16) : invalidation immédiate read-your-own-writes, valable uniquement depuis
+ * une Server Action (le cas ici). Purge le tag posé par `unstable_cache` dans lib/db/public.ts.
+ */
+async function revalidateSite(tenantId: string): Promise<void> {
+  const sub = await getSubdomainForTenant(tenantId);
+  if (sub) updateTag(`site-${sub.toLowerCase()}`);
+}
 
 async function ctx(): Promise<{ tenantId: string; userId: string; plan: string } | { error: string }> {
   const session = await auth();
@@ -46,6 +56,7 @@ export async function saveSiteContent(content: unknown): Promise<{ ok: boolean; 
   const res = await saveEditorSiteContent(c.tenantId, c.userId, parsed.data);
   if (!res.ok) return { ok: false, error: res.error === 'no_site' ? 'Génère d’abord ton site.' : 'Action impossible' };
   revalidatePath('/dashboard/website');
+  await revalidateSite(c.tenantId);
   return { ok: true };
 }
 
@@ -77,6 +88,7 @@ export async function setSitePublished(published: boolean): Promise<{ ok: boolea
   if (!res.ok) return { ok: false, error: 'Action impossible' };
   logEvent(published ? 'site.published' : 'site.unpublished', c.tenantId, {});
   revalidatePath('/dashboard/website');
+  await revalidateSite(c.tenantId);
   return { ok: true };
 }
 
@@ -199,6 +211,7 @@ export async function applyAIEdit(instruction: string, currentContent: unknown):
   if (!res.ok) return { ok: false, error: 'Sauvegarde impossible' };
 
   revalidatePath('/dashboard/website');
+  await revalidateSite(c.tenantId);
   logEvent('ai_edit.applied', c.tenantId, {});
   return { ok: true, content: merged };
 }
@@ -221,5 +234,6 @@ export async function saveSiteTemplateAction(style: string): Promise<{ ok: boole
   if (!res.ok) return { ok: false, error: res.error === 'no_profile' ? 'Complète d’abord ton profil.' : 'Action impossible' };
 
   revalidatePath('/dashboard/website');
+  await revalidateSite(tenantId);
   return { ok: true };
 }

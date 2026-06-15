@@ -3,9 +3,11 @@
 import { db } from '@/lib/db';
 import { coachProfiles, users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
+import { updateTag } from 'next/cache';
 import { nanoid } from 'nanoid';
 import { auth } from '@/lib/auth';
 import { requireTenantId } from '@/lib/tenant';
+import { getSubdomainForTenant } from '@/lib/db/website';
 import { sanitizeText } from '@/lib/security';
 import { ProfileDraftSchema } from '@/lib/validation';
 import { logActivity } from '@/lib/db/activity';
@@ -24,6 +26,12 @@ const TONE_CANON: Record<string, string> = {
   humoristique: 'personnel',
   personnel: 'personnel',
 };
+
+/** Le profil alimente le contenu de base du site public → on invalide son cache (tag `site-<sub>`). */
+async function revalidateSite(tenantId: string): Promise<void> {
+  const sub = await getSubdomainForTenant(tenantId);
+  if (sub) updateTag(`site-${sub.toLowerCase()}`);
+}
 
 async function ctx(): Promise<{ tenantId: string; userId: string } | { error: string }> {
   const session = await auth();
@@ -107,6 +115,7 @@ export async function saveProfileDraft(input: ProfileDraft): Promise<{ ok: boole
     })
     .where(eq(coachProfiles.tenantId, c.tenantId));
 
+  await revalidateSite(c.tenantId);
   return { ok: true };
 }
 
@@ -151,6 +160,7 @@ export async function importInstagramAction(url: string): Promise<InstagramImpor
     })
     .where(eq(coachProfiles.tenantId, c.tenantId));
 
+  await revalidateSite(c.tenantId);
   return { ok: true, followers: scrape.data.followers, analysis };
 }
 
@@ -181,6 +191,7 @@ export async function analyzeReviewsAction(text: string): Promise<ReviewsImport>
     .set({ reviewsText: clean.slice(0, 4000), reviewsAnalysis: JSON.stringify(analysis), updatedAt: new Date().toISOString() })
     .where(eq(coachProfiles.tenantId, c.tenantId));
 
+  await revalidateSite(c.tenantId);
   return { ok: true, analysis };
 }
 

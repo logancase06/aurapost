@@ -1,6 +1,7 @@
 import { db } from './index';
 import { websites, coachProfiles, coachPhotos, generatedPosts, users as usersTable } from './schema';
 import { and, eq, desc } from 'drizzle-orm';
+import { unstable_cache } from 'next/cache';
 import { styleForTone, type CoachSiteData, type SiteStyle } from '@/templates/coach-site/CoachSite';
 import { buildGeneratedSiteContent, mergeSiteContent, parseSiteContent } from './site';
 
@@ -23,8 +24,25 @@ function safeUrl(raw: string | null | undefined): string | null {
   return null;
 }
 
-/** Données publiques du site loué (route /site/[subdomain]). Exploite le contenu IA si présent. */
+/**
+ * Données publiques du site loué (route /site/[subdomain]). Exploite le contenu IA si présent.
+ *
+ * - Site publié (requireActive≠false) : mis en cache avec le tag `site-<sub>`. ISR garde un
+ *   filet à 3600 s, mais l'invalidation réelle est on-demand (revalidateTag) au save/publish/
+ *   template/profil — le client voit ses changements immédiatement (cf. dashboard/website/actions).
+ * - Aperçu (requireActive=false, propriétaire) : JAMAIS caché → toujours frais.
+ */
 export async function getCoachSiteData(subdomain: string, opts?: { requireActive?: boolean }): Promise<CoachSiteData | null> {
+  if (opts?.requireActive === false) return getRawCoachSiteData(subdomain, opts);
+  const sub = subdomain.toLowerCase();
+  return unstable_cache(() => getRawCoachSiteData(subdomain, opts), ['coach-site', sub], {
+    revalidate: 3600,
+    tags: [`site-${sub}`],
+  })();
+}
+
+/** Lecture brute (sans cache) — source de vérité utilisée par le wrapper caché et l'aperçu. */
+async function getRawCoachSiteData(subdomain: string, opts?: { requireActive?: boolean }): Promise<CoachSiteData | null> {
   const [site] = await db
     .select({
       tenantId: websites.tenantId,

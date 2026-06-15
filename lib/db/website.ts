@@ -48,6 +48,12 @@ export async function getWebsiteForTenant(tenantId: string): Promise<WebsiteRow 
   return row ? map(row) : null;
 }
 
+/** Sous-domaine du site d'un tenant (clé du tag de cache `site-<sub>`), ou null si pas de site. */
+export async function getSubdomainForTenant(tenantId: string): Promise<string | null> {
+  const [row] = await db.select({ subdomain: websites.subdomain }).from(websites).where(eq(websites.tenantId, tenantId)).limit(1);
+  return row?.subdomain ?? null;
+}
+
 export async function getWebsiteBySubdomain(subdomain: string): Promise<WebsiteRow | null> {
   const [row] = await db
     .select(COLS)
