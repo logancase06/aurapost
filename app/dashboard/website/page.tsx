@@ -4,7 +4,7 @@ import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { coachProfiles, websites } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { Pencil, ExternalLink, CheckCircle2, Lock } from 'lucide-react';
+import { Pencil, ExternalLink, CheckCircle2, Lock, Search, Zap } from 'lucide-react';
 import { canGenerateSite } from '@/lib/plans';
 import { getWebsiteForTenant } from '@/lib/db/website';
 import { getCoachSiteData } from '@/lib/db/public';
@@ -58,22 +58,47 @@ export default async function WebsitePage() {
   const publicUrl = site ? `https://${site.subdomain}.${APP_DOMAIN}` : null;
   const siteData = site ? await getCoachSiteData(site.subdomain, { requireActive: false }) : null;
 
-  // ── État 1 : aucun site (ou pas encore de contenu) → choisir un style et créer ──
+  // ── État 1 : aucun site (ou pas encore de contenu) → 2 chemins d'entrée ──────
   if (!site || !hasContent) {
     return (
       <DashboardShell active="/dashboard/website">
         <div>
           <h1 className="text-2xl font-bold">Crée ton site vitrine</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Choisis un style, on génère ton site depuis ton profil, puis tu le personnalises.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Explore des exemples pour trouver ton style, ou génère ton site directement depuis ton profil.</p>
         </div>
-        <Card className="mt-6 p-5">
-          <p className="font-semibold">1. Choisis un style</p>
-          <p className="mb-4 text-sm text-muted-foreground">Tu pourras en changer à tout moment.</p>
-          <TemplateChooser current={currentStyle} recommended={recommended} />
-        </Card>
-        <div className="mt-6">
-          <CreateSiteButton />
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          {/* Chemin mis en avant : explorer des exemples */}
+          <Card className="flex flex-col border-primary/40 bg-primary/5 p-6">
+            <Search className="h-7 w-7 text-primary" />
+            <h2 className="mt-3 text-lg font-bold">Explorer des exemples</h2>
+            <p className="mt-1 flex-1 text-sm text-muted-foreground">
+              Parcours 10 sites de coachs réels, trouve ton style, personnalise avec l’IA.
+            </p>
+            <Button asChild variant="gradient" className="mt-4 w-fit">
+              <Link href="/dashboard/website/explore">Explorer →</Link>
+            </Button>
+          </Card>
+
+          {/* Chemin discret : génération directe depuis le profil */}
+          <Card className="flex flex-col p-6">
+            <Zap className="h-7 w-7 text-muted-foreground" />
+            <h2 className="mt-3 text-lg font-bold">Créer directement</h2>
+            <p className="mt-1 flex-1 text-sm text-muted-foreground">
+              On génère ton site depuis ton profil en 30 secondes.
+            </p>
+            <div className="mt-4">
+              <CreateSiteButton />
+            </div>
+          </Card>
         </div>
+
+        {/* Choix du style (optionnel) — conservé pour qui veut choisir avant de générer */}
+        <details className="mt-6 rounded-xl border border-border bg-card p-1">
+          <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-muted-foreground">Choisir un style manuellement</summary>
+          <div className="p-3">
+            <TemplateChooser current={currentStyle} recommended={recommended} />
+          </div>
+        </details>
       </DashboardShell>
     );
   }
@@ -108,6 +133,9 @@ export default async function WebsitePage() {
               <Link href={`/site/${site.subdomain}`} target="_blank">Aperçu <ExternalLink className="h-3.5 w-3.5" /></Link>
             </Button>
           )}
+          <Button asChild variant="ghost" size="sm">
+            <Link href="/dashboard/website/explore"><Search className="h-3.5 w-3.5" /> Changer de style</Link>
+          </Button>
         </div>
       </div>
 

@@ -1,4 +1,4 @@
-import { LayoutDashboard, Globe, BarChart3, History, CreditCard, CalendarDays, Gift, Settings, User, type LucideIcon } from 'lucide-react';
+import { LayoutDashboard, Globe, Compass, BarChart3, History, CreditCard, CalendarDays, Gift, Settings, User, type LucideIcon } from 'lucide-react';
 
 export interface NavLink {
   href: string;
@@ -12,6 +12,7 @@ export const DASHBOARD_LINKS: NavLink[] = [
   { href: '/dashboard/profile', label: 'Mon profil', icon: User },
   { href: '/dashboard/calendar', label: 'Calendrier', icon: CalendarDays },
   { href: '/dashboard/website', label: 'Mon site', icon: Globe },
+  { href: '/dashboard/website/explore', label: 'Explorer des styles', icon: Compass },
   { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/dashboard/referral', label: 'Parrainage', icon: Gift },
   { href: '/dashboard/history', label: 'Historique', icon: History },
