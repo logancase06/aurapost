@@ -16,6 +16,8 @@ CREATE TABLE IF NOT EXISTS tenants (
   plan_expires_at TEXT,
   payment_failed_at TEXT,
   generating_at TEXT,
+  unsubscribed_at TEXT,
+  unsubscribe_token TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );

@@ -29,6 +29,10 @@ export const tenants = sqliteTable(
     planExpiresAt: text('plan_expires_at'),
     paymentFailedAt: text('payment_failed_at'), // début de la période de grâce (échec de paiement)
     generatingAt: text('generating_at'), // verrou anti double-génération (null = libre)
+    // RGPD/LCEN — désabonnement des emails marketing (null = abonné).
+    // `unsubscribeToken` est réservé : la vérification est stateless via HMAC (lib/unsubscribe.ts).
+    unsubscribedAt: text('unsubscribed_at'),
+    unsubscribeToken: text('unsubscribe_token'),
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull(),
   },
