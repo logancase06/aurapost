@@ -6,6 +6,7 @@ import { createTenantAndOwner, hashPassword } from './users-actions';
 import { addTenantToOrg } from './organizations';
 import { runMonthlyGeneration } from './posts';
 import { sendEmail, shell, button, escHtml } from '@/lib/email';
+import { getUnsubscribeUrl } from '@/lib/unsubscribe';
 import { sanitizeText } from '@/lib/security';
 import { logError } from '@/lib/logger';
 
@@ -41,7 +42,7 @@ async function createMagicLink(email: string): Promise<string> {
   return `${baseUrl}/auth/magic?token=${token}`;
 }
 
-function welcomeHtml(name: string, orgName: string, link: string): string {
+function welcomeHtml(name: string, orgName: string, link: string, unsubscribeUrl: string): string {
   return shell(`
     <tr><td style="padding:32px">
       <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1e1b4b">Votre espace AuraPost est prêt ✦</h1>
@@ -51,6 +52,10 @@ function welcomeHtml(name: string, orgName: string, link: string): string {
         charte de votre réseau. Connectez-vous en un clic pour le relire et le publier.
       </p>
       ${button(link, 'Voir mes 12 posts →')}
+      <p style="margin:24px 0 0;color:#9ca3af;font-size:11px;line-height:1.5">
+        Vous recevez cet email car ${escHtml(orgName)} vous a inscrit sur AuraPost (intérêt légitime).
+        Vous pouvez <a href="${unsubscribeUrl}" style="color:#9ca3af">vous désinscrire</a> à tout moment.
+      </p>
     </td></tr>`);
 }
 
@@ -108,7 +113,7 @@ export async function inviteDistributor(orgId: string, orgName: string, input: D
     }
 
     const link = await createMagicLink(email);
-    await sendEmail({ email, name: displayName }, `Votre espace AuraPost (${orgName}) est prêt ✦`, welcomeHtml(displayName.split(' ')[0] || 'là', orgName, link));
+    await sendEmail({ email, name: displayName }, `Votre espace AuraPost (${orgName}) est prêt ✦`, welcomeHtml(displayName.split(' ')[0] || 'là', orgName, link, getUnsubscribeUrl(tenantId)));
     return { ok: true, created, email };
   } catch (err) {
     logError('[org-invite] échec', { email, error: String(err) });
