@@ -74,8 +74,8 @@ export default function SiteFooter({ data, accent }: { data: CoachSiteData; acce
         </div>
 
         <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', marginTop: 48, paddingTop: 24, display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between', alignItems: 'center' }}>
-          <p style={{ margin: 0, fontSize: 12, color: '#52525b' }}>© {year} {data.displayName} <span style={{ color: accent }}>·</span> Site créé avec AuraPost</p>
-          <a href="https://aurapost.fr" style={{ fontSize: 12, color: '#52525b', textDecoration: 'none' }}>✦ AuraPost</a>
+          <p style={{ margin: 0, fontSize: 12, color: '#9ca3af' }}>© {year} {data.displayName} <span style={{ color: accent }}>·</span> Site créé avec AuraPost</p>
+          <a href="https://aurapost.fr" target="_blank" rel="noopener noreferrer" className="cs-foot-link" style={{ fontSize: 12, color: '#9ca3af', textDecoration: 'none' }}>✦ AuraPost</a>
         </div>
       </div>
       <style>{`.cs-foot-link{transition:color .15s ease}.cs-foot-link:hover{color:#fff}@media (max-width:768px){.cs-footer-grid{grid-template-columns:1fr!important;gap:32px!important}}`}</style>
