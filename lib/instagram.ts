@@ -1,5 +1,6 @@
 import { logError, logInfo } from './logger';
 import { runClaudeCode } from './claude-code';
+import { runAnalysisLLM } from './analyze/llm';
 import { extractJson } from './parse-json';
 
 // Scraping de page Instagram PUBLIQUE, côté serveur uniquement, sans authentification.
@@ -137,9 +138,22 @@ export async function analyzeInstagram(data: InstagramData): Promise<InstagramAn
     .filter(Boolean)
     .join('\n');
 
+  const user = `${ANALYSIS_PROMPT}\n\nProfil :\n"""${corpus.slice(0, 4000)}"""`;
+
+  // 1) Chemin production : API Anthropic (ANTHROPIC_API_KEY) — fonctionne sur serverless.
+  //    Sans ça, l'analyse du ton tombait silencieusement en mock même avec une clé configurée.
+  try {
+    const text = await runAnalysisLLM('Tu réponds UNIQUEMENT en JSON strict valide.', user);
+    const parsed = normalizeAnalysis(extractJson(text));
+    if (parsed) return parsed;
+  } catch (err) {
+    logInfo('[instagram] API indisponible, essai Claude Code CLI', { error: String(err) });
+  }
+
+  // 2) Repli : Claude Code CLI (dev local / tunnel).
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
-      const text = await runClaudeCode(`${ANALYSIS_PROMPT}\n\nProfil :\n"""${corpus.slice(0, 4000)}"""`);
+      const text = await runClaudeCode(user);
       const parsed = normalizeAnalysis(extractJson(text));
       if (parsed) return parsed;
     } catch (err) {
