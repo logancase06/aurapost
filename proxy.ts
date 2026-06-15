@@ -128,6 +128,10 @@ export default async function proxy(req: NextRequest) {
     pathname.startsWith('/site/') ||
     pathname.startsWith('/coach/') ||
     pathname === '/api/site/contact' ||
+    pathname === '/api/unsubscribe' ||
+    pathname === '/api/resubscribe' ||
+    pathname === '/unsubscribed' ||
+    pathname === '/resubscribed' ||
     pathname === '/status' ||
     pathname.startsWith('/api/health') ||
     pathname.startsWith('/blog') ||
