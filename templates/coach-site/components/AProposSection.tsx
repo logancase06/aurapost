@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Reveal from '../Reveal';
 import type React from 'react';
 import { type Theme } from '../theme';
@@ -32,13 +33,12 @@ export default function AProposSection({ data, style, accent, t }: { data: Coach
           )}
         </div>
         {data.photoUrl && (
-          <div className="cs-apropos-media site-image-zoom" style={{ maxWidth: 400, marginLeft: 'auto', width: '100%' }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={data.photoUrl} alt={data.displayName} loading="lazy" decoding="async" style={{ width: '100%', aspectRatio: '4/5', objectFit: 'cover', display: 'block', ...photoStyle }} />
+          <div className="cs-apropos-media site-image-zoom" style={{ position: 'relative', maxWidth: 400, marginLeft: 'auto', width: '100%', aspectRatio: '4/5', ...photoStyle }}>
+            <Image src={data.photoUrl} alt={data.displayName} fill sizes="(max-width: 768px) 100vw, 40vw" style={{ objectFit: 'cover' }} />
           </div>
         )}
       </div>
-      <style>{`@media (max-width:768px){.cs-apropos-grid{grid-template-columns:1fr!important;gap:28px!important}.cs-apropos-media{order:-1;max-width:100%!important}.cs-apropos-media img{height:260px!important;aspect-ratio:auto!important}}`}</style>
+      <style>{`@media (max-width:768px){.cs-apropos-grid{grid-template-columns:1fr!important;gap:28px!important}.cs-apropos-media{order:-1;max-width:100%!important;aspect-ratio:auto!important;height:260px!important}}`}</style>
     </Reveal>
   );
 }

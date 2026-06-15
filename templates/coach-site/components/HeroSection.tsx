@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { Check } from 'lucide-react';
 import { headStyle, initials, metaLine, ctaLabelFor, ctaHrefFor, splitLastWord, GRAIN, type Theme } from '../theme';
 import { forcesOf } from './ForcesSection';
@@ -48,6 +49,10 @@ export default function HeroSection({ data, style, accent, t }: { data: CoachSit
           </div>
 
           {data.photoUrl ? (
+            // next/image NON utilisé ici volontairement : la photo Impact est positionnée
+            // absolute (desktop) ↔ static (mobile) avec un clip-path diagonal ; `Image fill`
+            // exige un ancêtre positionné à chaque breakpoint et l'image s'échapperait au
+            // reflow mobile. Photo déjà ré-encodée 1200px/JPEG côté upload → gain marginal.
             // eslint-disable-next-line @next/next/no-img-element
             <img src={data.photoUrl} alt={`Photo de ${data.displayName}`} className="cs-hero-impact-photo" />
           ) : (
@@ -112,9 +117,8 @@ export default function HeroSection({ data, style, accent, t }: { data: CoachSit
 
           <div className="cs-hero-clarte-media" style={{ position: 'relative' }}>
             {data.photoUrl ? (
-              <div className="cs-hero-clarte-frame" style={{ position: 'relative', maxWidth: 460, marginLeft: 'auto', border: '8px solid #fff', borderRadius: 20, overflow: 'hidden', boxShadow: '0 32px 80px rgba(0,0,0,0.14)' }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={data.photoUrl} alt={data.displayName} style={{ display: 'block', width: '100%', aspectRatio: '4/5', objectFit: 'cover' }} />
+              <div className="cs-hero-clarte-frame" style={{ position: 'relative', maxWidth: 460, marginLeft: 'auto', aspectRatio: '4/5', border: '8px solid #fff', borderRadius: 20, overflow: 'hidden', boxShadow: '0 32px 80px rgba(0,0,0,0.14)' }}>
+                <Image src={data.photoUrl} alt={data.displayName} fill priority sizes="(max-width: 768px) 100vw, 40vw" style={{ objectFit: 'cover' }} />
                 {headline && (
                   <span className="cs-hero-clarte-badge" style={{ position: 'absolute', bottom: 16, left: -20, background: '#fff', borderRadius: 9999, padding: '8px 16px', boxShadow: '0 8px 24px rgba(0,0,0,0.12)', fontSize: 13, fontWeight: 600, color: t.ink }}>
                     ✓ {headline.length > 30 ? `${headline.slice(0, 30)}…` : headline}
@@ -137,8 +141,7 @@ export default function HeroSection({ data, style, accent, t }: { data: CoachSit
           @media (max-width:768px){
             .cs-hero-clarte-grid{grid-template-columns:1fr!important;gap:28px!important;padding:88px 24px 56px!important}
             .cs-hero-clarte-media{order:-1}
-            .cs-hero-clarte-frame{max-width:100%!important;border:none!important;border-radius:16px!important}
-            .cs-hero-clarte-frame img{height:280px!important;aspect-ratio:auto!important}
+            .cs-hero-clarte-frame{max-width:100%!important;border:none!important;border-radius:16px!important;aspect-ratio:auto!important;height:280px!important}
             .cs-hero-clarte-badge{display:none!important}
           }
         `}</style>
@@ -157,8 +160,9 @@ export default function HeroSection({ data, style, accent, t }: { data: CoachSit
     <section id="accueil" className="cs-hero-auth" style={{ position: 'relative', overflow: 'hidden', background: onPhoto ? '#0A0A0A' : t.bg }}>
       {onPhoto ? (
         <>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={data.photoUrl!} alt="" className="cs-hero-auth-photo" style={{ display: 'block', width: '100%', height: 'clamp(380px, 58vh, 680px)', objectFit: 'cover', objectPosition: 'center top' }} />
+          <div className="cs-hero-auth-photo" style={{ position: 'relative', width: '100%', height: 'clamp(380px, 58vh, 680px)' }}>
+            <Image src={data.photoUrl!} alt="" fill priority sizes="100vw" style={{ objectFit: 'cover', objectPosition: 'center top' }} />
+          </div>
           <div aria-hidden style={{ position: 'absolute', inset: 0, backgroundImage: `url("${GRAIN}")`, backgroundSize: '180px', opacity: 0.07, mixBlendMode: 'overlay', pointerEvents: 'none' }} />
           <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.35) 45%, transparent 72%)' }} />
           <div className="cs-hero-auth-text" style={{ position: 'absolute', left: 48, right: 48, bottom: 48 }}>
