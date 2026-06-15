@@ -7,6 +7,8 @@ const config: Config = {
     '^@/(.*)$': '<rootDir>/$1',
     // nanoid v5 est ESM-only → shim CJS pour les tests.
     '^nanoid$': '<rootDir>/__mocks__/nanoid.ts',
+    // next/font/google est une transformation au build (SWC) → mock pour les tests.
+    '^next/font/google$': '<rootDir>/__mocks__/next-font-google.ts',
   },
   transform: {
     '^.+\\.(ts|tsx)$': [
