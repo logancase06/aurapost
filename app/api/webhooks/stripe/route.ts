@@ -8,8 +8,7 @@ import { tenants, users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { sendPaymentFailedEmail, sendPaymentSucceededEmail, sendCancellationEmail, sendTrialEndingEmail } from '@/lib/email';
 import { logError, logInfo } from '@/lib/logger';
-
-const GRACE_DAYS = 7;
+import { GRACE_PERIOD_DAYS as GRACE_DAYS } from '@/lib/constants';
 
 /** Email + nom du propriétaire d'un tenant (fire-and-forget pour les notifications). */
 async function owner(tenantId: string): Promise<{ email: string; name: string } | null> {

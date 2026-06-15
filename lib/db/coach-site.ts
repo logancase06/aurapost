@@ -195,27 +195,6 @@ export async function generateAndStoreSite(
   return { ok: true, site: { subdomain, content, photos: state.photos, themeColor: '#7c3aed' } };
 }
 
-export async function getStoredSite(tenantId: string): Promise<GeneratedSite | null> {
-  const [row] = await db
-    .select({ subdomain: websites.subdomain, content: websites.content, themeColor: websites.themeColor })
-    .from(websites)
-    .where(eq(websites.tenantId, tenantId))
-    .limit(1);
-  if (!row?.content) return null;
-  const content = parseJson<SiteContent>(row.content);
-  if (!content) return null;
-  const state = await getSiteWizardState(tenantId);
-  return { subdomain: row.subdomain, content, photos: state?.photos ?? [], themeColor: row.themeColor ?? '#7c3aed' };
-}
-
-export async function updateSiteContent(tenantId: string, userId: string, content: SiteContent) {
-  await db
-    .update(websites)
-    .set({ content: JSON.stringify(content), seoDescription: content.seo_description, headline: content.hero_title, ...touch() })
-    .where(eq(websites.tenantId, tenantId));
-  await logActivity(tenantId, userId, 'site_edited', null, {});
-}
-
 export async function publishWebsite(tenantId: string, userId: string): Promise<{ ok: boolean; subdomain?: string }> {
   const [row] = await db.select({ id: websites.id, subdomain: websites.subdomain }).from(websites).where(eq(websites.tenantId, tenantId)).limit(1);
   if (!row) return { ok: false };
