@@ -319,6 +319,22 @@ export function sendTrialEndingEmail(to: { email: string; name: string }, daysLe
   return sendEmail(to, `Ton essai se termine dans ${daysLeft} jours`, html);
 }
 
+/** Analyse de profil prête (onboarding) — 3 points à améliorer + lien dashboard. */
+export function sendAnalysisReadyEmail(to: { email: string; name: string }, score: number, points: string[]) {
+  const list = points.slice(0, 3).map((p) => `<li style="margin:0 0 6px">${escHtml(p)}</li>`).join('');
+  const html = shell(`
+    <tr><td style="padding:32px">
+      <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1e1b4b">Ton analyse Instagram est prête ✦</h1>
+      <p style="margin:0 0 16px;color:#6b7280;font-size:15px;line-height:1.6">
+        Bonjour ${escHtml(to.name)}, on a analysé ton profil — score global : <strong>${score}/100</strong>.
+        Voici les 3 priorités pour progresser cette semaine :
+      </p>
+      <ol style="margin:0 0 24px;padding-left:20px;color:#374151;font-size:14px;line-height:1.7">${list || '<li>Optimise ta bio et tes hashtags.</li>'}</ol>
+      ${button(`${APP_URL()}/dashboard/analyze`, 'Voir mon analyse complète →')}
+    </td></tr>`);
+  return sendEmail(to, `Ton analyse Instagram : ${score}/100 — 3 choses à améliorer`, html);
+}
+
 /** Notification interne (admin) d'un nouveau prospect agence/réseau. */
 export function sendAgencyLeadNotification(
   to: { email: string; name?: string },

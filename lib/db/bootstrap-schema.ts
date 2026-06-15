@@ -58,11 +58,23 @@ CREATE TABLE IF NOT EXISTS coach_profiles (
   reviews_text TEXT,
   reviews_analysis TEXT,
   photos TEXT,
+  last_recommendation TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS coach_profiles_tenant_idx ON coach_profiles (tenant_id);
 CREATE INDEX IF NOT EXISTS coach_profiles_user_idx ON coach_profiles (user_id);
+
+CREATE TABLE IF NOT EXISTS profile_analyses (
+  id TEXT PRIMARY KEY,
+  tenant_id TEXT NOT NULL,
+  platform TEXT NOT NULL,
+  profile_url TEXT,
+  score_global INTEGER,
+  analysis_json TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS profile_analyses_tenant_platform_idx ON profile_analyses (tenant_id, platform);
 
 CREATE TABLE IF NOT EXISTS generated_posts (
   id TEXT PRIMARY KEY,

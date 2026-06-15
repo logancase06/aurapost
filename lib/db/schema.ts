@@ -83,12 +83,30 @@ export const coachProfiles = sqliteTable(
     reviewsText: text('reviews_text'), // texte brut collé par le coach
     reviewsAnalysis: text('reviews_analysis'), // JSON : { strengths[], testimonial, tone }
     photos: text('photos'), // JSON : string[] d'URLs (R2 ou data URL en mock)
+    lastRecommendation: text('last_recommendation'), // action prioritaire en cours (feature Analyse)
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull(),
   },
   (t) => ({
     tenantIdx: index('coach_profiles_tenant_idx').on(t.tenantId),
     userIdx: index('coach_profiles_user_idx').on(t.userId),
+  })
+);
+
+// Analyses de présence en ligne (feature « Analyse & Recommandations »).
+export const profileAnalyses = sqliteTable(
+  'profile_analyses',
+  {
+    id: text('id').primaryKey(),
+    tenantId: text('tenant_id').notNull(),
+    platform: text('platform').notNull(), // 'instagram' | 'linkedin'
+    profileUrl: text('profile_url'),
+    scoreGlobal: integer('score_global'),
+    analysisJson: text('analysis_json').notNull(), // JSON complet de l'analyse
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => ({
+    tenantPlatformIdx: index('profile_analyses_tenant_platform_idx').on(t.tenantId, t.platform),
   })
 );
 

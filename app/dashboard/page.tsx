@@ -8,6 +8,8 @@ import { listPosts, getPostStats, hasGeneratedThisMonth, getVariantesCount, getL
 import { canExportPost, getPlanLimits } from '@/lib/plans';
 import { getSmartSuggestions, getGenerationStreak } from '@/lib/db/suggestions';
 import { getOnboardingProgress, getProfileCompletion } from '@/lib/db/onboarding';
+import { getLatestAnalysis } from '@/lib/db/analyses';
+import AnalyzeCard from './AnalyzeCard';
 import { currentMonth } from '@/lib/utils';
 import { XCircle, CalendarDays, ChevronDown } from 'lucide-react';
 import VerifyEmailBanner from './VerifyEmailBanner';
@@ -90,6 +92,12 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
   const firstName = (me?.fullName ?? session.user.name ?? '').split(' ')[0] || 'coach';
   const emailVerified = !!session.user.emailVerifiedAt;
 
+  // Carte « Analyse de profil » (score Instagram le plus récent + nudge si > 30 j).
+  const latestIg = await getLatestAnalysis(tenantId, 'instagram');
+  const analyzeCard = latestIg
+    ? { score: latestIg.scoreGlobal ?? 0, staleDays: Math.floor((Date.now() - new Date(latestIg.createdAt).getTime()) / 86400000) }
+    : null;
+
   // Bandeau « nouveau mois » : a déjà généré au moins une fois, mais pas ce mois-ci.
   const showNewMonth = !alreadyGenerated && progress.generation;
   const monthName = new Date().toLocaleDateString('fr-FR', { month: 'long' });
@@ -118,6 +126,9 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
       </div>
 
       {!emailVerified && <VerifyEmailBanner />}
+
+      <AnalyzeCard instagram={analyzeCard ? { score: analyzeCard.score, date: latestIg!.createdAt } : null} staleDays={analyzeCard?.staleDays ?? null} />
+
 
       {fallbackMock && (
         <Alert variant="warning" className="mt-6">

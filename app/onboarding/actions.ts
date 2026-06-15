@@ -4,10 +4,14 @@ import { db } from '@/lib/db';
 import { coachProfiles, users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { updateTag } from 'next/cache';
+import { after } from 'next/server';
 import { nanoid } from 'nanoid';
 import { auth } from '@/lib/auth';
 import { requireTenantId } from '@/lib/tenant';
 import { getSubdomainForTenant } from '@/lib/db/website';
+import { analyzeInstagramProfile } from '@/lib/analyze/instagram';
+import { saveAnalysis, setLastRecommendation } from '@/lib/db/analyses';
+import { sendAnalysisReadyEmail } from '@/lib/email';
 import { sanitizeText } from '@/lib/security';
 import { ProfileDraftSchema } from '@/lib/validation';
 import { logActivity } from '@/lib/db/activity';
@@ -161,6 +165,23 @@ export async function importInstagramAction(url: string): Promise<InstagramImpor
     .where(eq(coachProfiles.tenantId, c.tenantId));
 
   await revalidateSite(c.tenantId);
+
+  // Analyse complète du profil en arrière-plan (after() = après la réponse, garanti).
+  const igUrl = url.trim();
+  after(async () => {
+    try {
+      const res = await analyzeInstagramProfile({ url: igUrl });
+      if (!res.ok) return;
+      await saveAnalysis(c.tenantId, 'instagram', res.analysis.score_global, res.analysis, igUrl);
+      if (res.analysis.prochaine_action) await setLastRecommendation(c.tenantId, res.analysis.prochaine_action);
+      const [u] = await db.select({ email: users.email, name: users.fullName }).from(users).where(eq(users.id, c.userId)).limit(1);
+      const priorities = res.analysis.problemes.map((p) => p.titre).filter(Boolean);
+      if (u) await sendAnalysisReadyEmail({ email: u.email, name: u.name.split(' ')[0] || 'coach' }, res.analysis.score_global, priorities);
+    } catch (err) {
+      logError('[onboarding] analyse auto Instagram', { error: String(err) });
+    }
+  });
+
   return { ok: true, followers: scrape.data.followers, analysis };
 }
 
