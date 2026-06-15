@@ -6,12 +6,14 @@ import { auth } from '@/lib/auth';
 import { requireTenantId } from '@/lib/tenant';
 import { setSiteStyle } from '@/lib/db/website';
 import { getSiteEditorData, saveEditorSiteContent, publishWebsite as publishWebsiteDb, unpublishWebsite, type SiteEditorData } from '@/lib/db/coach-site';
-import { SiteContentSchema } from '@/lib/db/site';
+import { SiteContentSchema, parseSiteContent, mergeSiteContent, type SiteContent } from '@/lib/db/site';
 import { uploadCoachPhoto } from '@/lib/r2';
 import { validateImage, POST_PHOTO_MIME } from '@/lib/upload';
 import { MAX_UPLOAD_BYTES } from '@/lib/security';
 import { logError, logEvent } from '@/lib/logger';
 import { canGenerateSite } from '@/lib/plans';
+import { checkAuthRateLimit } from '@/lib/auth-rate-limit';
+import { extractJson } from '@/lib/parse-json';
 
 const StyleSchema = z.enum(['impact', 'clarte', 'authenticite']);
 
@@ -76,6 +78,129 @@ export async function setSitePublished(published: boolean): Promise<{ ok: boolea
   logEvent(published ? 'site.published' : 'site.unpublished', c.tenantId, {});
   revalidatePath('/dashboard/website');
   return { ok: true };
+}
+
+// ── Édition IA en langage naturel ────────────────────────────────────────────
+
+const AIEditSchema = z.object({
+  instruction: z.string().min(1).max(500),
+  currentContent: SiteContentSchema,
+});
+
+const AI_EDIT_MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6';
+
+const AI_EDIT_SYSTEM = `Tu es un expert en copywriting pour coachs sportifs et professionnels du bien-être.
+Tu reçois le contenu actuel d'un site vitrine (JSON) et une instruction de modification en langage naturel du coach.
+Tu renvoies UNIQUEMENT le contenu modifié en JSON valide, sans explication, sans markdown, sans balises de code.
+Règles strictes :
+- Ne jamais inventer de statistiques, résultats ou chiffres non présents dans le contenu actuel
+- Modifications ciblées : ne changer QUE ce qui est demandé, conserver le reste à l'identique
+- Respecter le style du coach (ton, langue)
+- hero.title : maximum 80 caractères
+- hero.subtitle : maximum 200 caractères
+- strengths[].title : maximum 40 caractères
+- strengths[].description : maximum 120 caractères
+- Répondre UNIQUEMENT avec le JSON, rien d'autre`;
+
+function buildAIEditUser(
+  profile: { name: string; speciality: string; city: string | null; tone: string },
+  template: string,
+  currentContent: SiteContent,
+  instruction: string
+): string {
+  return `Profil du coach :
+Nom : ${profile.name}
+Spécialité : ${profile.speciality}
+Ville : ${profile.city ?? 'non précisée'}
+Ton : ${profile.tone}
+Style du site : ${template}
+
+Contenu actuel du site :
+${JSON.stringify(currentContent, null, 2)}
+
+Instruction du coach : "${instruction}"
+
+Renvoie le contenu modifié en JSON valide.`;
+}
+
+/** Appel direct à l'API Anthropic (claude-sonnet-4-6). Lève si la clé est absente. */
+async function runAIEdit(system: string, user: string): Promise<string> {
+  const mod = await import('@anthropic-ai/sdk');
+  const Anthropic = mod.default;
+  const client = new Anthropic(); // lit ANTHROPIC_API_KEY dans l'environnement
+  const message = await client.messages.create({
+    model: AI_EDIT_MODEL,
+    max_tokens: 1000,
+    system,
+    messages: [{ role: 'user', content: user }],
+  });
+  let text = '';
+  for (const block of message.content) {
+    if (block.type === 'text') text += block.text + '\n';
+  }
+  if (!text.trim()) throw new Error('Réponse vide de l’API Anthropic');
+  return text;
+}
+
+export interface AIEditResult {
+  ok: boolean;
+  content?: SiteContent;
+  error?: string;
+}
+
+/**
+ * Modifie le contenu du site via une instruction en langage naturel.
+ * Ne modifie JAMAIS le contenu si l'appel IA échoue (renvoie une erreur, l'éditeur
+ * conserve son état). Rate-limité à 20 appels/heure/tenant.
+ */
+export async function applyAIEdit(instruction: string, currentContent: unknown): Promise<AIEditResult> {
+  const parsed = AIEditSchema.safeParse({ instruction, currentContent });
+  if (!parsed.success) return { ok: false, error: 'Instruction ou contenu invalide' };
+
+  const c = await ctx();
+  if ('error' in c) return { ok: false, error: c.error };
+  if (!canGenerateSite(c.plan)) return { ok: false, error: 'upgrade_required' };
+
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return { ok: false, error: 'L’édition IA n’est pas disponible en ce moment.' };
+  }
+
+  const rl = await checkAuthRateLimit(`aiedit:${c.tenantId}`, 20, 60 * 60 * 1000);
+  if (!rl.allowed) {
+    return { ok: false, error: `Trop de modifications. Réessaie dans ${Math.ceil(rl.retryAfterSec / 60)} min.` };
+  }
+
+  const editor = await getSiteEditorData(c.tenantId);
+  if (!editor) return { ok: false, error: 'Génère d’abord ton site.' };
+
+  const user = buildAIEditUser(editor.profile, editor.style, parsed.data.currentContent, parsed.data.instruction);
+
+  let raw: string;
+  try {
+    raw = await runAIEdit(AI_EDIT_SYSTEM, user);
+  } catch (err) {
+    logError('[applyAIEdit] appel Anthropic échoué', { error: String(err) });
+    logEvent('ai_edit.failed', c.tenantId, { reason: 'api_error' });
+    return { ok: false, error: 'L’IA est indisponible — réessaie dans quelques minutes' };
+  }
+
+  // Parse + coercition tolérante → contenu valide ; merge sur l'actuel (les champs
+  // omis par l'IA héritent du contenu courant, jamais de perte de données).
+  let aiContent: SiteContent;
+  try {
+    aiContent = parseSiteContent(extractJson(raw));
+  } catch {
+    logEvent('ai_edit.failed', c.tenantId, { reason: 'invalid_json' });
+    return { ok: false, error: 'Réponse IA invalide — réessaie' };
+  }
+
+  const merged = mergeSiteContent(parsed.data.currentContent, aiContent);
+  const res = await saveEditorSiteContent(c.tenantId, c.userId, merged);
+  if (!res.ok) return { ok: false, error: 'Sauvegarde impossible' };
+
+  revalidatePath('/dashboard/website');
+  logEvent('ai_edit.applied', c.tenantId, {});
+  return { ok: true, content: merged };
 }
 
 /** Enregistre le style visuel choisi pour le site vitrine. */
