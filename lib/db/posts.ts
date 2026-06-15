@@ -21,6 +21,7 @@ import { isGenerationRecorded, recordGeneration } from '@/lib/rate-limit';
 import { currentMonth } from '@/lib/utils';
 import { logError, logEvent } from '@/lib/logger';
 import { parseAnalysis, InstagramAnalysisSchema, ReviewsAnalysisSchema } from '@/lib/validation';
+import { getBrandConstraintsForTenant } from './organizations';
 
 export type PostStatus = 'draft' | 'approved' | 'rejected';
 
@@ -110,6 +111,8 @@ export async function getProfileInput(tenantId: string): Promise<CoachProfileInp
     .where(eq(coachProfiles.tenantId, tenantId))
     .limit(1);
   if (!row) return null;
+  // Contraintes de marque héritées si le tenant appartient à une organisation/réseau.
+  const brand = await getBrandConstraintsForTenant(tenantId);
   return {
     displayName: row.displayName,
     speciality: row.speciality,
@@ -125,6 +128,10 @@ export async function getProfileInput(tenantId: string): Promise<CoachProfileInp
     clientResults: row.results ?? null,
     linkedinHeadline: row.linkedinHeadline,
     linkedinSummary: row.linkedinSummary,
+    brandName: brand?.orgName ?? null,
+    brandTone: brand?.brandTone ?? null,
+    brandGuidelines: brand?.toneGuidelines ?? null,
+    forbiddenWords: brand?.forbiddenWords ?? null,
   };
 }
 
