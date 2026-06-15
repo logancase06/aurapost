@@ -55,7 +55,7 @@ export async function inviteMemberAction(input: unknown): Promise<{ ok: boolean;
   if ('error' in c) return { ok: false, error: c.error };
   const parsed = InviteSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: 'Email ou champs invalides.' };
-  const res = await inviteDistributor(c.orgId, c.orgName, parsed.data);
+  const res = await inviteDistributor(c.orgId, c.orgName, parsed.data, { autoGenerate: true });
   if (!res.ok) return { ok: false, error: res.error ?? 'Invitation impossible' };
   revalidatePath('/dashboard/org');
   return { ok: true, created: res.created };

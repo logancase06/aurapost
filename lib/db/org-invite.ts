@@ -5,6 +5,7 @@ import { nanoid } from 'nanoid';
 import { createTenantAndOwner, hashPassword } from './users-actions';
 import { addTenantToOrg } from './organizations';
 import { runMonthlyGeneration } from './posts';
+import { GENERATION_MODE } from '@/lib/content-generator';
 import { sendEmail, shell, button, escHtml } from '@/lib/email';
 import { getUnsubscribeUrl } from '@/lib/unsubscribe';
 import { sanitizeText } from '@/lib/security';
@@ -64,7 +65,7 @@ function welcomeHtml(name: string, orgName: string, link: string, unsubscribeUrl
  * pré-rempli, le rattache à l'org, et envoie un magic link « espace prêt ».
  * Idempotent : un email existant est simplement rattaché à l'org.
  */
-export async function inviteDistributor(orgId: string, orgName: string, input: DistributorInput): Promise<InviteResult> {
+export async function inviteDistributor(orgId: string, orgName: string, input: DistributorInput, opts?: { autoGenerate?: boolean }): Promise<InviteResult> {
   const email = (input.email ?? '').trim().toLowerCase();
   if (!EMAIL_RE.test(email)) return { ok: false, created: false, email, error: 'email invalide' };
 
@@ -102,9 +103,12 @@ export async function inviteDistributor(orgId: string, orgName: string, input: D
 
     await addTenantToOrg(orgId, tenantId, 'member');
 
-    // Adoption : on génère le premier mois AVANT que le distributeur se connecte (best-effort,
-    // non bloquant). Pour les nouveaux comptes uniquement, et seulement s'il n'a rien encore.
-    if (created) {
+    // Adoption : générer le premier mois AVANT la connexion du distributeur. PRUDENCE COÛT/TIMEOUT :
+    // en mode API, une génération prend 20-40 s → on ne la lance EN LIGNE que pour une invitation
+    // unitaire (autoGenerate) ou en mode mock (rapide/gratuit). En import CSV massif + API, on
+    // diffère à la première visite (la vraie solution = jobs asynchrones, cf. roadmap P2.11).
+    const cheap = GENERATION_MODE === 'mock-enrichi';
+    if (created && (cheap || opts?.autoGenerate)) {
       try {
         await runMonthlyGeneration(tenantId, tenantId);
       } catch (err) {
