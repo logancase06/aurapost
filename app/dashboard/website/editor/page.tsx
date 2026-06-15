@@ -18,5 +18,5 @@ export default async function SiteEditorPage() {
   // Pas de site (profil incomplet ou jamais généré) → retour à la page site.
   if (!data || !data.subdomain) redirect('/dashboard/website');
 
-  return <SiteEditor initial={data} appDomain={APP_DOMAIN} />;
+  return <SiteEditor initial={data} appDomain={APP_DOMAIN} aiEnabled={!!process.env.ANTHROPIC_API_KEY} />;
 }

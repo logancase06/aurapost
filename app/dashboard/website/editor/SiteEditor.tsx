@@ -15,10 +15,11 @@ import { cn } from '@/lib/utils';
 import type { SiteContent } from '@/lib/db/site';
 import type { SiteEditorData } from '@/lib/db/coach-site';
 import { saveSiteContent, uploadSitePhoto, setSitePublished } from '../actions';
+import AIEditPanel from '@/components/explore/AIEditPanel';
 
 const STYLE_LABEL: Record<string, string> = { impact: 'Impact', clarte: 'Clarté', authenticite: 'Authenticité' };
 
-export default function SiteEditor({ initial, appDomain }: { initial: SiteEditorData; appDomain: string }) {
+export default function SiteEditor({ initial, appDomain, aiEnabled }: { initial: SiteEditorData; appDomain: string; aiEnabled: boolean }) {
   const subdomain = initial.subdomain as string;
   const [content, setContent] = useState<SiteContent>(initial.content);
   const [published, setPublished] = useState(initial.published);
@@ -77,6 +78,12 @@ export default function SiteEditor({ initial, appDomain }: { initial: SiteEditor
     setContent((c) => ({ ...c, strengths: c.strengths.map((s, j) => (j === i ? { ...s, ...patch } : s)) }));
   const setTestimonials = (list: SiteContent['testimonials']) => setContent((c) => ({ ...c, testimonials: list }));
 
+  // Édition IA : remplace le contenu (déjà sauvegardé côté serveur) + refresh aperçu.
+  const applyAIContent = (next: SiteContent) => {
+    setContent(next);
+    setIframeKey((k) => k + 1);
+  };
+
   const uploadPhoto = useCallback(async (file: File): Promise<string | null> => {
     if (file.size > 10 * 1024 * 1024) {
       toast.error('Photo trop lourde (max 10 Mo).');
@@ -109,6 +116,9 @@ export default function SiteEditor({ initial, appDomain }: { initial: SiteEditor
 
   const Editor = (
     <div className="space-y-5 pb-24">
+      {/* ÉDITION IA — au-dessus des panneaux manuels */}
+      <AIEditPanel aiEnabled={aiEnabled} content={content} onApply={applyAIContent} />
+
       {/* HERO */}
       <Panel title="Accroche (hero)">
         <FieldText label="Titre principal" value={content.hero.title ?? ''} max={80} onChange={(v) => setHero({ title: v })} />
