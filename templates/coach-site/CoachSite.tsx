@@ -1,6 +1,7 @@
 import { themeFor, accentForSpeciality } from './theme';
 import type { CoachSiteData, SiteStyle } from './types';
 import SiteNav from './components/SiteNav';
+import GrainOverlay from './components/GrainOverlay';
 import HeroSection from './components/HeroSection';
 import ForcesSection from './components/ForcesSection';
 import AProposSection from './components/AProposSection';
@@ -32,6 +33,7 @@ export default function CoachSite({ data }: { data: CoachSiteData }) {
 
   return (
     <div style={{ fontFamily: t.fontBody, color: t.ink, background: t.bg, '--site-accent': accent } as React.CSSProperties}>
+      <GrainOverlay style={style} />
       <SiteNav name={data.displayName} accent={accent} hasApropos={hasApropos} hasTemoignages={hasTemoignages} />
       <HeroSection data={data} style={style} accent={accent} t={t} />
       <ForcesSection data={data} style={style} accent={accent} t={t} />

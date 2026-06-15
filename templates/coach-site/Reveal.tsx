@@ -51,7 +51,8 @@ export default function Reveal({
         ...style,
         opacity: hidden ? 0 : 1,
         transform: hidden ? 'translateY(22px)' : 'translateY(0)',
-        transition: `opacity 0.7s ease ${delay}ms, transform 0.7s cubic-bezier(0.16,1,0.3,1) ${delay}ms`,
+        // Easing « ease-out-expo » — entrée plus naturelle et premium.
+        transition: `opacity 0.6s cubic-bezier(0.16,1,0.3,1) ${delay}ms, transform 0.6s cubic-bezier(0.16,1,0.3,1) ${delay}ms`,
         willChange: 'opacity, transform',
       }}
     >

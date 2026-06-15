@@ -32,7 +32,7 @@ export default function AProposSection({ data, style, accent, t }: { data: Coach
           )}
         </div>
         {data.photoUrl && (
-          <div className="cs-apropos-media" style={{ maxWidth: 400, marginLeft: 'auto', width: '100%' }}>
+          <div className="cs-apropos-media site-image-zoom" style={{ maxWidth: 400, marginLeft: 'auto', width: '100%' }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={data.photoUrl} alt={data.displayName} style={{ width: '100%', aspectRatio: '4/5', objectFit: 'cover', display: 'block', ...photoStyle }} />
           </div>
