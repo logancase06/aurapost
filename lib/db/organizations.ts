@@ -4,6 +4,7 @@ import { and, eq, inArray, sql, desc, count } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { slugify } from '@/lib/utils';
 import { currentMonth } from '@/lib/utils';
+import { mergeForbidden } from '@/lib/compliance';
 
 export interface Organization {
   id: string;
@@ -210,7 +211,8 @@ export async function getBrandConstraintsForTenant(tenantId: string): Promise<Te
     orgName: membership.org.name,
     brandTone: membership.org.brandTone,
     toneGuidelines: kit?.toneGuidelines ?? null,
-    forbiddenWords: kit?.forbiddenWords ?? [],
+    // Mots interdits de l'org + liste noire MLM par défaut (conformité allégations de revenus).
+    forbiddenWords: mergeForbidden(kit?.forbiddenWords),
   };
 }
 

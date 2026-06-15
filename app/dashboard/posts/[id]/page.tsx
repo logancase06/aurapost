@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { ArrowLeft, Camera, Briefcase, History } from 'lucide-react';
 import { auth } from '@/lib/auth';
 import { getPostWithVariants } from '@/lib/db/posts';
+import { getBrandConstraintsForTenant } from '@/lib/db/organizations';
+import { findForbidden } from '@/lib/compliance';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import DashboardShell from '../../DashboardShell';
@@ -22,6 +24,10 @@ export default async function PostDetailPage({ params }: { params: Promise<{ id:
   if (!data) notFound();
   const { post, original, variants } = data;
   const NetworkIcon = post.network === 'linkedin' ? Briefcase : Camera;
+
+  // Badge conformité marque (si le tenant appartient à une organisation/réseau).
+  const brand = await getBrandConstraintsForTenant(tenantId);
+  const breaches = brand ? findForbidden(post.content, brand.forbiddenWords) : null;
 
   return (
     <DashboardShell active="/dashboard">
@@ -43,6 +49,9 @@ export default async function PostDetailPage({ params }: { params: Promise<{ id:
           {STATUS_LABEL[post.status] ?? post.status}
         </Badge>
         {post.variantOfId && <Badge variant="secondary">Variante</Badge>}
+        {breaches && (breaches.length === 0
+          ? <Badge variant="success">Conforme marque ✓</Badge>
+          : <Badge variant="destructive">⚠ Terme à éviter : {breaches[0]}</Badge>)}
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[1.4fr_1fr]">
