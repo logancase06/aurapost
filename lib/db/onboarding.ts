@@ -2,6 +2,24 @@ import { db } from './index';
 import { coachProfiles, coachPhotos, generatedPosts, websites, tenants, users } from './schema';
 import { and, eq, isNull, lt, sql } from 'drizzle-orm';
 import { computeCompletion, type CompletionResult } from '@/lib/completion';
+import { currentMonth } from '@/lib/utils';
+
+/** Coachs onboardés qui n'ont PAS encore généré ce mois-ci (relance mensuelle). */
+export async function coachesToRemindMonthly(month = currentMonth()): Promise<{ email: string; name: string; tenantId: string }[]> {
+  const generated = await db
+    .selectDistinct({ tenantId: generatedPosts.tenantId })
+    .from(generatedPosts)
+    .where(and(eq(generatedPosts.month, month), isNull(generatedPosts.variantOfId)));
+  const done = new Set(generated.map((g) => g.tenantId));
+
+  const onboarded = await db
+    .select({ email: users.email, name: users.fullName, tenantId: users.tenantId })
+    .from(users)
+    .where(eq(users.onboardingCompleted, true))
+    .limit(2000);
+
+  return onboarded.filter((u) => !done.has(u.tenantId));
+}
 
 export interface OnboardingProgress {
   profile: boolean; // profil coach rempli

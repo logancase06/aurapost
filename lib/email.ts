@@ -226,6 +226,19 @@ export function sendCancellationEmail(to: { email: string; name: string }) {
   return sendEmail(to, 'Ton abonnement AuraPost est annulé', html);
 }
 
+export function sendMonthlyReminderEmail(to: { email: string; name: string }, month: string) {
+  const html = shell(`
+    <tr><td style="padding:32px">
+      <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1e1b4b">${escHtml(month)} est là 📅</h1>
+      <p style="margin:0 0 24px;color:#6b7280;font-size:15px;line-height:1.6">
+        Bonjour ${escHtml(to.name)}, un nouveau mois commence — tes 12 posts t'attendent.
+        Pense à mettre à jour ton profil si tu as de nouveaux résultats clients, puis génère ton contenu.
+      </p>
+      ${button(`${APP_URL()}/dashboard`, 'Générer mes posts →')}
+    </td></tr>`);
+  return sendEmail(to, `${to.name.split(' ')[0] || 'Coach'}, tes posts de ${month} t'attendent 📅`, html);
+}
+
 export function sendTrialEndingEmail(to: { email: string; name: string }, daysLeft: number) {
   const html = shell(`
     <tr><td style="padding:32px">
