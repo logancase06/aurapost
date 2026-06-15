@@ -33,8 +33,10 @@ describe('content generator (mock)', () => {
   });
 
   it('generateMonthlyContent bascule sur le mock et retourne 12 posts', async () => {
-    const posts = await generateMonthlyContent(profile);
+    // generateMonthlyContent renvoie { posts, mode } (mode = 'api' | 'mock').
+    const { posts, mode } = await generateMonthlyContent(profile);
     expect(posts).toHaveLength(12);
+    expect(mode).toBe('mock');
   });
 
   it('generateDemoPosts retourne 3 posts (2 IG + 1 LinkedIn)', () => {
