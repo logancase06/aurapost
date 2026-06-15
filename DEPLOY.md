@@ -7,6 +7,14 @@ tourne sans aucune clé. Cette page décrit la configuration *production-ready*.
 > Vérifiez l'état des intégrations à tout moment sur **`/status`** (public, sans clés exposées)
 > ou via **`GET /api/health/detailed`** (probes Turso/Redis/R2).
 
+> ## ⚠️ **CRITIQUE — `TURSO_DATABASE_URL` est OBLIGATOIRE en production**
+> **Sans elle, l'application REFUSE de démarrer** (throw explicite, cf. `lib/db/index.ts`).
+> En production, AuraPost ne tombe **jamais** silencieusement sur une base SQLite en
+> mémoire : sur serverless (Netlify), chaque lambda aurait sa propre instance, remise à
+> zéro à chaque cold start → **perte de données et incohérence garanties**. Renseignez
+> `TURSO_DATABASE_URL` **et** `TURSO_AUTH_TOKEN`, puis vérifiez `GET /api/health/detailed`
+> (`database.status` doit être `ok`, pas `degraded`).
+
 ---
 
 ## 0. Pré-vol

@@ -63,6 +63,26 @@ function buildClient(): Client {
       authToken: process.env.TURSO_AUTH_TOKEN ?? '',
     });
   }
+
+  // ── Pas de Turso configuré ───────────────────────────────────────────────
+  // GARDE PRODUCTION : on REFUSE de démarrer sur une base SQLite en mémoire en
+  // production. Sur serverless (Netlify/Vercel), chaque lambda a sa propre instance
+  // mémoire, remise à zéro à chaque cold start → perte de données et incohérence
+  // garanties. Mieux vaut un crash explicite qu'une corruption silencieuse.
+  // Le build (`next build`) collecte les pages avec NODE_ENV=production mais n'accède
+  // pas à la base (init paresseuse) → on l'exclut via NEXT_PHASE.
+  const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
+  if (process.env.NODE_ENV === 'production' && !isBuildPhase) {
+    throw new Error(
+      '[AuraPost] FATAL: TURSO_DATABASE_URL absent en production. Refus de démarrer sur une base ' +
+        'SQLite en mémoire (perte de données garantie sur serverless). Configurez TURSO_DATABASE_URL ' +
+        '+ TURSO_AUTH_TOKEN avant le déploiement (voir DEPLOY.md).'
+    );
+  }
+  // Dev / test : fallback mémoire assumé, mais JAMAIS silencieux.
+  if (process.env.NODE_ENV !== 'test') {
+    console.warn('[AuraPost] ⚠️ DB mode: in-memory/file (dev) — données non durables, jamais utilisé en production.');
+  }
   return createMemoryClient();
 }
 
