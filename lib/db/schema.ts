@@ -27,6 +27,8 @@ export const tenants = sqliteTable(
     stripeCustomerId: text('stripe_customer_id'),
     stripeSubscriptionId: text('stripe_subscription_id'),
     planExpiresAt: text('plan_expires_at'),
+    paymentFailedAt: text('payment_failed_at'), // début de la période de grâce (échec de paiement)
+    generatingAt: text('generating_at'), // verrou anti double-génération (null = libre)
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull(),
   },

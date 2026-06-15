@@ -14,6 +14,8 @@ CREATE TABLE IF NOT EXISTS tenants (
   stripe_customer_id TEXT,
   stripe_subscription_id TEXT,
   plan_expires_at TEXT,
+  payment_failed_at TEXT,
+  generating_at TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );

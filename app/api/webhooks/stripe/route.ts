@@ -3,7 +3,19 @@ import { NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { upsertSubscription, findTenantByStripeCustomer } from '@/lib/db/subscription';
 import { planIdForPrice } from '@/lib/plans';
+import { db } from '@/lib/db';
+import { tenants, users } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
+import { sendPaymentFailedEmail, sendPaymentSucceededEmail, sendCancellationEmail, sendTrialEndingEmail } from '@/lib/email';
 import { logError, logInfo } from '@/lib/logger';
+
+const GRACE_DAYS = 7;
+
+/** Email + nom du propriétaire d'un tenant (fire-and-forget pour les notifications). */
+async function owner(tenantId: string): Promise<{ email: string; name: string } | null> {
+  const [u] = await db.select({ email: users.email, name: users.fullName }).from(users).where(eq(users.tenantId, tenantId)).limit(1);
+  return u ? { email: u.email, name: u.name } : null;
+}
 
 // Webhook Stripe. Met à jour la table subscriptions (+ tenants.plan) selon les événements
 // checkout.session.completed / customer.subscription.updated / customer.subscription.deleted.
@@ -89,6 +101,44 @@ export async function POST(req: NextRequest) {
         const tenantId = await findTenantByStripeCustomer(sub.customer);
         if (tenantId) {
           await upsertSubscription({ tenantId, plan: 'starter', status: 'canceled', stripeCustomerId: sub.customer });
+          const o = await owner(tenantId);
+          if (o) await sendCancellationEmail(o);
+        }
+        break;
+      }
+
+      case 'invoice.payment_failed': {
+        const inv = event.data.object as { customer: string };
+        const tenantId = await findTenantByStripeCustomer(inv.customer);
+        if (tenantId) {
+          // Période de grâce : on note l'échec, on garde l'accès (l'expiration dure
+          // jouera via planExpiresAt). On prévient le coach.
+          await db.update(tenants).set({ paymentFailedAt: new Date().toISOString(), updatedAt: new Date().toISOString() }).where(eq(tenants.id, tenantId));
+          const o = await owner(tenantId);
+          if (o) await sendPaymentFailedEmail(o, GRACE_DAYS);
+        }
+        break;
+      }
+
+      case 'invoice.payment_succeeded': {
+        const inv = event.data.object as { customer: string };
+        const tenantId = await findTenantByStripeCustomer(inv.customer);
+        if (tenantId) {
+          // Paiement repassé : on lève la période de grâce.
+          await db.update(tenants).set({ paymentFailedAt: null, updatedAt: new Date().toISOString() }).where(eq(tenants.id, tenantId));
+          const o = await owner(tenantId);
+          if (o) await sendPaymentSucceededEmail(o);
+        }
+        break;
+      }
+
+      case 'customer.subscription.trial_will_end': {
+        const sub = event.data.object as { customer: string; trial_end?: number };
+        const tenantId = await findTenantByStripeCustomer(sub.customer);
+        if (tenantId) {
+          const daysLeft = sub.trial_end ? Math.max(1, Math.ceil((sub.trial_end * 1000 - Date.now()) / 86_400_000)) : 3;
+          const o = await owner(tenantId);
+          if (o) await sendTrialEndingEmail(o, daysLeft);
         }
         break;
       }

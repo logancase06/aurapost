@@ -10,6 +10,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import DashboardShell from '../DashboardShell';
 import UpgradeButton from './UpgradeButton';
+import PortalButton from './PortalButton';
+import { formatDate } from '@/lib/utils';
 
 export const metadata = { title: 'Abonnement' };
 
@@ -32,8 +34,18 @@ export default async function BillingPage() {
         <div>
           <p className="text-sm text-muted-foreground">Plan actuel</p>
           <p className="mt-1 text-xl font-bold">{currentPlan?.name ?? 'Gratuit (Starter)'}</p>
+          {sub?.currentPeriodEnd && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              {sub.status === 'trialing' ? 'Fin d’essai' : 'Renouvellement'} le {formatDate(sub.currentPeriodEnd)}
+            </p>
+          )}
         </div>
-        {sub?.status && sub.status !== 'incomplete' && <Badge variant="success">{sub.status}</Badge>}
+        <div className="flex items-center gap-3">
+          {sub?.status && sub.status !== 'incomplete' && (
+            <Badge variant={sub.status === 'past_due' ? 'destructive' : 'success'}>{sub.status}</Badge>
+          )}
+          {currentPlanId !== 'starter' && stripeConfigured && <PortalButton />}
+        </div>
       </Card>
 
       {!stripeConfigured && (

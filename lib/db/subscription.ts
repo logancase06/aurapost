@@ -74,7 +74,9 @@ export async function upsertSubscription(input: UpsertSubscriptionInput): Promis
   }
 
   // Synchronise le plan effectif du tenant (source de vérité pour le gating).
-  const active = input.status === 'active' || input.status === 'trialing';
+  // 'past_due' garde le plan actif pendant la période de grâce (l'expiration réelle
+  // se fait via planExpiresAt / la suppression d'abonnement).
+  const active = input.status === 'active' || input.status === 'trialing' || input.status === 'past_due';
   await db
     .update(tenants)
     .set({

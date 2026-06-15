@@ -182,6 +182,63 @@ export function sendReferralJoinedEmail(to: { email: string; name: string }, ref
   return sendEmail(to, 'Quelqu’un a rejoint AuraPost grâce à vous ✦', referralJoinedHtml(to.name, refereeName));
 }
 
+// ── Cycle de vie facturation ─────────────────────────────────────────────────
+
+export function sendPostsReadyEmail(to: { email: string; name: string }, count: number, month: string) {
+  return sendEmail(to, `Tes ${count} posts de ${month} sont prêts ✨`, monthlyPostsHtml(to.name, count, month, `${APP_URL()}/dashboard`));
+}
+
+export function sendPaymentFailedEmail(to: { email: string; name: string }, graceDays: number) {
+  const html = shell(`
+    <tr><td style="padding:32px">
+      <h1 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#1e1b4b">⚠️ Problème de paiement</h1>
+      <p style="margin:0 0 24px;color:#6b7280;font-size:15px;line-height:1.6">
+        Bonjour ${escHtml(to.name)}, ton dernier paiement n'a pas pu être effectué. Mets à jour ta carte sous
+        <strong>${graceDays} jours</strong> pour conserver l'accès à ton espace.
+      </p>
+      ${button(`${APP_URL()}/dashboard/billing`, 'Mettre à jour ma carte →')}
+    </td></tr>`);
+  return sendEmail(to, '⚠️ Problème de paiement — action requise', html);
+}
+
+export function sendPaymentSucceededEmail(to: { email: string; name: string }) {
+  const html = shell(`
+    <tr><td style="padding:32px">
+      <h1 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#1e1b4b">Paiement confirmé ✓</h1>
+      <p style="margin:0 0 24px;color:#6b7280;font-size:15px;line-height:1.6">
+        Bonjour ${escHtml(to.name)}, ton paiement est passé — tout est bon, ton accès est pleinement actif.
+      </p>
+      ${button(`${APP_URL()}/dashboard`, 'Accéder à mon espace →')}
+    </td></tr>`);
+  return sendEmail(to, 'Paiement confirmé ✓ — tout est bon', html);
+}
+
+export function sendCancellationEmail(to: { email: string; name: string }) {
+  const html = shell(`
+    <tr><td style="padding:32px">
+      <h1 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#1e1b4b">Ton abonnement est annulé</h1>
+      <p style="margin:0 0 24px;color:#6b7280;font-size:15px;line-height:1.6">
+        Bonjour ${escHtml(to.name)}, ton abonnement AuraPost a bien été annulé. Tes données restent conservées
+        <strong>30 jours</strong> — tu peux te réabonner à tout moment et tout retrouver.
+      </p>
+      ${button(`${APP_URL()}/dashboard/billing`, 'Me réabonner →')}
+    </td></tr>`);
+  return sendEmail(to, 'Ton abonnement AuraPost est annulé', html);
+}
+
+export function sendTrialEndingEmail(to: { email: string; name: string }, daysLeft: number) {
+  const html = shell(`
+    <tr><td style="padding:32px">
+      <h1 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#1e1b4b">Ton essai se termine dans ${daysLeft} jours</h1>
+      <p style="margin:0 0 24px;color:#6b7280;font-size:15px;line-height:1.6">
+        Bonjour ${escHtml(to.name)}, ton essai gratuit touche à sa fin. Continue avec AuraPost pour garder ton contenu
+        et ton site — tes données sont conservées dans tous les cas.
+      </p>
+      ${button(`${APP_URL()}/dashboard/billing`, 'Continuer avec AuraPost →')}
+    </td></tr>`);
+  return sendEmail(to, `Ton essai se termine dans ${daysLeft} jours`, html);
+}
+
 /** Message du formulaire de contact d'un site coach → envoyé au coach. */
 export function sendContactEmail(
   to: { email: string; name: string },
