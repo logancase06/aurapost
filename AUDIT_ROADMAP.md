@@ -128,3 +128,34 @@ Backlog     ▸ Phase 4 (v1.x) + Phase 5 (dette)       → en continu
 - ✅ **1.4** `generatedMode` posé sur variantes + pack de légendes.
 - ✅ **1.5** Email mensuel : breakdown « 8 IG + 4 LinkedIn » codé en dur → `count` réel.
 - ⚠️ **1.6** `/dashboard/website/preview` consolidé (redirect vers editor) ✅. Fusion onboarding/site + explore en onglets : **laissée distincte** (étapes/flux différents, fusion risquée) — documenté MVP.
+
+## ✅ Phase 1.5 — Mockup agence
+- ✅ `/agency-demo` (hero B2B, mockup dashboard réseau étiqueté « exemple », brand kit, 3 étapes, formulaire) + `/agency-contact`.
+- ✅ Table `agency_leads` + `POST /api/agency-contact` (zod + honeypot + rate-limit IP) → stockage + email admin + confirmation prospect (`after()`). Lien discret depuis la landing.
+
+## ✅ Phase 2 — Couche organisation
+- ✅ **2.1** Schéma `organizations`/`org_tenants`/`org_templates`/`org_brand_kit` (schema + bootstrap + migration) + data layer complet.
+- ✅ **2.2/2.3** Dashboard `/dashboard/org` (membres+stats, invitation, brand kit, templates) via **server actions** (déviation assumée vs routes REST listées — idiomatique Next, même protection `requireTenantId` + rôle owner).
+- ✅ **2.4** Héritage brand kit injecté dans le prompt de génération (`getProfileInput` → `brandConstraintsBlock`).
+
+## ✅ Phase 5 — Différenciateurs démo
+- ✅ **5.1** `/demo-live?token=` (vitrine Vincent lecture seule, bannière, noindex). Token via `DEMO_TOKEN` (défaut `demo`).
+- ⚠️ **5.2** Génération temps réel (typewriter, compteur) : **différé** — architecture à appel unique atomique ; un vrai streaming par post nécessite SSE + job async. Documenté ; recommandation = animation de révélation côté démo.
+- ✅ **5.3** Import CSV distributeurs (`/api/organizations/[slug]/import-members`) + rapport créés/rattachés/erreurs.
+- ✅ **5.4** Reporting réseau `/dashboard/org/reporting` (KPIs réels + top/bottom 5 + export CSV). Filtre par période = MVP (vue courante).
+- ✅ **5.5** Onboarding agence `/agency/onboarding` (wizard 4 étapes).
+- ✅ **5.6** Conformité MLM (liste noire défaut + mots org, badge « Conforme marque », page `/org/[slug]/compliance`).
+
+## ✅ Phase 6 — Pitch
+- ✅ **6.1** `/pitch` (deck 9 slides, clavier, plein écran, imprimable). Slide reporting = mockup inline (l'iframe `/dashboard/org` exigerait une session → contourné).
+- ⚠️ **6.2** Email outreach + pixel tracking + `outreach_log` : **différé** (le tracker `/admin/leads` propose un email de suivi `mailto`).
+- ✅ **6.3** `/agency-pricing` (3 plans + calculateur ROI **SSR sans JS** via formulaire GET).
+- ✅ **6.4** Tracker `/admin/leads` (statuts, notes, suivi) + lien back-office.
+
+## Phase 3 & 4 — Dette / stabilité
+- ✅ **3.1** Rate-limit déjà distribué (Upstash + fallback mémoire) ; verrou de génération distribué via DB (`tenants.generating_at`). Aucun changement requis.
+- ⚠️ **3.2** Équipe intra-tenant (`users.role` member) : **différé** (la couche org couvre le multi-compte ; priorité moindre).
+- ⚠️ **3.3** CSP nonces : **différé** — `'unsafe-inline'` est un compromis Next/Netlify documenté ; le passage aux nonces risque de casser les styles inline.
+- ✅ **4.1** N+1 cron email-sequences batché + test jest (35 tests).
+- ✅ **4.2** Docs synchronisées (CHANGELOG 0.8.0, ROADMAP marqué livré, ARCHITECTURE prix, `PITCH_HERBALIFE.md` créé).
+- ⚠️ **4.3** Screenshots Playwright `/screenshots/pitch/` : **non exécuté** (nécessite navigateur + serveur dev dans l'environnement) — script `npm run screenshots` disponible.

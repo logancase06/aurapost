@@ -2,6 +2,12 @@
 
 Les 5 prochaines versions après le lancement. Priorisées par impact / effort.
 
+> ✅ **Livré (run agence) — AuraPost for Teams** : couche organisation (orgs, membres, brand kit
+> imposé, templates validés, import CSV distributeurs, reporting réseau, conformité MLM),
+> pages commerciales `/agency-demo` · `/agency-pricing` · `/pitch`, capture de leads + tracker
+> `/admin/leads`, mode démo protégé `/demo-live`. La **marque blanche complète** (v1.5) et la
+> **publication automatique** (v1.1) restent à venir.
+
 ---
 
 ## v1.1 — Programmation native & multi-réseaux (T+1 mois)

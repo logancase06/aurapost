@@ -2,6 +2,27 @@
 
 Toutes les évolutions notables du projet. Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/).
 
+## [0.8.0] — 2026-06-15 — Durcissement prod & AuraPost for Teams (réseaux/MLM)
+
+### Bloquants production
+- **Garde anti-fallback DB** : refus de démarrer en production sans `TURSO_DATABASE_URL` (throw explicite, jamais de base en mémoire silencieuse). Avertissement en gras dans `DEPLOY.md`.
+- **Métriques admin 100 % réelles** : suppression des chiffres simulés (NPS, conversion, MRR seedé) → posts/mois, approbation, conversion, MRR estimé, coachs actifs. État « En attente des premières données ».
+- **Email post-génération garanti** via `after()` (Next 16) ; `maxDuration=26` (plan Netlify gratuit).
+
+### Pitch-ready
+- Seed démo réaliste Vincent/Sophie/Thomas (`npm run seed:demo`) ; prix cohérents partout (149 €/209 €) ; champ domaine perso (mort) masqué ; `generatedMode` posé sur variantes & pack ; copy email mensuel basé sur le `count` réel.
+
+### AuraPost for Teams (réseaux, franchises, MLM)
+- **Couche organisation** : tables `organizations` / `org_tenants` / `org_templates` / `org_brand_kit`. Dashboard `/dashboard/org` (membres + stats, invitations, brand kit, templates).
+- **Brand kit hérité** injecté dans la génération + **conformité MLM** (liste noire d'allégations de revenus, badge « Conforme marque ✓ », page `/org/[slug]/compliance`).
+- **Import CSV** des distributeurs (`/api/organizations/[slug]/import-members`) + **onboarding agence** `/agency/onboarding` (wizard 4 étapes) + **reporting réseau** `/dashboard/org/reporting` (+ export CSV).
+- **Commercial** : `/agency-demo`, `/agency-pricing` (+ calculateur ROI SSR), `/pitch` (deck interactif), capture de leads `/api/agency-contact` + tracker `/admin/leads`, mode démo protégé `/demo-live?token=`.
+
+### Performance
+- **N+1 cron email-sequences** corrigé (batch GROUP BY + SELECT unique) + test jest.
+
+> Build vert · tsc 0 erreur · 35 tests Jest verts.
+
 ## [0.7.0] — 2026-06-14 — Go-to-market, conversion, RGPD, PWA & business
 
 ### Git & déploiement
