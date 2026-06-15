@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import LandingClient from '@/components/landing/LandingClient';
 import { resolveHeroVariant } from '@/lib/ab';
+import { safeJsonLd } from '@/lib/utils';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://aurapost.fr';
 
@@ -36,7 +37,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const heroCopy = resolveHeroVariant(hero);
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
       <LandingClient heroCopy={heroCopy} />
     </>
   );

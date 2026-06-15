@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Clock } from 'lucide-react';
 import { ARTICLES, getArticle, readingTimeMinutes } from '@/lib/blog';
+import { safeJsonLd } from '@/lib/utils';
 import ShareButtons from './ShareButtons';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://aurapost.fr';
@@ -57,7 +58,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
 
   return (
     <main className="mx-auto min-h-screen max-w-3xl px-6 py-16">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
 
       <Link href="/blog" className="text-sm text-muted-foreground hover:text-foreground">
         ← Tous les articles

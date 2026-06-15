@@ -5,6 +5,7 @@ import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { websites } from '@/lib/db/schema';
 import { getCoachSiteData } from '@/lib/db/public';
+import { safeJsonLd } from '@/lib/utils';
 import CoachSite, { type CoachSiteData } from '@/templates/coach-site/CoachSite';
 
 type SP = Promise<{ preview?: string }>;
@@ -80,7 +81,7 @@ export default async function PublicSitePage({ params, searchParams }: { params:
   return (
     <>
       {!isPreview && (
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd(data, subdomain)) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd(data, subdomain)) }} />
       )}
       <CoachSite data={data} />
     </>

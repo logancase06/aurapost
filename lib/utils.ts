@@ -38,3 +38,15 @@ export function formatDate(dateStr: string): string {
 export function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
+
+/**
+ * Sérialise un objet pour injection sûre dans <script type="application/ld+json">.
+ * JSON.stringify n'échappe PAS `<` : une donnée coach contenant `</script>` pourrait
+ * sinon clore la balise et injecter du HTML (XSS stocké). On échappe `<`, `>`, `&`.
+ */
+export function safeJsonLd(obj: unknown): string {
+  return JSON.stringify(obj)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026');
+}
