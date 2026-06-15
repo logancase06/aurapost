@@ -241,6 +241,14 @@ export default function LandingClient({ heroCopy = HERO_VARIANTS.a }: { heroCopy
         </ScrollReveal>
       </section>
 
+      {/* Bandeau discret B2B — agences & réseaux. */}
+      <div className="border-t border-border/60 bg-card/30">
+        <div className="mx-auto max-w-6xl px-6 py-4 text-center text-sm text-muted-foreground">
+          Vous êtes une agence ou un réseau de distributeurs ?{' '}
+          <Link href="/agency-demo" className="font-semibold text-primary hover:underline">Découvrez AuraPost for Teams →</Link>
+        </div>
+      </div>
+
       <footer className="border-t border-border/60">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-6 py-8 text-sm text-muted-foreground sm:flex-row">
           <span className="flex items-center gap-2 font-black uppercase tracking-tight text-foreground">

@@ -319,6 +319,41 @@ export function sendTrialEndingEmail(to: { email: string; name: string }, daysLe
   return sendEmail(to, `Ton essai se termine dans ${daysLeft} jours`, html);
 }
 
+/** Notification interne (admin) d'un nouveau prospect agence/réseau. */
+export function sendAgencyLeadNotification(
+  to: { email: string; name?: string },
+  lead: { company: string; contactName: string; email: string; phone?: string | null; distributorCount?: number | null; message?: string | null }
+) {
+  const html = shell(`
+    <tr><td style="padding:32px">
+      <h1 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#1e1b4b">Nouvelle demande agence ✦</h1>
+      <p style="margin:0 0 16px;color:#6b7280;font-size:15px">
+        <strong>${escHtml(lead.company)}</strong>${lead.distributorCount ? ` — ${escHtml(lead.distributorCount)} distributeurs` : ''}
+      </p>
+      <div style="background:#f5f3ff;border-radius:10px;padding:16px;color:#374151;font-size:14px;line-height:1.7">
+        Contact : ${escHtml(lead.contactName)}<br>
+        Email : ${escHtml(lead.email)}<br>
+        ${lead.phone ? `Téléphone : ${escHtml(lead.phone)}<br>` : ''}
+        ${lead.message ? `<br>${escHtml(lead.message)}` : ''}
+      </div>
+    </td></tr>`);
+  return sendEmail(to, `Nouvelle demande agence : ${lead.company}${lead.distributorCount ? ` (${lead.distributorCount} distributeurs)` : ''}`, html);
+}
+
+/** Confirmation envoyée au prospect agence après soumission du formulaire. */
+export function sendAgencyLeadConfirmation(to: { email: string; name: string }) {
+  const html = shell(`
+    <tr><td style="padding:32px">
+      <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1e1b4b">Merci ${escHtml(to.name)} ✦</h1>
+      <p style="margin:0 0 24px;color:#6b7280;font-size:15px;line-height:1.6">
+        Nous avons bien reçu votre demande pour AuraPost for Teams. Un membre de l'équipe vous
+        recontacte <strong>sous 24h</strong> pour organiser une démo de 20 minutes adaptée à votre réseau.
+      </p>
+      ${button(`${APP_URL()}/agency-demo`, 'Revoir la démo →')}
+    </td></tr>`);
+  return sendEmail(to, 'Votre demande AuraPost for Teams — on vous recontacte sous 24h', html);
+}
+
 /** Message du formulaire de contact d'un site coach → envoyé au coach. */
 export function sendContactEmail(
   to: { email: string; name: string },

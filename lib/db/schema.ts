@@ -292,6 +292,27 @@ export const supportTickets = sqliteTable(
   })
 );
 
+// Prospects agence / réseau (formulaire /agency-demo → /api/agency-contact).
+export const agencyLeads = sqliteTable(
+  'agency_leads',
+  {
+    id: text('id').primaryKey(),
+    company: text('company').notNull(),
+    contactName: text('contact_name').notNull(),
+    email: text('email').notNull(),
+    phone: text('phone'),
+    distributorCount: integer('distributor_count'),
+    message: text('message'),
+    status: text('status').notNull().default('new'), // new | contacted | demo | won | lost
+    notes: text('notes'),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => ({
+    statusIdx: index('agency_leads_status_idx').on(t.status),
+    createdIdx: index('agency_leads_created_idx').on(t.createdAt),
+  })
+);
+
 export const activityLogs = sqliteTable(
   'activity_logs',
   {
