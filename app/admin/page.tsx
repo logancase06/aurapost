@@ -45,9 +45,12 @@ export default async function AdminPage() {
               <ShieldCheck className="h-3 w-3" /> Admin
             </Badge>
           </span>
-          <Link href="/dashboard" className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-4 w-4" /> Mon dashboard
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link href="/admin/leads" className="text-sm font-medium text-primary hover:underline">Prospects agence</Link>
+            <Link href="/dashboard" className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground">
+              <ArrowLeft className="h-4 w-4" /> Mon dashboard
+            </Link>
+          </div>
         </div>
       </header>
 
