@@ -7,6 +7,7 @@ import { getPlan, FREE_TRIAL_DAYS } from '@/lib/plans';
 import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
+import { checkAuthRateLimit } from '@/lib/auth-rate-limit';
 import { logError } from '@/lib/logger';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
@@ -16,6 +17,13 @@ export async function POST(req: NextRequest) {
     const session = await auth();
     if (!session?.user?.id) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     const tenantId = await requireTenantId();
+
+    // Cette route est exclue du rate-limit global du proxy (passthrough) → limite dédiée
+    // par tenant pour éviter la création en masse de sessions de paiement.
+    const rl = await checkAuthRateLimit(`checkout:${tenantId}`, 10, 60 * 60 * 1000);
+    if (!rl.allowed) {
+      return NextResponse.json({ error: 'Trop de tentatives. Réessayez dans quelques minutes.' }, { status: 429 });
+    }
 
     const body = await req.json().catch(() => ({}));
     const plan = getPlan(body?.plan);
