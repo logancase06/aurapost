@@ -99,10 +99,17 @@ export async function linkPhotoToPost(postId: string, photoId: string, textOverl
   });
 }
 
-/** Supprime une photo de la bibliothèque coach (scellé au tenant) + ses liens posts. */
+/** Supprime une photo de la bibliothèque coach (scellé au tenant) + son objet R2 + ses liens. */
 export async function deletePhoto(tenantId: string, photoId: string): Promise<boolean> {
-  const photo = await getPhoto(tenantId, photoId);
-  if (!photo) return false;
+  const [row] = await db
+    .select({ id: coachPhotos.id, r2Key: coachPhotos.r2Key })
+    .from(coachPhotos)
+    .where(and(eq(coachPhotos.tenantId, tenantId), eq(coachPhotos.id, photoId)))
+    .limit(1);
+  if (!row) return false;
+  // Suppression R2 best-effort AVANT la DB (un orphelin DB serait pire qu'un orphelin R2).
+  const { deleteR2Object } = await import('@/lib/r2');
+  await deleteR2Object(row.r2Key);
   await db.delete(postPhotos).where(eq(postPhotos.photoId, photoId));
   await db.delete(coachPhotos).where(and(eq(coachPhotos.tenantId, tenantId), eq(coachPhotos.id, photoId)));
   return true;

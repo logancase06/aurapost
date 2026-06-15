@@ -24,11 +24,25 @@ async function resize(buffer: Buffer): Promise<{ data: Buffer; contentType: stri
   return { data: out, contentType: 'image/jpeg' };
 }
 
+function s3Client() {
+  return import('@aws-sdk/client-s3').then(({ S3Client }) => ({
+    client: new S3Client({
+      region: 'auto',
+      endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+      credentials: {
+        accessKeyId: process.env.R2_ACCESS_KEY_ID!,
+        secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
+      },
+    }),
+    bucket: process.env.R2_BUCKET_NAME!,
+  }));
+}
+
 export async function uploadCoachPhoto(
   tenantId: string,
   originalName: string,
   buffer: Buffer
-): Promise<{ ok: true; url: string } | { ok: false; reason: string }> {
+): Promise<{ ok: true; url: string; key: string | null } | { ok: false; reason: string }> {
   let data: Buffer;
   let ct: string;
   try {
@@ -45,31 +59,35 @@ export async function uploadCoachPhoto(
 
   // ── Mode mock : pas de R2 → data URL (base64) ───────────────────────────────
   if (!IS_R2_CONFIGURED) {
-    return { ok: true, url: `data:${ct};base64,${data.toString('base64')}` };
+    return { ok: true, url: `data:${ct};base64,${data.toString('base64')}`, key: null };
   }
 
   try {
-    const { S3Client, PutObjectCommand, GetObjectCommand } = await import('@aws-sdk/client-s3');
-    const client = new S3Client({
-      region: 'auto',
-      endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-      credentials: {
-        accessKeyId: process.env.R2_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
-      },
-    });
-    const bucket = process.env.R2_BUCKET_NAME!;
+    const { PutObjectCommand, GetObjectCommand } = await import('@aws-sdk/client-s3');
+    const { client, bucket } = await s3Client();
     await client.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: data, ContentType: ct }));
 
     // URL publique si bucket public, sinon URL signée 1 an.
     if (process.env.R2_PUBLIC_URL) {
-      return { ok: true, url: `${process.env.R2_PUBLIC_URL.replace(/\/$/, '')}/${key}` };
+      return { ok: true, url: `${process.env.R2_PUBLIC_URL.replace(/\/$/, '')}/${key}`, key };
     }
     const { getSignedUrl } = await import('@aws-sdk/s3-request-presigner');
     const url = await getSignedUrl(client, new GetObjectCommand({ Bucket: bucket, Key: key }), { expiresIn: SIGNED_URL_TTL });
-    return { ok: true, url };
+    return { ok: true, url, key };
   } catch (err) {
     logError('[r2] upload échoué', { error: String(err) });
     return { ok: false, reason: 'upload_failed' };
+  }
+}
+
+/** Supprime un objet R2 (best-effort). Ne lève jamais — l'orphelin est moins grave. */
+export async function deleteR2Object(key: string | null): Promise<void> {
+  if (!key || !IS_R2_CONFIGURED) return;
+  try {
+    const { DeleteObjectCommand } = await import('@aws-sdk/client-s3');
+    const { client, bucket } = await s3Client();
+    await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
+  } catch (err) {
+    logError('[r2] suppression échouée (orphelin laissé)', { key, error: String(err) });
   }
 }

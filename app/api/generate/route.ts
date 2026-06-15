@@ -6,9 +6,12 @@ import { isPlanActive } from '@/lib/plans';
 import { checkAuthRateLimit } from '@/lib/auth-rate-limit';
 import { sendMonthlyPostsEmail } from '@/lib/email';
 import { db } from '@/lib/db';
-import { users } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { users, tenants } from '@/lib/db/schema';
+import { and, eq, or, isNull, lt } from 'drizzle-orm';
 import { logError } from '@/lib/logger';
+
+// Au-delà de ce délai, un verrou est considéré périmé (génération crashée).
+const LOCK_STALE_MS = 5 * 60 * 1000;
 
 // Génération des 12 posts en un appel Claude (~20-40 s en mode API) → relève le
 // timeout par défaut de la fonction (~10 s sur Netlify/Vercel) pour éviter les 502.
@@ -31,7 +34,24 @@ export async function POST() {
       return NextResponse.json({ error: `Trop de tentatives. Réessayez dans ${rl.retryAfterSec}s.` }, { status: 429 });
     }
 
-    const result = await runMonthlyGeneration(tenantId, session.user.id);
+    // Verrou anti double-soumission (2 onglets / double-clic) : pose generating_at
+    // seulement s'il est libre ou périmé. Si 0 ligne affectée → génération en cours.
+    const now = Date.now();
+    const staleBefore = new Date(now - LOCK_STALE_MS).toISOString();
+    const lock = await db
+      .update(tenants)
+      .set({ generatingAt: new Date(now).toISOString() })
+      .where(and(eq(tenants.id, tenantId), or(isNull(tenants.generatingAt), lt(tenants.generatingAt, staleBefore))));
+    if (((lock as { rowsAffected?: number }).rowsAffected ?? 0) === 0) {
+      return NextResponse.json({ error: 'Génération déjà en cours.' }, { status: 429 });
+    }
+
+    let result: Awaited<ReturnType<typeof runMonthlyGeneration>>;
+    try {
+      result = await runMonthlyGeneration(tenantId, session.user.id);
+    } finally {
+      await db.update(tenants).set({ generatingAt: null }).where(eq(tenants.id, tenantId));
+    }
 
     if (!result.ok) {
       const map = {

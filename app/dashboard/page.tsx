@@ -9,7 +9,8 @@ import { canExportPost, getPlanLimits } from '@/lib/plans';
 import { getSmartSuggestions, getGenerationStreak } from '@/lib/db/suggestions';
 import { getOnboardingProgress, getProfileCompletion } from '@/lib/db/onboarding';
 import { currentMonth } from '@/lib/utils';
-import { XCircle, Mail, CalendarDays, ChevronDown } from 'lucide-react';
+import { XCircle, CalendarDays, ChevronDown } from 'lucide-react';
+import VerifyEmailBanner from './VerifyEmailBanner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -112,12 +113,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
         </div>
       </div>
 
-      {!emailVerified && (
-        <Alert variant="warning" className="mt-6">
-          <Mail />
-          <AlertDescription>Vérifie ton adresse email — on t&apos;a envoyé un lien à l&apos;inscription.</AlertDescription>
-        </Alert>
-      )}
+      {!emailVerified && <VerifyEmailBanner />}
 
       {/* Bandeau « nouveau mois » — action principale du mois, en haut */}
       {showNewMonth && (

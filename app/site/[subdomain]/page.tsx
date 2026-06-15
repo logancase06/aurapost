@@ -1,11 +1,23 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
+import { eq } from 'drizzle-orm';
+import { auth } from '@/lib/auth';
+import { db } from '@/lib/db';
+import { websites } from '@/lib/db/schema';
 import { getCoachSiteData } from '@/lib/db/public';
 import CoachSite, { type CoachSiteData } from '@/templates/coach-site/CoachSite';
 
 type SP = Promise<{ preview?: string }>;
 
 const APP_DOMAIN = process.env.APP_DOMAIN ?? 'aurapost.fr';
+
+/** L'aperçu (site non publié) n'est autorisé qu'au propriétaire connecté du site. */
+async function canPreview(subdomain: string): Promise<boolean> {
+  const session = await auth();
+  if (!session?.user?.tenantId) return false;
+  const [w] = await db.select({ tenantId: websites.tenantId }).from(websites).where(eq(websites.subdomain, subdomain.toLowerCase())).limit(1);
+  return !!w && w.tenantId === session.user.tenantId;
+}
 
 function metaDescription(data: CoachSiteData): string {
   const place = data.city ? ` à ${data.city}` : '';
@@ -21,7 +33,7 @@ export async function generateMetadata({
   searchParams: SP;
 }): Promise<Metadata> {
   const { subdomain } = await params;
-  const isPreview = (await searchParams)?.preview === '1';
+  const isPreview = (await searchParams)?.preview === '1' && (await canPreview(subdomain));
   const data = await getCoachSiteData(subdomain, { requireActive: !isPreview });
   if (!data) return { title: 'Site introuvable' };
   const place = data.city ? ` à ${data.city}` : '';
@@ -61,7 +73,8 @@ function jsonLd(data: CoachSiteData, subdomain: string) {
 // ?preview=1 → rend le site même non publié (éditeur), avec noindex.
 export default async function PublicSitePage({ params, searchParams }: { params: Promise<{ subdomain: string }>; searchParams: SP }) {
   const { subdomain } = await params;
-  const isPreview = (await searchParams)?.preview === '1';
+  // ?preview=1 n'est honoré que pour le propriétaire connecté (sinon site publié only).
+  const isPreview = (await searchParams)?.preview === '1' && (await canPreview(subdomain));
   const data = await getCoachSiteData(subdomain, { requireActive: !isPreview });
   if (!data) notFound();
   return (

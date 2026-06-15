@@ -10,6 +10,7 @@ import { listPhotos, savePhoto } from '@/lib/db/photos';
 import { logError } from '@/lib/logger';
 import { csrfGuard, logUnauthorized, MAX_UPLOAD_BYTES } from '@/lib/security';
 import { validateImage, POST_PHOTO_MIME } from '@/lib/upload';
+import { getPlanLimits } from '@/lib/plans';
 
 // Bibliothèque photos pour le dialog d'approbation des posts.
 //   GET  → 3 dernières photos + mini-profil coach (handle + spécialité pour l'aperçu).
@@ -51,6 +52,13 @@ export async function POST(req: NextRequest) {
     }
     const tenantId = await requireTenantId();
 
+    // Limite de photos selon le plan.
+    const max = getPlanLimits(session.user.plan).photosMax;
+    const existing = await listPhotos(tenantId, max + 1);
+    if (existing.length >= max) {
+      return NextResponse.json({ error: `Limite de ${max} photos atteinte — supprime-en une pour en ajouter.` }, { status: 429 });
+    }
+
     const form = await req.formData();
     const file = form.get('photo');
     if (!(file instanceof File)) return NextResponse.json({ error: 'Aucune photo reçue.' }, { status: 400 });
@@ -71,7 +79,7 @@ export async function POST(req: NextRequest) {
     const res = await uploadCoachPhoto(tenantId, file.name || 'photo.jpg', buffer);
     if (!res.ok) return NextResponse.json({ error: 'Échec de l’upload. Réessayez.' }, { status: 500 });
 
-    const photo = await savePhoto(tenantId, { r2Url: res.url, sizeBytes: file.size });
+    const photo = await savePhoto(tenantId, { r2Url: res.url, r2Key: res.key, sizeBytes: file.size });
     return NextResponse.json({ ok: true, photo });
   } catch (err) {
     logError('[posts/photo POST]', { error: String(err) });
