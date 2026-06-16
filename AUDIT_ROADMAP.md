@@ -111,6 +111,15 @@ Backlog     ▸ Phase 4 (v1.x) + Phase 5 (dette)       → en continu
 
 ---
 
+# Run #6 (pré-déploiement) — 2026-06-16
+
+- ✅ **Fix critique — cron de réconciliation des jobs** : `/api/cron/reconcile-jobs` (running>5min/pending>10min → failed + verrou libéré + nettoyage). Le blocage que j'avais signalé est résolu. 50 tests.
+- ✅ **Docs déploiement** : crons (DEPLOY.md + netlify.toml), `GENERATION_ASYNC`/`CRON_SECRET` requis en prod.
+- ⚠️ **Lint** : 7 erreurs react-hooks **préexistantes** (build vert, non bloquantes) — à trier hors déploiement.
+- ❌ **Non traités** (non bloquants pour le déploiement) : F1 onboarding court, E1 villes/partenaires, E2 rétention, B2 facturation siège, 6.2 outreach, H4 multi-provider, G2 CSP nonces.
+
+---
+
 # Run nocturne #5 — 2026-06-16
 
 - ✅ **Fix 0 — flag `is_demo`** : démo exclue de toutes les métriques admin (seed:demo safe en prod). Colonnes + filtres + health.

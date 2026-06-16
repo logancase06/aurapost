@@ -2,6 +2,19 @@
 
 Toutes les évolutions notables du projet. Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/).
 
+## [1.6.0] — 2026-06-16 — Réconciliation des jobs & prêt au déploiement
+
+### Robustesse génération
+- **Cron de réconciliation** `/api/cron/reconcile-jobs` (`CRON_SECRET`) : les jobs bloqués (`running` > 5 min ou `pending` > 10 min, ex. lambda tué pendant `after()`) passent en `failed` et **le verrou `generating_at` est libéré** (le coach n'est plus bloqué). Nettoyage des jobs > 7 j. 2 tests.
+
+### Déploiement
+- `DEPLOY.md` + `netlify.toml` : table des **crons** (planification externe, `Bearer $CRON_SECRET`) — `reconcile-jobs` toutes les 10 min ; `GENERATION_ASYNC=true` et `CRON_SECRET` marqués **requis en prod**.
+
+### Connu (non bloquant)
+- `npm run lint` remonte 7 erreurs react-hooks **préexistantes** (config eslint stricte) — `next build` passe (non bloquant pour le déploiement) ; à trier hors fenêtre de déploiement.
+
+> Build vert · tsc 0 erreur · 50 tests Jest verts.
+
 ## [1.5.0] — 2026-06-16 — Génération asynchrone & métriques prod propres
 
 ### Génération asynchrone (H3) — fin du timeout serverless
