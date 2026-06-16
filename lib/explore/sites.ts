@@ -1,4 +1,5 @@
 import type { CoachSiteData, SiteStyle } from '@/templates/coach-site/CoachSite';
+import { unsplash, FITNESS_PHOTO_IDS } from '@/lib/stock-images';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Sites de démonstration de l'explorateur (Bloc F). 10 exemples statiques
@@ -326,6 +327,28 @@ export const DEMO_SITES: DemoSite[] = [
   },
 ];
 
+// Photo de coach par démo (Unsplash vérifié, hôte autorisé dans next.config). Sans photo,
+// le hero retombe sur le placeholder initiales/SVG → rendu « wireframe / généré ». On mappe
+// chaque démo vers un cliché sport/bien-être cohérent avec sa spécialité.
+const DEMO_PHOTO_IDX: Record<string, number> = {
+  'alex-fitness': 11, // coach / haltères
+  'marco-boxe': 1, // box jump / training
+  'sarah-run': 2, // course / cardio
+  'crossfit-lyon': 8, // squat barre
+  'marie-nutrition': 6, // plein air / lifestyle sain
+  'studio-zen': 9, // yoga
+  'emma-bienetre': 3, // route / nature
+  'julie-vie': 13, // salle / ambiance
+  'thomas-perso': 0, // haltères
+  'anna-mental': 5, // sprint / focus
+};
+
+/** URL de la photo d'un site démo (Unsplash). Portrait par défaut pour le hero. */
+export function demoPhoto(site: DemoSite, w = 1000, h = 1250): string {
+  const idx = DEMO_PHOTO_IDX[site.id] ?? 0;
+  return unsplash(FITNESS_PHOTO_IDS[idx], w, h);
+}
+
 /** Témoignages portant un résultat concret → section « Ce que ça change ». */
 function demoResults(site: DemoSite): CoachSiteData['results'] {
   const list = site.testimonials
@@ -363,7 +386,7 @@ export function adaptDemoSiteToCoachSiteData(site: DemoSite): CoachSiteData {
     story: site.about.bio,
     storyQuote: site.about.headline,
     results: demoResults(site),
-    photoUrl: null,
+    photoUrl: demoPhoto(site),
   };
 }
 
