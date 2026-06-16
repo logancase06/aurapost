@@ -51,6 +51,61 @@ const TONE_LABEL: Record<string, string> = {
   personnel: 'personnel et chaleureux',
 };
 
+// ── Questionnaire de création (Mandat 2) ────────────────────────────────────
+export type QuestionKey = 'photos' | 'tarifs' | 'highlight' | 'tone' | 'action';
+export interface QuestionDef {
+  key: QuestionKey;
+  label: string;
+  options: string[]; // chips de réponse rapide
+}
+
+// Labels « spéciaux » qui déclenchent une ACTION post-création (pas du texte de prompt).
+export const PHOTO_HAVE = 'J’ai déjà mes photos';
+export const TARIFS_PRECISE = 'Oui, avec mes tarifs précis';
+
+export const QUESTIONNAIRE: QuestionDef[] = [
+  { key: 'photos', label: 'As-tu des photos à utiliser pour ton site ?', options: [PHOTO_HAVE, 'Pas encore, utilise un visuel par défaut'] },
+  { key: 'tarifs', label: 'Veux-tu afficher tes tarifs sur le site ?', options: [TARIFS_PRECISE, 'Non, juste un bouton de contact'] },
+  { key: 'highlight', label: 'Qu’est-ce qui doit ressortir le plus ?', options: ['Mon parcours / mon expérience', 'Mes résultats clients', 'Ma personnalité / mon approche'] },
+  { key: 'tone', label: 'Quel ton veux-tu pour ce site ?', options: ['Sérieux et professionnel', 'Chaleureux et motivant', 'Épuré et minimaliste'] },
+  { key: 'action', label: 'Que doit faire un visiteur en arrivant ?', options: ['Réserver une séance', 'Te contacter par WhatsApp', 'Découvrir tes offres'] },
+];
+
+/** Pré-sélection de la chip « ton » depuis le ton du profil onboarding (modifiable). */
+export const TONE_CHIP_FOR_PROFILE: Record<string, string> = {
+  motivant: 'Chaleureux et motivant',
+  educatif: 'Sérieux et professionnel',
+  personnel: 'Chaleureux et motivant',
+};
+
+export type QuestionnaireAnswers = Partial<Record<QuestionKey, string>> & { brief?: string };
+
+/** Quelle zone ouvrir dans l'éditeur après création, selon les réponses Q1/Q2. */
+export function focusFromAnswers(a: QuestionnaireAnswers): 'offers' | 'photos' | undefined {
+  if (a.tarifs === TARIFS_PRECISE) return 'offers';
+  if (a.photos === PHOTO_HAVE) return 'photos';
+  return undefined;
+}
+
+/**
+ * Assemble les réponses structurées + la description libre (Q6) en une description
+ * textuelle cohérente pour l'IA. Q1 (photos) / Q2 (tarifs) « presse-bouton » ne sont
+ * pas du texte de prompt (gérés en actions) — mais une réponse LIBRE y est conservée.
+ */
+export function buildSiteDescriptionFromQuestionnaire(a: QuestionnaireAnswers): string {
+  const lines: string[] = [];
+  if (a.tone) lines.push(`Ton souhaité : ${a.tone.toLowerCase()}.`);
+  if (a.highlight) lines.push(`Mettre en avant : ${a.highlight.toLowerCase()}.`);
+  if (a.action) lines.push(`Action principale attendue : ${a.action.toLowerCase()}.`);
+  if (a.tarifs === TARIFS_PRECISE) lines.push('Afficher mes tarifs sur le site.');
+  else if (a.tarifs && a.tarifs !== 'Non, juste un bouton de contact') lines.push(`Tarifs : ${a.tarifs}`);
+  // Photos : seule une réponse libre porte du sens pour le prompt.
+  if (a.photos && a.photos !== PHOTO_HAVE && a.photos !== 'Pas encore, utilise un visuel par défaut') lines.push(`Photos : ${a.photos}`);
+  const brief = (a.brief ?? '').trim();
+  if (brief) lines.push(brief);
+  return lines.join(' ').trim();
+}
+
 /** Placeholder contextuel : utilise la spécialité réelle du coach si connue. */
 export function briefPlaceholder(specialty?: string | null): string {
   return specialty

@@ -9,7 +9,7 @@ export const maxDuration = 60;
 
 const APP_DOMAIN = process.env.APP_DOMAIN ?? 'aurapost.fr';
 
-export default async function SiteEditorPage() {
+export default async function SiteEditorPage({ searchParams }: { searchParams: Promise<{ focus?: string }> }) {
   const session = await auth();
   if (!session?.user?.id) redirect('/login');
   const tenantId = session.user.tenantId!;
@@ -18,5 +18,8 @@ export default async function SiteEditorPage() {
   // Pas de site (profil incomplet ou jamais généré) → retour à la page site.
   if (!data || !data.subdomain) redirect('/dashboard/website');
 
-  return <SiteEditor initial={data} appDomain={APP_DOMAIN} aiEnabled={!!process.env.ANTHROPIC_API_KEY} />;
+  const { focus } = await searchParams;
+  const initialFocus = focus === 'offers' || focus === 'photos' ? focus : undefined;
+
+  return <SiteEditor initial={data} appDomain={APP_DOMAIN} aiEnabled={!!process.env.ANTHROPIC_API_KEY} initialFocus={initialFocus} />;
 }

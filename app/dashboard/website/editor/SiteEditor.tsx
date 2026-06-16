@@ -19,7 +19,7 @@ import AIEditPanel from '@/components/explore/AIEditPanel';
 
 const STYLE_LABEL: Record<string, string> = { impact: 'Impact', clarte: 'Clarté', authenticite: 'Authenticité' };
 
-export default function SiteEditor({ initial, appDomain, aiEnabled }: { initial: SiteEditorData; appDomain: string; aiEnabled: boolean }) {
+export default function SiteEditor({ initial, appDomain, aiEnabled, initialFocus }: { initial: SiteEditorData; appDomain: string; aiEnabled: boolean; initialFocus?: 'offers' | 'photos' }) {
   const subdomain = initial.subdomain as string;
   const [content, setContent] = useState<SiteContent>(initial.content);
   const [published, setPublished] = useState(initial.published);
@@ -69,6 +69,17 @@ export default function SiteEditor({ initial, appDomain, aiEnabled }: { initial:
     window.addEventListener('beforeunload', h);
     return () => window.removeEventListener('beforeunload', h);
   }, [saveState]);
+
+  // Ouverture ciblée demandée par le questionnaire de création (Q1 photos / Q2 tarifs).
+  useEffect(() => {
+    if (!initialFocus) return;
+    const id = initialFocus === 'offers' ? 'panel-offers' : 'panel-hero';
+    const t = setTimeout(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      toast(initialFocus === 'offers' ? 'Ajoute tes tarifs ici 👇' : 'Ajoute tes photos ici 👇', { icon: 'ℹ️' });
+    }, 400);
+    return () => clearTimeout(t);
+  }, [initialFocus]);
 
   // ── Updaters immutables ──────────────────────────────────────────────────
   const setHero = (patch: Partial<SiteContent['hero']>) => setContent((c) => ({ ...c, hero: { ...c.hero, ...patch } }));
@@ -122,7 +133,7 @@ export default function SiteEditor({ initial, appDomain, aiEnabled }: { initial:
       <AIEditPanel aiEnabled={aiEnabled} content={content} onApply={applyAIContent} />
 
       {/* HERO */}
-      <Panel title="Accroche (hero)">
+      <Panel title="Accroche (hero)" id="panel-hero">
         <FieldText label="Titre principal" value={content.hero.title ?? ''} max={80} onChange={(v) => setHero({ title: v })} />
         <FieldArea label="Sous-titre" value={content.hero.subtitle ?? ''} max={200} onChange={(v) => setHero({ subtitle: v })} />
         <div className="grid gap-3 sm:grid-cols-2">
@@ -150,7 +161,7 @@ export default function SiteEditor({ initial, appDomain, aiEnabled }: { initial:
       </Panel>
 
       {/* OFFRES & TARIFS */}
-      <Panel title="Mes offres & tarifs">
+      <Panel title="Mes offres & tarifs" id="panel-offers">
         <p className="text-xs text-muted-foreground">
           Mets en avant tes formules et tes prix (ex. « Coaching individuel — 60 €/séance »). Affichées dans la section « Ce qu’on fait ensemble ».
         </p>
@@ -308,9 +319,9 @@ export default function SiteEditor({ initial, appDomain, aiEnabled }: { initial:
 
 // ── Sous-composants ──────────────────────────────────────────────────────────
 
-function Panel({ title, children }: { title: string; children: React.ReactNode }) {
+function Panel({ title, children, id }: { title: string; children: React.ReactNode; id?: string }) {
   return (
-    <section className="rounded-xl border border-border bg-card p-4">
+    <section id={id} className="rounded-xl border border-border bg-card p-4">
       <h2 className="mb-3 text-sm font-bold">{title}</h2>
       <div className="space-y-3">{children}</div>
     </section>

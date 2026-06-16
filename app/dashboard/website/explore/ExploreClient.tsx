@@ -7,7 +7,6 @@ import { cn } from '@/lib/utils';
 import type { DemoSite } from '@/lib/explore/sites';
 import DemoSiteCard from '@/components/explore/DemoSiteCard';
 import SitePreviewModal from '@/components/explore/SitePreviewModal';
-import { applyDemoStyle } from './actions';
 
 const FAVORITES_KEY = 'aurapost_explore_favorites';
 const MAX_FAVORITES = 5;
@@ -26,7 +25,6 @@ export default function ExploreClient({ sites }: { sites: DemoSite[] }) {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [activeFilter, setActiveFilter] = useState<Filter>('all');
   const [selectedSite, setSelectedSite] = useState<DemoSite | null>(null);
-  const [usingId, setUsingId] = useState<string | null>(null);
 
   // Favoris persistés en localStorage (jamais de server action pour ça).
   useEffect(() => {
@@ -62,15 +60,10 @@ export default function ExploreClient({ sites }: { sites: DemoSite[] }) {
     persist([...favorites, id]);
   }
 
-  async function handleUse(site: DemoSite) {
-    setUsingId(site.id);
-    const res = await applyDemoStyle(site.id);
-    if (res.ok && res.redirectTo) {
-      router.push(res.redirectTo);
-      return;
-    }
-    setUsingId(null);
-    toast.error(res.error || 'Action impossible');
+  // « Utiliser ce style » → questionnaire de création (Mandat 2) AVANT génération,
+  // en transportant le style du template choisi. La génération a lieu après le questionnaire.
+  function handleUse(site: DemoSite) {
+    router.push(`/dashboard/website?create=${encodeURIComponent(site.id)}`);
   }
 
   const counts: Record<Filter, number> = {
@@ -152,7 +145,6 @@ export default function ExploreClient({ sites }: { sites: DemoSite[] }) {
       <SitePreviewModal
         site={selectedSite}
         isFavorite={selectedSite ? favorites.includes(selectedSite.id) : false}
-        using={usingId !== null && usingId === selectedSite?.id}
         onClose={() => setSelectedSite(null)}
         onToggleFavorite={toggleFavorite}
         onUse={handleUse}

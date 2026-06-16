@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import DashboardShell from '../DashboardShell';
 import TemplateChooser from './TemplateChooser';
 import CopyUrlButton from './CopyUrlButton';
-import DescribeSiteForm from './DescribeSiteForm';
+import CreateSiteEntry from './CreateSiteEntry';
 import PublishToggle from './PublishToggle';
 import CoachSite, { styleForTone, type SiteStyle } from '@/templates/coach-site/CoachSite';
 
@@ -24,10 +24,11 @@ export const metadata = { title: 'Mon site' };
 
 const APP_DOMAIN = process.env.APP_DOMAIN ?? 'aurapost.fr';
 
-export default async function WebsitePage() {
+export default async function WebsitePage({ searchParams }: { searchParams: Promise<{ create?: string }> }) {
   const session = await auth();
   if (!session?.user?.id) redirect('/login');
   const tenantId = session.user.tenantId!;
+  const { create: createParam } = await searchParams;
 
   // Le site vitrine est réservé au Pack Complet → écran d'upgrade si plan inférieur.
   if (!canGenerateSite(session.user.plan)) {
@@ -83,15 +84,21 @@ export default async function WebsitePage() {
             </Button>
           </Card>
 
-          {/* Chemin « décris ton site » : texte libre → génération + affinage IA */}
+          {/* Chemin « créer directement » : questionnaire guidé → génération + affinage IA */}
           <Card className="flex flex-col p-6">
             <Zap className="h-7 w-7 text-muted-foreground" />
-            <h2 className="mt-3 text-lg font-bold">Décris ton site</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Dis-nous en une phrase ce que tu veux (ton, parcours, tarifs à mettre en avant…). On génère depuis ton profil et on l’ajuste.
+            <h2 className="mt-3 text-lg font-bold">Créer mon site</h2>
+            <p className="mt-1 flex-1 text-sm text-muted-foreground">
+              Réponds à quelques questions rapides (ton, parcours, tarifs…) — on génère depuis ton profil et on l’ajuste. Tout est optionnel.
             </p>
             <div className="mt-4">
-              <DescribeSiteForm aiEnabled={!!process.env.ANTHROPIC_API_KEY} specialty={prof?.speciality} tone={prof?.tone} city={prof?.city} />
+              <CreateSiteEntry
+                aiEnabled={!!process.env.ANTHROPIC_API_KEY}
+                specialty={prof?.speciality}
+                tone={prof?.tone}
+                city={prof?.city}
+                autoOpenDemoId={createParam}
+              />
             </div>
           </Card>
         </div>
