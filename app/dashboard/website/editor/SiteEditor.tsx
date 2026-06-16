@@ -77,6 +77,8 @@ export default function SiteEditor({ initial, appDomain, aiEnabled }: { initial:
   const setStrength = (i: number, patch: Partial<SiteContent['strengths'][number]>) =>
     setContent((c) => ({ ...c, strengths: c.strengths.map((s, j) => (j === i ? { ...s, ...patch } : s)) }));
   const setTestimonials = (list: SiteContent['testimonials']) => setContent((c) => ({ ...c, testimonials: list }));
+  const services = content.services ?? [];
+  const setServices = (list: NonNullable<SiteContent['services']>) => setContent((c) => ({ ...c, services: list }));
 
   // Édition IA : remplace le contenu (déjà sauvegardé côté serveur) + refresh aperçu.
   const applyAIContent = (next: SiteContent) => {
@@ -145,6 +147,36 @@ export default function SiteEditor({ initial, appDomain, aiEnabled }: { initial:
             <FieldArea label="Description" value={s.description} max={120} onChange={(v) => setStrength(i, { description: v })} />
           </div>
         ))}
+      </Panel>
+
+      {/* OFFRES & TARIFS */}
+      <Panel title="Mes offres & tarifs">
+        <p className="text-xs text-muted-foreground">
+          Mets en avant tes formules et tes prix (ex. « Coaching individuel — 60 €/séance »). Affichées dans la section « Ce qu’on fait ensemble ».
+        </p>
+        {services.map((s, i) => (
+          <div key={i} className="rounded-lg border border-border p-3">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-xs font-semibold text-muted-foreground">Offre {i + 1}</span>
+              <div className="flex items-center gap-3">
+                <label className="flex cursor-pointer items-center gap-1.5 text-xs">
+                  <input type="checkbox" checked={s.enabled} onChange={(e) => setServices(services.map((x, j) => (j === i ? { ...x, enabled: e.target.checked } : x)))} />
+                  Affichée
+                </label>
+                <button type="button" onClick={() => setServices(services.filter((_, j) => j !== i))} className="text-muted-foreground hover:text-destructive">
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+            <FieldText label="Titre de l’offre" value={s.title} max={60} placeholder="Coaching individuel" onChange={(v) => setServices(services.map((x, j) => (j === i ? { ...x, title: v } : x)))} />
+            <FieldArea label="Description & tarif" value={s.description} max={200} placeholder="Suivi sur-mesure, 1 séance/semaine — 60 €/séance ou 270 € le forfait de 5." onChange={(v) => setServices(services.map((x, j) => (j === i ? { ...x, description: v } : x)))} />
+          </div>
+        ))}
+        {services.length < 4 && (
+          <Button type="button" variant="outline" size="sm" onClick={() => setServices([...services, { title: '', description: '', enabled: true }])}>
+            <Plus className="h-4 w-4" /> Ajouter une offre
+          </Button>
+        )}
       </Panel>
 
       {/* TÉMOIGNAGES */}
