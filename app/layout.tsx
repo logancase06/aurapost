@@ -47,6 +47,24 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="fr" className={`dark ${GeistSans.variable} ${GeistMono.variable}`} suppressHydrationWarning>
+      <head>
+        {/* Garde-fou dev : un Service Worker enregistré lors d'une session précédente sert
+            du cache périmé (cache-first sur .css) → page sans styles. On le désenregistre et
+            on purge ses caches AVANT React, puis on recharge une seule fois pour repartir
+            sur du réseau propre. Aucun effet en prod (hostname ≠ localhost). */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){
+  if (location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') return;
+  if (!('serviceWorker' in navigator)) return;
+  var hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.getRegistrations().then(function(rs){ rs.forEach(function(r){ r.unregister(); }); }).catch(function(){});
+  if (typeof caches !== 'undefined') { caches.keys().then(function(ks){ ks.forEach(function(k){ caches.delete(k); }); }).catch(function(){}); }
+  if (hadController && !sessionStorage.getItem('sw-purged')) { sessionStorage.setItem('sw-purged','1'); location.reload(); }
+})();`,
+          }}
+        />
+      </head>
       <body className="min-h-screen bg-background font-sans text-foreground antialiased">
         <a href="#main-content" className="skip-link">
           Aller au contenu principal
