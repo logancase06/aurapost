@@ -5,6 +5,8 @@ export interface LegalSection {
   heading: string;
   paragraphs: string[];
   bullets?: string[];
+  /** Paragraphe de bas de section (ex. renvoi vers une page dédiée). */
+  footer?: string;
 }
 
 /** Mise en page partagée des pages légales (privacy, terms). */
@@ -52,6 +54,7 @@ export default function LegalLayout({
                 ))}
               </ul>
             )}
+            {s.footer && <p className="mt-3 text-sm text-muted-foreground">{s.footer}</p>}
           </section>
         ))}
       </div>

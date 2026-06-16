@@ -32,15 +32,19 @@ const SECTIONS: LegalSection[] = [
     ],
   },
   {
-    heading: 'Sous-traitants',
-    paragraphs: ['Nous faisons appel à des prestataires conformes au RGPD :'],
-    bullets: [
-      'Turso (base de données) — hébergement des données applicatives.',
-      'Resend (emails transactionnels).',
-      'Stripe (paiements).',
-      'Cloudflare R2 (stockage des photos).',
-      'Anthropic / Claude (génération de contenu) — vos saisies de profil servent à générer le contenu.',
+    heading: 'Sous-traitants & hébergement',
+    paragraphs: [
+      'Nous faisons appel à des prestataires conformes au RGPD, encadrés par des accords de traitement (DPA) et, pour les transferts hors UE, par les Clauses Contractuelles Types :',
     ],
+    bullets: [
+      'Turso (base de données, USA) — hébergement des données applicatives.',
+      'Cloudflare R2 (stockage des photos, UE/USA).',
+      'Resend (emails transactionnels, USA).',
+      'Anthropic / Claude (génération de contenu, USA) — vos saisies de profil servent à générer le contenu.',
+      'Stripe (paiements, USA). Upstash (rate-limiting, UE/USA). Netlify (hébergement applicatif, USA).',
+    ],
+    footer:
+      'La liste complète des sous-traitants, les pays d’hébergement et les liens vers chaque DPA sont détaillés sur la page dédiée : aurapost.fr/legal/sous-traitants.',
   },
   {
     heading: 'Durée de conservation',
