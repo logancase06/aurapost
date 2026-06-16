@@ -42,6 +42,24 @@ optionnelle) et indique si un mock prend le relais.
 - [ ] `GET /api/health/detailed` → `mode: "production"` (PAS `PROD-MOCK`), `database.status: "ok"`
 - [ ] `/status` ne montre **aucune** alerte rouge
 - [ ] `npm run seed:demo` (si environnement de démonstration)
+- [ ] `CRON_SECRET` défini (`openssl rand -base64 32`) — requis pour sécuriser les endpoints cron
+- [ ] `GENERATION_ASYNC=true` — **requis en prod** pour la génération asynchrone (résout le timeout 26 s ; sinon génération synchrone qui peut être coupée)
+
+### Crons (planification externe)
+
+Tous les crons sont des Route Handlers protégés par `Authorization: Bearer $CRON_SECRET`.
+Le plugin Next ne planifie pas les route handlers : utiliser un planificateur externe
+(Netlify Scheduled Functions dédiées, cron-job.org, GitHub Actions…) qui appelle ces URLs :
+
+| Endpoint | Fréquence conseillée |
+|---|---|
+| `/api/cron/reconcile-jobs` | **toutes les 10 min** (répare les jobs de génération bloqués + nettoyage) |
+| `/api/cron/email-sequences` | 1×/jour |
+| `/api/cron/distributor-activation` | 1×/jour |
+| `/api/cron/monthly-reminder` | 1×/jour |
+| `/api/cron/data-retention` | 1×/jour |
+
+Exemple : `curl -H "Authorization: Bearer $CRON_SECRET" https://aurapost.fr/api/cron/reconcile-jobs`
 
 ---
 

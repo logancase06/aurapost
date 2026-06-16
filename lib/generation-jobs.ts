@@ -1,6 +1,6 @@
 import { db } from './db';
-import { generationJobs, generatedPosts, users } from './db/schema';
-import { and, eq, lt } from 'drizzle-orm';
+import { generationJobs, generatedPosts, users, tenants } from './db/schema';
+import { and, eq, lt, or, inArray } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { getProfileInput, type PostStatus } from './db/posts';
 import { generateMonthlyContent } from './content-generator';
@@ -70,6 +70,40 @@ export async function failJob(jobId: string, error: string): Promise<void> {
 export async function cleanOldJobs(): Promise<void> {
   const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
   await db.delete(generationJobs).where(lt(generationJobs.createdAt, cutoff));
+}
+
+/**
+ * Réconcilie les jobs bloqués (lambda tué pendant after()) : 'running' > 5 min ou
+ * 'pending' > 10 min → 'failed', et libère le verrou generating_at des tenants concernés.
+ * À appeler par un cron (toutes les ~10 min).
+ */
+export async function reconcileStuckJobs(): Promise<{ failed: number; locksReleased: number }> {
+  const now = Date.now();
+  const runningCutoff = new Date(now - 5 * 60 * 1000).toISOString();
+  const pendingCutoff = new Date(now - 10 * 60 * 1000).toISOString();
+
+  const stuck = await db
+    .select({ id: generationJobs.id, tenantId: generationJobs.tenantId })
+    .from(generationJobs)
+    .where(
+      or(
+        and(eq(generationJobs.status, 'running'), lt(generationJobs.startedAt, runningCutoff)),
+        and(eq(generationJobs.status, 'pending'), lt(generationJobs.createdAt, pendingCutoff))
+      )
+    );
+  if (stuck.length === 0) return { failed: 0, locksReleased: 0 };
+
+  const completedAt = new Date().toISOString();
+  await db
+    .update(generationJobs)
+    .set({ status: 'failed', errorMessage: 'Job interrompu (lambda arrêté avant la fin).', completedAt })
+    .where(inArray(generationJobs.id, stuck.map((s) => s.id)));
+
+  // Libère le verrou generating_at des tenants des jobs échoués (filet anti-blocage).
+  const tenantIds = [...new Set(stuck.map((s) => s.tenantId))];
+  await db.update(tenants).set({ generatingAt: null }).where(inArray(tenants.id, tenantIds));
+
+  return { failed: stuck.length, locksReleased: tenantIds.length };
 }
 
 export interface RunJobOpts {

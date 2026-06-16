@@ -3,8 +3,10 @@ process.env.AURAPOST_USE_MOCK = '1';
 delete process.env.TURSO_DATABASE_URL;
 
 import { db } from '@/lib/db';
-import { tenants, users, coachProfiles } from '@/lib/db/schema';
-import { createGenerationJob, runGenerationJob, getJob } from '@/lib/generation-jobs';
+import { eq } from 'drizzle-orm';
+import { nanoid } from 'nanoid';
+import { tenants, users, coachProfiles, generationJobs } from '@/lib/db/schema';
+import { createGenerationJob, runGenerationJob, getJob, reconcileStuckJobs } from '@/lib/generation-jobs';
 
 async function seed(id: string) {
   const now = new Date().toISOString();
@@ -48,5 +50,33 @@ describe('generation-jobs', () => {
     const id = await createGenerationJob('job-a', 12);
     expect(await getJob(id, 'job-b')).toBeNull();
     expect(await getJob(id, 'job-a')).not.toBeNull();
+  });
+});
+
+describe('reconcileStuckJobs', () => {
+  const old = new Date(Date.now() - 20 * 60 * 1000).toISOString();
+  const recent = new Date().toISOString();
+
+  beforeAll(async () => {
+    const now = new Date().toISOString();
+    await db.insert(tenants).values({ id: 'job-stuck', name: 'stuck', ownerId: 'u-x', status: 'active', plan: 'starter', generatingAt: now, createdAt: now, updatedAt: now });
+    // Job 'running' bloqué depuis 20 min.
+    await db.insert(generationJobs).values({ id: 'gj-stuck', tenantId: 'job-stuck', status: 'running', progress: 3, total: 12, postsGenerated: '[]', startedAt: old, createdAt: old });
+    // Job 'running' récent (ne doit pas être touché).
+    await db.insert(generationJobs).values({ id: 'gj-recent', tenantId: 'job-a', status: 'running', progress: 1, total: 12, postsGenerated: '[]', startedAt: recent, createdAt: recent });
+  });
+
+  it('marque les jobs running > 5 min comme failed et libère le verrou', async () => {
+    const res = await reconcileStuckJobs();
+    expect(res.failed).toBeGreaterThanOrEqual(1);
+    const stuck = await getJob('gj-stuck', 'job-stuck');
+    expect(stuck?.status).toBe('failed');
+    const [t] = await db.select({ g: tenants.generatingAt }).from(tenants).where(eq(tenants.id, 'job-stuck')).limit(1);
+    expect(t.g).toBeNull();
+  });
+
+  it('ne touche pas les jobs récents', async () => {
+    const recentJob = await getJob('gj-recent', 'job-a');
+    expect(recentJob?.status).toBe('running');
   });
 });

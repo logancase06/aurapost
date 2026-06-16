@@ -63,3 +63,12 @@
 # ── Edge Functions ────────────────────────────────────────────────────────────
 # Le middleware Next (proxy.ts) est automatiquement déployé en Edge par le plugin.
 # Aucune edge function manuelle nécessaire : déclaré ici pour la traçabilité.
+#
+# ── Crons (planification externe, cf. DEPLOY.md) ────────────────────────────────
+# Les route handlers ne sont pas planifiés par le plugin Next : un planificateur
+# externe doit appeler ces URLs avec `Authorization: Bearer $CRON_SECRET`.
+#   /api/cron/reconcile-jobs        → toutes les 10 min (jobs bloqués + nettoyage)
+#   /api/cron/email-sequences       → 1×/jour
+#   /api/cron/distributor-activation→ 1×/jour
+#   /api/cron/monthly-reminder      → 1×/jour
+#   /api/cron/data-retention        → 1×/jour
