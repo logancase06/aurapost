@@ -111,6 +111,16 @@ Backlog     ▸ Phase 4 (v1.x) + Phase 5 (dette)       → en continu
 
 ---
 
+# Run nocturne #3 — 2026-06-16
+
+- ✅ **Fix critique — `first_login_at`** : suivi de connexion (first/last/count) via event signIn. Reporting org en 3 états (jamais connecté / inactif / actif). **La métrique d'adoption que demandait Herbalife.**
+- ✅ **Fix PWA** : service worker résilient (plus de `Uncaught Failed to fetch` réseau down).
+- ✅ **E1 (partiel)** : 5 articles de blog SEO (sitemap auto, JSON-LD, CTA). **Restent** : pages `/coaches/[ville]`, `/partenaires`, vérif parrainage.
+- ✅ **F2** : `prefers-reduced-motion` global.
+- ❌ **Non traités ce run** : D2 crons (now débloqués par `first_login_at` — à brancher), B2 facturation siège, F1 onboarding court, H3 jobs async, H1 schéma source unique, H2 CI, F3 ton B2B, E2 rétention, G2/G3 sécu, H4 multi-provider, 6.2 outreach, H5 docs.
+
+---
+
 # Run nocturne #2 (P1 → P2) — 2026-06-16
 
 - ✅ **Fix critique** `analyzeReviews` API-first (était mock-only en prod). Même classe de bug que `analyzeInstagram`.

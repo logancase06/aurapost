@@ -2,6 +2,20 @@
 
 Toutes les évolutions notables du projet. Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/).
 
+## [1.3.0] — 2026-06-16 — Adoption réseau mesurable, SEO & robustesse PWA
+
+### Adoption (fix critique)
+- **Suivi de connexion** : `users.first_login_at` / `last_login_at` / `login_count`, posés via l'event NextAuth `signIn` (non bloquant). Le reporting réseau distingue enfin **jamais connecté / connecté mais inactif / actif** — la métrique d'adoption qu'exige tout acheteur réseau. KPIs reporting + badges par distributeur.
+
+### Acquisition (E1)
+- **5 articles de blog SEO** : coach à Nice, guide Hyrox, 10 clients/mois, abandon à 3 mois, AuraPost vs ChatGPT. Metadata + JSON-LD + og:image + temps de lecture + CTA. Sitemap auto.
+
+### Robustesse & accessibilité
+- **Service worker** durci : plus de `Uncaught TypeError: Failed to fetch` quand le réseau est injoignable (fallback gracieux, cache bumpé v3).
+- **`prefers-reduced-motion`** : animations/transitions neutralisées pour les utilisateurs sensibles au mouvement.
+
+> Build vert · tsc 0 erreur · 41 tests Jest verts.
+
 ## [1.2.0] — 2026-06-16 — Conformité réseau (validation MLM) & correctifs production
 
 ### Conformité / réseau (P1)
