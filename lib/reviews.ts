@@ -1,6 +1,7 @@
 import { runClaudeCode } from './claude-code';
+import { runAnalysisLLM } from './analyze/llm';
 import { extractJson } from './parse-json';
-import { logError } from './logger';
+import { logError, logInfo } from './logger';
 
 // Analyse des avis clients (texte libre) via le SDK Claude Code, avec fallback mock.
 
@@ -27,9 +28,22 @@ function normalize(raw: unknown): ReviewsAnalysis | null {
 }
 
 export async function analyzeReviews(reviewsText: string): Promise<ReviewsAnalysis> {
-  const prompt = `${SYSTEM_PROMPT}\n\nAvis clients :\n"""${reviewsText.slice(0, 4000)}"""`;
+  const corpus = `Avis clients :\n"""${reviewsText.slice(0, 4000)}"""`;
 
-  for (let attempt = 1; attempt <= 3; attempt++) {
+  // 1) Chemin production : API Anthropic (fonctionne sur serverless). Sans ce chemin,
+  //    l'analyse tombait silencieusement en mock même avec ANTHROPIC_API_KEY (la CLI
+  //    Claude Code n'existe pas en serverless). Cf. même fix sur analyzeInstagram.
+  try {
+    const text = await runAnalysisLLM(SYSTEM_PROMPT, corpus);
+    const parsed = normalize(extractJson(text));
+    if (parsed) return parsed;
+  } catch (err) {
+    logInfo('[reviews] API indisponible, essai Claude Code CLI', { error: String(err) });
+  }
+
+  // 2) Repli : Claude Code CLI (dev local / tunnel).
+  const prompt = `${SYSTEM_PROMPT}\n\n${corpus}`;
+  for (let attempt = 1; attempt <= 2; attempt++) {
     try {
       const text = await runClaudeCode(prompt);
       const parsed = normalize(extractJson(text));
