@@ -48,7 +48,11 @@ export default async function WebsitePage() {
   }
 
   const site = await getWebsiteForTenant(tenantId);
-  const [prof] = await db.select({ tone: coachProfiles.tone }).from(coachProfiles).where(eq(coachProfiles.tenantId, tenantId)).limit(1);
+  const [prof] = await db
+    .select({ tone: coachProfiles.tone, speciality: coachProfiles.speciality, city: coachProfiles.city })
+    .from(coachProfiles)
+    .where(eq(coachProfiles.tenantId, tenantId))
+    .limit(1);
   const recommended = styleForTone(prof?.tone);
   const currentStyle = site && SITE_STYLES.includes(site.template as SiteStyle) ? (site.template as SiteStyle) : null;
 
@@ -87,7 +91,7 @@ export default async function WebsitePage() {
               Dis-nous en une phrase ce que tu veux (ton, parcours, tarifs à mettre en avant…). On génère depuis ton profil et on l’ajuste.
             </p>
             <div className="mt-4">
-              <DescribeSiteForm aiEnabled={!!process.env.ANTHROPIC_API_KEY} />
+              <DescribeSiteForm aiEnabled={!!process.env.ANTHROPIC_API_KEY} specialty={prof?.speciality} tone={prof?.tone} city={prof?.city} />
             </div>
           </Card>
         </div>
