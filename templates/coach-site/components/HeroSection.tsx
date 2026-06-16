@@ -53,8 +53,10 @@ export default function HeroSection({ data, style, accent, t }: { data: CoachSit
             // absolute (desktop) ↔ static (mobile) avec un clip-path diagonal ; `Image fill`
             // exige un ancêtre positionné à chaque breakpoint et l'image s'échapperait au
             // reflow mobile. Photo déjà ré-encodée 1200px/JPEG côté upload → gain marginal.
+            // `fetchPriority="high"` : c'est le candidat LCP du style Impact (faute de
+            // `priority` next/image), on demande au navigateur de la charger en priorité.
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={data.photoUrl} alt={`Photo de ${data.displayName}`} className="cs-hero-impact-photo" />
+            <img src={data.photoUrl} alt={`Photo de ${data.displayName}`} className="cs-hero-impact-photo" fetchPriority="high" />
           ) : (
             <span aria-hidden className="cs-hero-impact-initials" style={{ ...headFont, color: accent }}>{initials(data.displayName)}</span>
           )}
