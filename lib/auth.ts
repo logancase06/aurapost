@@ -1,6 +1,7 @@
 import NextAuth, { type NextAuthConfig } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import { findUserByEmail, findUserById } from '@/lib/db/users-db';
+import { recordLogin } from '@/lib/db/users-actions';
 import { db } from '@/lib/db/index';
 import { magicTokens, tenants } from '@/lib/db/schema';
 import { and, eq, gt, isNull } from 'drizzle-orm';
@@ -183,6 +184,19 @@ const config: NextAuthConfig = {
         session.user.planExpiresAt = token.planExpiresAt ?? null;
       }
       return session;
+    },
+  },
+
+  events: {
+    // Suivi de connexion (first/last login + compteur). Best-effort : n'interrompt jamais l'auth.
+    async signIn({ user }) {
+      if (user?.id) {
+        try {
+          await recordLogin(user.id);
+        } catch (err) {
+          logError('[auth] recordLogin échoué', { error: String(err) });
+        }
+      }
     },
   },
 

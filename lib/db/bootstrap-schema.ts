@@ -33,6 +33,9 @@ CREATE TABLE IF NOT EXISTS users (
   email_verified_at TEXT,
   consent_given_at TEXT,
   onboarding_completed INTEGER DEFAULT 0,
+  first_login_at TEXT,
+  last_login_at TEXT,
+  login_count INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS users_tenant_idx ON users (tenant_id);

@@ -13,10 +13,11 @@ import { inviteMemberAction, saveBrandKitAction, addTemplateAction, relanceInact
 import { ShieldCheck } from 'lucide-react';
 import type { OrgMemberStats, BrandKit, OrgTemplate } from '@/lib/db/organizations';
 
-const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-function isInactive(lastActivity: string | null): boolean {
-  return !lastActivity || Date.now() - new Date(lastActivity).getTime() > WEEK_MS;
-}
+const STATE_BADGE: Record<string, { label: string; variant: 'destructive' | 'warning' | 'success' }> = {
+  never: { label: 'Jamais connecté', variant: 'destructive' },
+  inactive: { label: 'Inactif', variant: 'warning' },
+  active: { label: 'Actif', variant: 'success' },
+};
 
 interface Props {
   orgName: string;
@@ -117,7 +118,7 @@ export default function OrgManager({ orgName, members, brandKit, templates, requ
       <Card className="overflow-hidden">
         <div className="flex items-center justify-between border-b border-border p-4">
           <span className="font-bold">Distributeurs</span>
-          {members.some((m) => isInactive(m.lastActivity)) && (
+          {members.some((m) => m.state !== 'active') && (
             <Button
               size="sm"
               variant="outline"
@@ -145,7 +146,7 @@ export default function OrgManager({ orgName, members, brandKit, templates, requ
                 <div className="flex items-center gap-4 text-xs text-muted-foreground">
                   <span>{m.postsThisMonth} posts/mois</span>
                   <span>{m.approvalRate}% approuvés</span>
-                  {isInactive(m.lastActivity) && <Badge variant="destructive">Inactif 7j+</Badge>}
+                  <Badge variant={STATE_BADGE[m.state].variant}>{STATE_BADGE[m.state].label}</Badge>
                   <Badge variant={m.siteActive ? 'success' : 'secondary'}>{m.siteActive ? 'Site publié' : 'Pas de site'}</Badge>
                 </div>
               </div>

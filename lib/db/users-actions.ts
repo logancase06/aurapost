@@ -1,6 +1,6 @@
 import { db } from './index';
 import { users, tenants } from './schema';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import { nanoid } from 'nanoid';
 import { logError } from '@/lib/logger';
@@ -72,4 +72,23 @@ export async function markEmailVerified(email: string): Promise<void> {
 /** Hash bcrypt coût 12 — point unique de vérité pour le coût. */
 export function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 12);
+}
+
+/**
+ * Enregistre une connexion : pose first_login_at au 1er login, met à jour last_login_at
+ * et incrémente login_count. Best-effort (appelé depuis l'event signIn — ne bloque jamais l'auth).
+ * Mesure d'adoption réseau : distingue « jamais connecté » de « connecté puis inactif ».
+ */
+export async function recordLogin(userId: string): Promise<void> {
+  const now = new Date().toISOString();
+  const [u] = await db.select({ firstLoginAt: users.firstLoginAt }).from(users).where(eq(users.id, userId)).limit(1);
+  if (!u) return;
+  await db
+    .update(users)
+    .set({
+      lastLoginAt: now,
+      loginCount: sql`${users.loginCount} + 1`,
+      ...(u.firstLoginAt ? {} : { firstLoginAt: now }),
+    })
+    .where(eq(users.id, userId));
 }

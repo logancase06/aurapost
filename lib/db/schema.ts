@@ -53,6 +53,9 @@ export const users = sqliteTable(
     emailVerifiedAt: text('email_verified_at'),
     consentGivenAt: text('consent_given_at'), // RGPD — consentement explicite
     onboardingCompleted: integer('onboarding_completed', { mode: 'boolean' }).default(false),
+    firstLoginAt: text('first_login_at'), // 1ère connexion (mesure d'adoption réseau)
+    lastLoginAt: text('last_login_at'),
+    loginCount: integer('login_count').notNull().default(0),
     createdAt: text('created_at').notNull(),
   },
   (t) => ({

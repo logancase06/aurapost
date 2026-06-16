@@ -22,7 +22,9 @@ export default async function OrgReportingPage() {
 
   const kpis = [
     { label: 'Distributeurs', value: String(r.memberCount) },
-    { label: 'Actifs cette semaine', value: `${r.activeThisWeek}/${r.memberCount}` },
+    { label: 'Actifs (7j)', value: `${r.activeThisWeek}/${r.memberCount}` },
+    { label: 'Jamais connectés', value: String(r.neverConnected) },
+    { label: 'Connectés inactifs', value: String(r.inactiveConnected) },
     { label: 'Posts ce mois', value: String(r.postsThisMonth) },
     { label: 'Taux d’approbation', value: `${r.approvalRate}%` },
     { label: 'Sites publiés', value: `${r.sitesPublished} (${r.publishRate}%)` },

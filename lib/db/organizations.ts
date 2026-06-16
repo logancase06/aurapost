@@ -97,6 +97,8 @@ export async function addTenantToOrg(orgId: string, tenantId: string, role: 'own
   await db.insert(orgTenants).values({ orgId, tenantId, role, invitedAt: now, joinedAt: now });
 }
 
+export type MemberState = 'never' | 'inactive' | 'active';
+
 export interface OrgMemberStats {
   tenantId: string;
   name: string;
@@ -108,6 +110,10 @@ export interface OrgMemberStats {
   approvalRate: number;
   siteActive: boolean;
   lastActivity: string | null;
+  firstLoginAt: string | null;
+  lastLoginAt: string | null;
+  /** never = jamais connecté · inactive = connecté mais sans action récente · active = action < 7j. */
+  state: MemberState;
 }
 
 /** Membres d'une org avec leurs stats (batché). */
@@ -119,16 +125,17 @@ export async function listOrgMembersWithStats(orgId: string): Promise<OrgMemberS
   const month = currentMonth();
   const [profiles, owners, posts, sites, logs] = await Promise.all([
     db.select({ tenantId: coachProfiles.tenantId, name: coachProfiles.displayName, city: coachProfiles.city }).from(coachProfiles).where(inArray(coachProfiles.tenantId, tenantIds)),
-    db.select({ tenantId: users.tenantId, email: users.email }).from(users).where(inArray(users.tenantId, tenantIds)),
+    db.select({ tenantId: users.tenantId, email: users.email, firstLoginAt: users.firstLoginAt, lastLoginAt: users.lastLoginAt }).from(users).where(inArray(users.tenantId, tenantIds)),
     db.select({ tenantId: generatedPosts.tenantId, status: generatedPosts.status, month: generatedPosts.month }).from(generatedPosts).where(inArray(generatedPosts.tenantId, tenantIds)),
     db.select({ tenantId: websites.tenantId, status: websites.status }).from(websites).where(inArray(websites.tenantId, tenantIds)),
     db.select({ tenantId: activityLogs.tenantId, last: sql<string>`max(${activityLogs.createdAt})` }).from(activityLogs).where(inArray(activityLogs.tenantId, tenantIds)).groupBy(activityLogs.tenantId),
   ]);
 
   const nameMap = new Map(profiles.map((p) => [p.tenantId, { name: p.name, city: p.city }]));
-  const emailMap = new Map(owners.map((o) => [o.tenantId, o.email]));
+  const ownerMap = new Map(owners.map((o) => [o.tenantId, o]));
   const siteMap = new Map(sites.map((s) => [s.tenantId, s.status === 'active']));
   const lastMap = new Map(logs.map((l) => [l.tenantId, l.last]));
+  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
 
   const agg = new Map<string, { total: number; approved: number; rejected: number; month: number }>();
   for (const id of tenantIds) agg.set(id, { total: 0, approved: 0, rejected: 0, month: 0 });
@@ -144,17 +151,28 @@ export async function listOrgMembersWithStats(orgId: string): Promise<OrgMemberS
   return tenantIds.map((id) => {
     const a = agg.get(id)!;
     const decided = a.approved + a.rejected;
+    const owner = ownerMap.get(id);
+    const lastActivity = lastMap.get(id) ?? null;
+    const firstLoginAt = owner?.firstLoginAt ?? null;
+    const state: MemberState = !firstLoginAt
+      ? 'never'
+      : lastActivity && new Date(lastActivity).getTime() >= weekAgo
+        ? 'active'
+        : 'inactive';
     return {
       tenantId: id,
       name: nameMap.get(id)?.name ?? '—',
-      email: emailMap.get(id) ?? '—',
+      email: owner?.email ?? '—',
       city: nameMap.get(id)?.city ?? null,
       postsThisMonth: a.month,
       totalPosts: a.total,
       approved: a.approved,
       approvalRate: decided > 0 ? Math.round((a.approved / decided) * 100) : 0,
       siteActive: siteMap.get(id) ?? false,
-      lastActivity: lastMap.get(id) ?? null,
+      lastActivity,
+      firstLoginAt,
+      lastLoginAt: owner?.lastLoginAt ?? null,
+      state,
     };
   }).sort((x, y) => y.totalPosts - x.totalPosts);
 }
@@ -264,6 +282,8 @@ export async function addOrgTemplate(orgId: string, t: { name: string; content: 
 export interface OrgReporting {
   memberCount: number;
   activeThisWeek: number;
+  neverConnected: number; // jamais connecté (first_login_at null)
+  inactiveConnected: number; // connecté mais sans action récente
   postsThisMonth: number;
   approved: number;
   rejected: number;
@@ -277,8 +297,9 @@ export interface OrgReporting {
 /** Rapport agrégé d'une org (période : 'week' | 'month' | 'all'). */
 export async function getOrgReporting(orgId: string): Promise<OrgReporting> {
   const members = await listOrgMembersWithStats(orgId);
-  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-  const activeThisWeek = members.filter((m) => m.lastActivity && new Date(m.lastActivity).getTime() >= weekAgo).length;
+  const activeThisWeek = members.filter((m) => m.state === 'active').length;
+  const neverConnected = members.filter((m) => m.state === 'never').length;
+  const inactiveConnected = members.filter((m) => m.state === 'inactive').length;
   const postsThisMonth = members.reduce((s, m) => s + m.postsThisMonth, 0);
   const approved = members.reduce((s, m) => s + m.approved, 0);
   const totalPosts = members.reduce((s, m) => s + m.totalPosts, 0);
@@ -289,6 +310,8 @@ export async function getOrgReporting(orgId: string): Promise<OrgReporting> {
   return {
     memberCount: members.length,
     activeThisWeek,
+    neverConnected,
+    inactiveConnected,
     postsThisMonth,
     approved,
     rejected,
