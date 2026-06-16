@@ -28,8 +28,7 @@ export default function InstagramGridBackground() {
             alt=""
             loading="lazy"
             decoding="async"
-            // @ts-expect-error fetchpriority est valide en HTML, types React en retard
-            fetchpriority="low"
+            fetchPriority="low"
             className="aspect-square w-full rounded-sm object-cover grayscale"
           />
         ))}
