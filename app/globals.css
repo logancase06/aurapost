@@ -48,6 +48,32 @@
   }
 }
 
+/* ── Landing AuraPost — système éditorial ISOLÉ ──────────────────────────────
+   Séparé des tokens dashboard (.dark/violet) ET des accents des sites coachs.
+   Direction « presse » : papier chaud, encre noir-chaud, UN seul accent vermillon
+   (énergie/mouvement — anti-cliché violet/bleu dégradé des SaaS-IA). Scopé à `.landing`
+   pour ne jamais fuiter sur le reste de l'app. */
+.landing {
+  --landing-accent: #e5482b; /* vermillon — couleur de couverture magazine */
+  --landing-accent-dark: #b8371e; /* survol / texte sur papier */
+  --landing-ink: #18130f; /* noir chaud, jamais #000 pur */
+  --landing-paper: #f6f1e9; /* papier os, légèrement chaud */
+  --landing-paper-2: #efe7da; /* second fond (sections denses) */
+  --landing-muted: #6b6258; /* gris chaud — texte secondaire */
+  --landing-line: #e2d9cc; /* filets / règles éditoriales */
+  background: var(--landing-paper);
+  color: var(--landing-ink);
+}
+.landing ::selection {
+  background: var(--landing-accent);
+  color: #fff;
+}
+/* Titres display (serif éditoriale Fraunces). */
+.landing-display {
+  font-family: var(--font-landing-display), Georgia, 'Times New Roman', serif;
+  font-optical-sizing: auto;
+}
+
 @layer base {
   * {
     @apply border-border;
