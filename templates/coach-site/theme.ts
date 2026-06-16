@@ -132,6 +132,23 @@ export function ctaHrefFor(data: CoachSiteData): string {
   );
 }
 
+/** Hash déterministe stable d'une chaîne → entier ≥ 0 (jamais aléatoire, stable au reload). */
+export function seedHash(seed: string): number {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+  return h;
+}
+
+/**
+ * Variante déterministe entière dans [min, max] à partir d'un seed (B.5).
+ * Pure et stable : même seed → même valeur (jamais Math.random). L'appelant garantit
+ * une plage SÛRE (qui ne casse aucun layout à aucune valeur) — ici on borne juste le hash.
+ */
+export function deterministicVariant(seed: string, min: number, max: number): number {
+  if (max <= min) return min;
+  return min + (seedHash(seed) % (max - min + 1));
+}
+
 /** Sépare le dernier mot d'un titre (rendu en accent / souligné selon le style). */
 export function splitLastWord(title: string): { head: string; last: string } {
   const t = (title || '').trim();

@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import { Check } from 'lucide-react';
-import { headStyle, initials, metaLine, ctaLabelFor, ctaHrefFor, splitLastWord, GRAIN, type Theme } from '../theme';
+import { headStyle, initials, metaLine, ctaLabelFor, ctaHrefFor, splitLastWord, deterministicVariant, GRAIN, type Theme } from '../theme';
 import { forcesOf } from './ForcesSection';
 import type { CoachSiteData, SiteStyle } from '../types';
 
@@ -10,6 +10,13 @@ export default function HeroSection({ data, style, accent, t }: { data: CoachSit
   const accroche = data.heroTagline || 'Ton objectif mérite une vraie méthode.';
   const ctaLabel = ctaLabelFor(data);
   const ctaHref = ctaHrefFor(data);
+
+  // Variante déterministe par coach (B.5) — stable par seed, jamais aléatoire. Plages
+  // bornées pour ne JAMAIS casser le layout : l'image Impact couvre toujours son flanc
+  // droit (clip 10–18 %), le badge polaroid Clarté reste dans le cadre (bottom 12–28 px).
+  const seed = data.subdomain || data.displayName || '';
+  const diag = deterministicVariant(seed, 10, 18);
+  const badgeBottom = deterministicVariant(seed, 12, 28);
 
   // ── Style IMPACT : typographie maximale, photo diagonale, CTA dynamique ──────
   if (style === 'impact') {
@@ -68,7 +75,7 @@ export default function HeroSection({ data, style, accent, t }: { data: CoachSit
 
         <style>{`
           .cs-hero-impact{min-height:100vh;display:flex;align-items:center}
-          .cs-hero-impact-photo{position:absolute;right:0;top:0;height:100%;width:44%;object-fit:cover;object-position:center top;clip-path:polygon(12% 0,100% 0,100% 100%,0 100%);z-index:1}
+          .cs-hero-impact-photo{position:absolute;right:0;top:0;height:100%;width:44%;object-fit:cover;object-position:center top;clip-path:polygon(${diag}% 0,100% 0,100% 100%,0 100%);z-index:1}
           .cs-hero-impact-fade{position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(to right,#0a0a0a 35%,rgba(10,10,10,0.6) 60%,transparent 80%)}
           .cs-hero-impact-initials{position:absolute;right:24px;bottom:0;font-size:clamp(140px,22vw,320px);line-height:1;opacity:.05;letter-spacing:-.05em;z-index:1;user-select:none;pointer-events:none}
           .cs-cta-impact{transition:all .15s ease-out}
@@ -122,7 +129,7 @@ export default function HeroSection({ data, style, accent, t }: { data: CoachSit
               <div className="cs-hero-clarte-frame" style={{ position: 'relative', maxWidth: 460, marginLeft: 'auto', aspectRatio: '4/5', border: '8px solid #fff', borderRadius: 20, overflow: 'hidden', boxShadow: '0 32px 80px rgba(0,0,0,0.14)' }}>
                 <Image src={data.photoUrl} alt={data.displayName} fill priority sizes="(max-width: 768px) 100vw, 40vw" style={{ objectFit: 'cover' }} />
                 {headline && (
-                  <span className="cs-hero-clarte-badge" style={{ position: 'absolute', bottom: 16, left: -20, background: '#fff', borderRadius: 9999, padding: '8px 16px', boxShadow: '0 8px 24px rgba(0,0,0,0.12)', fontSize: 13, fontWeight: 600, color: t.ink }}>
+                  <span className="cs-hero-clarte-badge" style={{ position: 'absolute', bottom: badgeBottom, left: -20, background: '#fff', borderRadius: 9999, padding: '8px 16px', boxShadow: '0 8px 24px rgba(0,0,0,0.12)', fontSize: 13, fontWeight: 600, color: t.ink }}>
                     ✓ {headline.length > 30 ? `${headline.slice(0, 30)}…` : headline}
                   </span>
                 )}
