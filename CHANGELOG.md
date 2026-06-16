@@ -2,6 +2,20 @@
 
 Toutes les évolutions notables du projet. Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/).
 
+## [1.2.0] — 2026-06-16 — Conformité réseau (validation MLM) & correctifs production
+
+### Conformité / réseau (P1)
+- **File de validation des posts (D1)** : `organizations.requires_approval` + table `post_approvals`. Quand activée, les posts d'un distributeur passent en **`pending_approval`** (nouveau statut) ; le distributeur voit « en attente », ne peut pas s'auto-approuver. Page **`/dashboard/org/approvals`** (manager) : liste par distributeur, **approuver / rejeter avec commentaire**, badge « Contenu à vérifier » si allégation détectée, email de décision, journal immuable. Toggle de validation + blacklist MLM élargie (santé, garanties).
+
+### Site vitrine
+- **Thème par spécialité** (`lib/coach-site-theme.ts`, source unique) : `{ bg, accent, accentLight, font, mood }` ; `accentForSpeciality` y délègue.
+
+### Correctifs production (critiques)
+- **`analyzeReviews` API-first** : ne tombe plus silencieusement en mock en serverless avec une clé API (même fix que `analyzeInstagram`). Restaure l'extraction réelle des points forts/ton qui alimentent génération et site.
+- **`/privacy`** : mention d'hébergement par sous-traitant (pays) + renvoi vers `/legal/sous-traitants`.
+
+> Build vert · tsc 0 erreur · 41 tests Jest verts.
+
 ## [1.1.0] — 2026-06-16 — Qualité contenu, pricing, analyse de profil & durcissement
 
 ### Produit (P0)

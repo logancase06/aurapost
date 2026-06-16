@@ -111,6 +111,20 @@ Backlog     ▸ Phase 4 (v1.x) + Phase 5 (dette)       → en continu
 
 ---
 
+# Run nocturne #2 (P1 → P2) — 2026-06-16
+
+- ✅ **Fix critique** `analyzeReviews` API-first (était mock-only en prod). Même classe de bug que `analyzeInstagram`.
+- ✅ **Fix** mention d'hébergement sous-traitants dans `/privacy`.
+- ✅ **D1 — File de validation MLM** : `requires_approval`, statut `pending_approval`, page `/dashboard/org/approvals` (approuver/rejeter + commentaire + email + audit), blacklist élargie, badge allégation, toggle. **(le levier signature Herbalife)** + 3 tests.
+- ✅ **Site** : `lib/coach-site-theme.ts` (thème par spécialité, source unique accent/mood).
+- ❌ **A1 publication LinkedIn/Meta** : non faite (interdit sans credentials — risque non testable).
+- ❌ **E1 acquisition SEO** (5 articles, `/coaches/[ville]`, `/partenaires`, parrainage) : non faite.
+- ❌ **D2 crons J+1/3/7** : non faits (manque `first_login_at`). Relance manuelle ✅ (run précédent).
+- ❌ **B2 facturation par siège Teams** : non faite (Stripe quantity).
+- ❌ **P2** (F1 onboarding court, H3 jobs async, H1 schéma source unique, H2 tests/CI, F2 reduced-motion, F3 ton B2B, G2 CSP nonces, G3 GDPR delete gating, E2 rétention, H4 multi-provider, 6.2 outreach) : non traités.
+
+---
+
 # Run nocturne autonome (P0 → P2) — 2026-06-16
 
 > Référentiel des priorités : `ROADMAP_DEFAUTS_SOLUTIONS.md`. Gate vert (tsc + build + 38 tests) après chaque item.
