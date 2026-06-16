@@ -1,18 +1,17 @@
 import Reveal from '../Reveal';
-import { headStyle, type Theme } from '../theme';
-import type { CoachSiteData } from '../types';
+import { type Theme } from '../theme';
+import SectionTitle from './SectionTitle';
+import type { CoachSiteData, SiteStyle } from '../types';
 
-export default function ResultsSection({ data, accent, t }: { data: CoachSiteData; accent: string; t: Theme }) {
+export default function ResultsSection({ data, style, accent, t }: { data: CoachSiteData; style: SiteStyle; accent: string; t: Theme }) {
   const results = data.results?.length ? data.results : [];
   if (results.length === 0) return null;
-  const headFont = headStyle(t);
   const isLight = !t.heroDark;
-  const sectionH2 = { ...headFont, fontSize: 'clamp(1.9rem, 5vw, 3rem)', lineHeight: 1.1, margin: '0 0 48px' } as const;
 
   return (
     <section style={{ background: isLight ? t.ink : '#111111', color: '#fff' }}>
       <Reveal style={{ maxWidth: 1080, margin: '0 auto', padding: '100px 24px' }}>
-        <h2 style={{ ...sectionH2, color: '#fff' }}>Ce que ça change</h2>
+        <SectionTitle style={style} accent={accent} t={t} color="#fff">Ce que ça change</SectionTitle>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 40 }}>
           {results.map((r, i) => (
             <div key={i} style={{ borderTop: `3px solid ${accent}`, paddingTop: 24 }}>

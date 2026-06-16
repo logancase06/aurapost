@@ -1,16 +1,16 @@
 import Reveal from '../Reveal';
 import { headStyle, type Theme } from '../theme';
-import type { CoachSiteData } from '../types';
+import SectionTitle from './SectionTitle';
+import type { CoachSiteData, SiteStyle } from '../types';
 
-export default function ServicesSection({ data, accent, t }: { data: CoachSiteData; accent: string; t: Theme }) {
+export default function ServicesSection({ data, style, accent, t }: { data: CoachSiteData; style: SiteStyle; accent: string; t: Theme }) {
   if (data.services.length === 0) return null;
   const headFont = headStyle(t);
   const wrap = { maxWidth: 1080, margin: '0 auto', padding: '100px 24px' } as const;
-  const sectionH2 = { ...headFont, fontSize: 'clamp(1.9rem, 5vw, 3rem)', lineHeight: 1.1, margin: '0 0 48px' } as const;
 
   return (
     <Reveal as="section" style={wrap}>
-      <h2 style={sectionH2}>Ce qu’on fait ensemble</h2>
+      <SectionTitle style={style} accent={accent} t={t}>Ce qu’on fait ensemble</SectionTitle>
       <div>
         {data.services.map((s, i) => (
           <div key={i} style={{ display: 'grid', gridTemplateColumns: '72px 1fr', gap: 22, padding: '30px 0', borderTop: `1px solid ${t.border}`, alignItems: 'baseline' }}>

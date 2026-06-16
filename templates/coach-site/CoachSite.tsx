@@ -47,8 +47,8 @@ export default function CoachSite({ data }: { data: CoachSiteData }) {
   const sections: Record<(typeof SECTION_ORDER)[SiteStyle][number], React.ReactNode> = {
     forces: <ForcesSection data={data} style={style} accent={accent} t={t} />,
     apropos: <AProposSection data={data} style={style} accent={accent} t={t} />,
-    services: <ServicesSection data={data} accent={accent} t={t} />,
-    results: <ResultsSection data={data} accent={accent} t={t} />,
+    services: <ServicesSection data={data} style={style} accent={accent} t={t} />,
+    results: <ResultsSection data={data} style={style} accent={accent} t={t} />,
     temoignages: <TemoignagesSection data={data} style={style} accent={accent} t={t} />,
     contact: <ContactSection data={data} style={style} accent={accent} t={t} />,
   };
