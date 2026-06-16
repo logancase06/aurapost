@@ -157,8 +157,13 @@ export default async function proxy(req: NextRequest) {
 
   // ── Auth via JWT (sans accès DB) — uniquement sur les préfixes protégés ───
   // Les routes inconnues passent (→ page 404 publique d'AuraPost).
+  // `/api/gdpr/*` est gardé ici aussi (défense en profondeur, en plus du contrôle
+  // auth+CSRF dans le handler) car l'export/suppression manipule des données sensibles.
   const isProtected =
-    pathname.startsWith('/dashboard') || pathname.startsWith('/onboarding') || pathname.startsWith('/admin');
+    pathname.startsWith('/dashboard') ||
+    pathname.startsWith('/onboarding') ||
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/api/gdpr');
 
   if (isProtected) {
     const token = await getToken({
@@ -171,6 +176,10 @@ export default async function proxy(req: NextRequest) {
     });
 
     if (!token) {
+      // API → 401 JSON (pas de redirection HTML) ; pages → redirection login.
+      if (pathname.startsWith('/api/')) {
+        return withSecurityHeaders(NextResponse.json({ error: 'Non autorisé' }, { status: 401 }));
+      }
       const url = req.nextUrl.clone();
       url.pathname = '/login';
       url.searchParams.set('callbackUrl', pathname);
