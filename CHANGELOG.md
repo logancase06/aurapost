@@ -2,6 +2,17 @@
 
 Toutes les évolutions notables du projet. Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/).
 
+## [1.4.0] — 2026-06-16 — Démo réseau complète & robustesse locale
+
+### Démo réseau / Herbalife (le centre du pitch)
+- **Seed agence** : `npm run seed:demo` crée « Réseau Vitalité France » (slug `reseau-vitalite`, validation obligatoire, brand kit + mots interdits + 2 templates) **+ 8 distributeurs** à états variés — 3 actifs, 2 inactifs, 2 jamais connectés, 1 (Marc Dupont) avec 3 posts en attente dont 1 avec allégation « résultats garantis ». `first_login_at`/`last_login_at`/`activity_logs` posés par état → reporting d'adoption réaliste. Manager : `manager@reseau-vitalite.fr` / `Demo2024!`.
+- **Mode agence dans `/demo-live`** : `?mode=agency` affiche le tableau de bord manager en lecture seule (distributeurs + états, reporting, file de validation avec badge allégation, brand kit). **Vérifié au runtime.** `DEMO_SCRIPT.md` : déroulé de pitch 20 min.
+
+### Robustesse locale
+- **Service worker dev-only** : désenregistré + caches purgés en dev (fin de la boucle « Failed to fetch » due aux chunks Turbopack périmés). Mockups et manifest existaient déjà — les `ERR_CONNECTION_REFUSED` venaient du serveur dev éteint.
+
+> Build vert · tsc 0 erreur · 44 tests Jest verts. `npm run seed:demo` OK (3 coachs + org 8 distributeurs).
+
 ## [1.3.0] — 2026-06-16 — Adoption réseau mesurable, SEO & robustesse PWA
 
 ### Adoption (fix critique)

@@ -111,6 +111,16 @@ Backlog     ▸ Phase 4 (v1.x) + Phase 5 (dette)       → en continu
 
 ---
 
+# Run nocturne #4 — 2026-06-16
+
+- ✅ **Fix local (Item 1)** : service worker dev-only (fin de la boucle Failed to fetch). Mockups/manifest OK (n'étaient pas manquants).
+- ✅ **Seed agence (Item 2)** : « Réseau Vitalité France » + 8 distributeurs à états variés (3 actifs / 2 inactifs / 2 jamais connectés / 1 en attente avec allégation). **Le jeu de données qui manquait pour le pitch.**
+- ✅ **Demo-live agence (Item 12)** : `/demo-live?token=…&mode=agency` (dashboard manager read-only) + `DEMO_SCRIPT.md`. Vérifié au runtime.
+- ❌ **Item 3 (jobs async / streaming)** : non fait — gros refactor du chemin de génération critique (risque vert) ; **#1 technique restant**.
+- ❌ **Items 4-11** : F1 onboarding court, E1 villes/partenaires, B2 facturation siège, E2 rétention, 6.2 outreach, H4 multi-provider, G2 CSP nonces, H5 docs complet — non traités (chacun = incrément conséquent). Priorisé : fix local + démo réseau (le but du pitch).
+
+---
+
 # Run nocturne #3 — 2026-06-16
 
 - ✅ **Fix critique — `first_login_at`** : suivi de connexion (first/last/count) via event signIn. Reporting org en 3 états (jamais connecté / inactif / actif). **La métrique d'adoption que demandait Herbalife.**
