@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import DashboardShell from '../DashboardShell';
 import TemplateChooser from './TemplateChooser';
 import CopyUrlButton from './CopyUrlButton';
-import CreateSiteButton from './CreateSiteButton';
+import DescribeSiteForm from './DescribeSiteForm';
 import PublishToggle from './PublishToggle';
 import CoachSite, { styleForTone, type SiteStyle } from '@/templates/coach-site/CoachSite';
 
@@ -79,15 +79,15 @@ export default async function WebsitePage() {
             </Button>
           </Card>
 
-          {/* Chemin discret : génération directe depuis le profil */}
+          {/* Chemin « décris ton site » : texte libre → génération + affinage IA */}
           <Card className="flex flex-col p-6">
             <Zap className="h-7 w-7 text-muted-foreground" />
-            <h2 className="mt-3 text-lg font-bold">Créer directement</h2>
-            <p className="mt-1 flex-1 text-sm text-muted-foreground">
-              On génère ton site depuis ton profil en 30 secondes.
+            <h2 className="mt-3 text-lg font-bold">Décris ton site</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Dis-nous en une phrase ce que tu veux (ton, parcours, tarifs à mettre en avant…). On génère depuis ton profil et on l’ajuste.
             </p>
             <div className="mt-4">
-              <CreateSiteButton />
+              <DescribeSiteForm aiEnabled={!!process.env.ANTHROPIC_API_KEY} />
             </div>
           </Card>
         </div>
