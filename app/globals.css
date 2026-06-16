@@ -196,3 +196,16 @@ html {
     transform: scale(1.04);
   }
 }
+
+/* Accessibilité — respect de prefers-reduced-motion : neutralise animations et
+   transitions pour les utilisateurs qui le demandent (et réduit la charge CPU). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
