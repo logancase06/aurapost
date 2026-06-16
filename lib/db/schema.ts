@@ -374,6 +374,25 @@ export const orgBrandKit = sqliteTable('org_brand_kit', {
   updatedAt: text('updated_at').notNull(),
 });
 
+// Jobs de génération asynchrone (résout le timeout serverless ; streaming via polling).
+export const generationJobs = sqliteTable(
+  'generation_jobs',
+  {
+    id: text('id').primaryKey(),
+    tenantId: text('tenant_id').notNull(),
+    status: text('status').notNull().default('pending'), // pending | running | done | failed
+    progress: integer('progress').notNull().default(0),
+    total: integer('total').notNull().default(12),
+    postsGenerated: text('posts_generated').notNull().default('[]'), // JSON : posts au fil de l'eau
+    errorMessage: text('error_message'),
+    generationMode: text('generation_mode'),
+    startedAt: text('started_at'),
+    completedAt: text('completed_at'),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => ({ tenantIdx: index('generation_jobs_tenant_idx').on(t.tenantId, t.createdAt) })
+);
+
 // File de validation des posts (conformité réseau/MLM). Une ligne par décision.
 export const postApprovals = sqliteTable(
   'post_approvals',

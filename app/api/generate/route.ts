@@ -4,6 +4,7 @@ import { requireTenantId } from '@/lib/tenant';
 import { runMonthlyGeneration } from '@/lib/db/posts';
 import { isPlanActive, getPlanLimits } from '@/lib/plans';
 import { orgApprovalContext } from '@/lib/db/organizations';
+import { createGenerationJob, runGenerationJob, failJob } from '@/lib/generation-jobs';
 import { checkAuthRateLimit } from '@/lib/auth-rate-limit';
 import { sendMonthlyPostsEmail } from '@/lib/email';
 import { db } from '@/lib/db';
@@ -53,6 +54,25 @@ export async function POST() {
     // Si l'organisation du tenant exige une validation → posts en attente d'approbation manager.
     const approvalCtx = await orgApprovalContext(tenantId);
     const initialStatus = approvalCtx?.requiresApproval ? ('pending_approval' as const) : ('draft' as const);
+
+    // ── Mode asynchrone (GENERATION_ASYNC=true) : job en arrière-plan, réponse < 500 ms ──
+    // Résout le timeout serverless. Le verrou generating_at est libéré par le job (after()).
+    if (process.env.GENERATION_ASYNC === 'true') {
+      const userId = session.user.id;
+      const jobId = await createGenerationJob(tenantId, limits.postsPerMonth);
+      after(async () => {
+        try {
+          await runGenerationJob(jobId, tenantId, userId, { maxPosts: limits.postsPerMonth, instagramOnly: limits.instagramOnly, initialStatus });
+        } catch (err) {
+          await failJob(jobId, String(err));
+          logError('[generate] job échoué', { error: String(err) });
+        } finally {
+          await db.update(tenants).set({ generatingAt: null }).where(eq(tenants.id, tenantId));
+        }
+      });
+      return NextResponse.json({ jobId, status: 'pending' }, { status: 202 });
+    }
+
     let result: Awaited<ReturnType<typeof runMonthlyGeneration>>;
     try {
       result = await runMonthlyGeneration(tenantId, session.user.id, { maxPosts: limits.postsPerMonth, instagramOnly: limits.instagramOnly, initialStatus });
