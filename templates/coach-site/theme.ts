@@ -1,5 +1,6 @@
 import type React from 'react';
 import { inter, bebas, jakarta, lato, playfair } from './fonts';
+import { getCoachTheme } from '@/lib/coach-site-theme';
 import type { SiteStyle, CoachServiceItem, CoachTestimonialItem, CoachResultItem, CoachSiteData } from './types';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -7,16 +8,14 @@ import type { SiteStyle, CoachServiceItem, CoachTestimonialItem, CoachResultItem
 // et par tous les composants de section → pas de cycle.
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Couleur d'accent unique choisie selon la spécialité du coach. */
+/** Couleur d'accent unique choisie selon la spécialité du coach (source : lib/coach-site-theme). */
 export function accentForSpeciality(speciality: string): string {
-  const s = (speciality || '').toLowerCase();
-  if (/hyrox|cross|wod|conditioning|metcon/.test(s)) return '#FF4D00'; // orange
-  if (/yoga|pilates|mobilit|souplesse|stretch/.test(s)) return '#7A9E7E'; // vert sauge
-  if (/run|course|trail|marathon|cardio|endurance/.test(s)) return '#1A56DB'; // bleu
-  if (/box|mma|combat|krav/.test(s)) return '#D7263D'; // rouge
-  if (/muscu|force|halt|powerlift|body/.test(s)) return '#E8590C'; // orange foncé
-  if (/nutri|dietet/.test(s)) return '#0F8B5F'; // vert
-  return '#FF4D00';
+  return getCoachTheme(speciality).accent;
+}
+
+/** Version claire de l'accent (badges, fonds de section) selon la spécialité. */
+export function accentLightForSpeciality(speciality: string): string {
+  return getCoachTheme(speciality).accentLight;
 }
 
 /** Style recommandé selon le ton du coach (présélection). */
