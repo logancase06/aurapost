@@ -26,7 +26,7 @@ export default function AgencyOnboarding({ hasOrg, orgName, orgSlug }: { hasOrg:
     start(async () => {
       const res = await createOrgAction(name);
       if (res.ok) {
-        toast.success('Organisation créée ✦');
+        toast.success('Organisation créée');
         router.refresh();
         setStep(1);
       } else toast.error(res.error || 'Action impossible');
@@ -38,7 +38,7 @@ export default function AgencyOnboarding({ hasOrg, orgName, orgSlug }: { hasOrg:
   function saveBrand() {
     start(async () => {
       const res = await saveBrandKitAction(bk);
-      if (res.ok) { toast.success('Brand kit enregistré ✦'); setStep(2); }
+      if (res.ok) { toast.success('Brand kit enregistré'); setStep(2); }
       else toast.error(res.error || 'Action impossible');
     });
   }
@@ -73,7 +73,7 @@ export default function AgencyOnboarding({ hasOrg, orgName, orgSlug }: { hasOrg:
       if (tpl.name && tpl.content) {
         const res = await addTemplateAction(tpl);
         if (!res.ok) { toast.error(res.error || 'Action impossible'); return; }
-        toast.success('Template ajouté ✦');
+        toast.success('Template ajouté');
         setTpl({ name: '', category: '', content: '' });
       }
       if (finish) router.push('/dashboard/org');

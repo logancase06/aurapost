@@ -40,7 +40,7 @@ export default function OrgManager({ orgName, members, brandKit, templates, requ
     start(async () => {
       const res = await inviteMemberAction(inv);
       if (res.ok) {
-        toast.success(res.created ? 'Distributeur invité ✦' : 'Distributeur rattaché');
+        toast.success(res.created ? 'Distributeur invité' : 'Distributeur rattaché');
         setInv({ email: '', firstName: '', city: '', speciality: '' });
       } else toast.error(res.error || 'Action impossible');
     });
@@ -56,7 +56,7 @@ export default function OrgManager({ orgName, members, brandKit, templates, requ
   function saveBrand() {
     start(async () => {
       const res = await saveBrandKitAction(bk);
-      if (res.ok) toast.success('Brand kit enregistré ✦');
+      if (res.ok) toast.success('Brand kit enregistré');
       else toast.error(res.error || 'Action impossible');
     });
   }
@@ -67,7 +67,7 @@ export default function OrgManager({ orgName, members, brandKit, templates, requ
     start(async () => {
       const res = await addTemplateAction(tpl);
       if (res.ok) {
-        toast.success('Template ajouté ✦');
+        toast.success('Template ajouté');
         setTpl({ name: '', category: '', content: '' });
       } else toast.error(res.error || 'Action impossible');
     });

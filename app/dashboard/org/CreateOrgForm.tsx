@@ -16,7 +16,7 @@ export default function CreateOrgForm() {
     start(async () => {
       const res = await createOrgAction(name);
       if (res.ok) {
-        toast.success('Organisation créée ✦');
+        toast.success('Organisation créée');
         window.location.reload();
       } else toast.error(res.error || 'Action impossible');
     });
