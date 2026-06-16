@@ -1,6 +1,6 @@
 // Service Worker AuraPost — cache app shell, offline (dernier dashboard en cache),
 // notifications push « Vos posts du mois sont prêts ».
-const CACHE = 'aurapost-v2';
+const CACHE = 'aurapost-v3';
 const OFFLINE_URLS = ['/', '/offline', '/icons/icon-192.png'];
 
 self.addEventListener('install', (event) => {
@@ -30,9 +30,24 @@ self.addEventListener('fetch', (event) => {
     );
     return;
   }
-  // Cache-first pour les assets statiques.
+  // Cache-first pour les assets statiques. Tout échec réseau est rattrapé (pas de
+  // rejet non géré : sinon « Uncaught TypeError: Failed to fetch » quand le serveur
+  // est injoignable — offline, dev arrêté, etc.).
   if (request.method === 'GET' && /\.(css|js|woff2?|png|jpg|svg|ico)$/.test(new URL(request.url).pathname)) {
-    event.respondWith(caches.match(request).then((r) => r || fetch(request)));
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        if (cached) return cached;
+        return fetch(request)
+          .then((res) => {
+            if (res.ok) {
+              const copy = res.clone();
+              caches.open(CACHE).then((cache) => cache.put(request, copy)).catch(() => {});
+            }
+            return res;
+          })
+          .catch(() => caches.match(request).then((r) => r || new Response('', { status: 504, statusText: 'offline' })));
+      })
+    );
   }
 });
 
