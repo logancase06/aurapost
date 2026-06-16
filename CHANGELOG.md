@@ -10,11 +10,17 @@ Toutes les évolutions notables du projet. Format inspiré de [Keep a Changelog]
 ### Acquisition (E1)
 - **5 articles de blog SEO** : coach à Nice, guide Hyrox, 10 clients/mois, abandon à 3 mois, AuraPost vs ChatGPT. Metadata + JSON-LD + og:image + temps de lecture + CTA. Sitemap auto.
 
+### Réseau (P1/P2)
+- **Crons d'activation distributeurs (D2)** : `/api/cron/distributor-activation` relance les jamais-connectés (J+1/3/7) et réengage les connectés inactifs (>14j), idempotent — débloqué par `first_login_at`.
+- **Sécurité (G3)** : `/api/gdpr/*` gardé au niveau middleware (401 JSON pour les API protégées).
+- **Ton B2B (F3)** : retrait des fioritures emoji sur les surfaces agence.
+
 ### Robustesse & accessibilité
 - **Service worker** durci : plus de `Uncaught TypeError: Failed to fetch` quand le réseau est injoignable (fallback gracieux, cache bumpé v3).
 - **`prefers-reduced-motion`** : animations/transitions neutralisées pour les utilisateurs sensibles au mouvement.
+- **Garde anti-dérive schéma (H1)** : test vérifiant que `bootstrap-schema.ts` suit `schema.ts` (évite les désyncs de DB dev/test). CI GitHub Actions déjà en place (H2).
 
-> Build vert · tsc 0 erreur · 41 tests Jest verts.
+> Build vert · tsc 0 erreur · 44 tests Jest verts.
 
 ## [1.2.0] — 2026-06-16 — Conformité réseau (validation MLM) & correctifs production
 

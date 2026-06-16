@@ -117,7 +117,12 @@ Backlog     ▸ Phase 4 (v1.x) + Phase 5 (dette)       → en continu
 - ✅ **Fix PWA** : service worker résilient (plus de `Uncaught Failed to fetch` réseau down).
 - ✅ **E1 (partiel)** : 5 articles de blog SEO (sitemap auto, JSON-LD, CTA). **Restent** : pages `/coaches/[ville]`, `/partenaires`, vérif parrainage.
 - ✅ **F2** : `prefers-reduced-motion` global.
-- ❌ **Non traités ce run** : D2 crons (now débloqués par `first_login_at` — à brancher), B2 facturation siège, F1 onboarding court, H3 jobs async, H1 schéma source unique, H2 CI, F3 ton B2B, E2 rétention, G2/G3 sécu, H4 multi-provider, 6.2 outreach, H5 docs.
+- ✅ **D2 crons** : `/api/cron/distributor-activation` (J+1/3/7 + réengagement, idempotent).
+- ✅ **F3** : ton B2B sobre (emojis retirés des surfaces agence).
+- ✅ **G3** : `/api/gdpr/*` gardé au middleware + 401 JSON pour API protégées.
+- ✅ **H1 (lite)** : test garde anti-dérive `schema.ts` ↔ `bootstrap-schema.ts`. **H2** : CI GitHub Actions déjà présente (tsc+build+test).
+- ✅ **Opérationnel** : dev DB régénérée (les nouvelles colonnes cassaient le `next dev` local) — pas de bug d'encodage, le site sert en UTF-8 correct (vérifié, `Ferré` OK).
+- ❌ **Restent (les plus lourds)** : B2 facturation par siège (Stripe quantity), H3 jobs async, F1 onboarding court, G2 CSP nonces, E2 rétention, H4 multi-provider, 6.2 outreach, H5 docs, E1 (villes/partenaires).
 
 ---
 
