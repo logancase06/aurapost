@@ -52,32 +52,37 @@ export default function ForcesSection({ data, style, accent, t }: { data: CoachS
     );
   }
 
-  // ── CLARTÉ : icône déduite dans un cercle accent, carte blanche ────────────
+  // ── CLARTÉ : LISTE ÉDITORIALE (B.2) — plus de cards. Filet fin entre chaque force,
+  //    icône petite alignée à gauche, titre et description sur la même ligne de lecture. ──
   if (style === 'clarte') {
     return (
       <Reveal as="section" style={wrap}>
-        <div id="forces" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 24 }}>
+        <div id="forces">
           {forces.map((f, i) => {
             const Icon = iconFor(f.title);
             return (
               <Reveal key={i} delay={(i + 1) * 100}>
-                <div className="cs-force-clarte" style={{ background: '#fff', border: '1px solid #F3F4F6', borderRadius: 16, padding: 28 }}>
-                  <span style={{ display: 'flex', width: 44, height: 44, borderRadius: '50%', background: `${accent}1A`, color: accent, alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
-                    <Icon size={22} />
-                  </span>
-                  <p style={{ margin: 0, fontSize: 17, fontWeight: 700, color: t.ink }}>{f.title}</p>
-                  {f.description && <p style={{ margin: '8px 0 0', fontSize: 14, lineHeight: 1.55, color: t.muted }}>{f.description}</p>}
+                <div
+                  className="cs-force-clarte-row"
+                  style={{ display: 'grid', gridTemplateColumns: '34px minmax(0,0.85fr) minmax(0,1.45fr)', gap: 28, alignItems: 'baseline', padding: '30px 0', borderTop: i === 0 ? 'none' : `1px solid ${t.border}` }}
+                >
+                  <Icon size={22} color={accent} style={{ position: 'relative', top: 4 }} />
+                  <h3 style={{ margin: 0, fontSize: 'clamp(1.15rem,2.2vw,1.45rem)', fontWeight: 800, color: t.ink, lineHeight: 1.25 }}>{f.title}</h3>
+                  {f.description ? <p style={{ margin: 0, fontSize: 16, lineHeight: 1.7, color: t.muted }}>{f.description}</p> : <span />}
                 </div>
               </Reveal>
             );
           })}
         </div>
-        <style>{`.cs-force-clarte{transition:transform .2s ease-out,box-shadow .2s ease-out}.cs-force-clarte:hover{transform:translateY(-4px);box-shadow:0 20px 48px rgba(0,0,0,0.09)}`}</style>
+        <style>{`@media (max-width:768px){.cs-force-clarte-row{grid-template-columns:24px 1fr!important;gap:14px!important}.cs-force-clarte-row>p{grid-column:2 / -1!important;margin-top:8px!important}}`}</style>
       </Reveal>
     );
   }
 
-  // ── AUTHENTICITÉ : grille asymétrique, fond chaud, bordure gauche accent ───
+  // ── AUTHENTICITÉ : grille asymétrique, fond chaud, bordure gauche accent.
+  //    La force PRINCIPALE (la plus grande) intègre une citation client (B.2) → relie
+  //    les sections plutôt que des blocs indépendants. ──
+  const pull = (data.testimonials?.find((q) => q.quote?.trim())?.quote ?? '').trim();
   return (
     <Reveal as="section" style={wrap}>
       <div id="forces" className="cs-forces-auth" style={{ display: 'grid', gridTemplateColumns: forces.length === 3 ? '2fr 1fr' : 'repeat(auto-fit, minmax(240px, 1fr))', gap: 20 }}>
@@ -85,6 +90,11 @@ export default function ForcesSection({ data, style, accent, t }: { data: CoachS
           <Reveal key={i} delay={(i + 1) * 100} style={{ gridRow: forces.length === 3 && i === 0 ? 'span 2' : 'auto', background: '#FDFBF7', borderLeft: `3px solid ${accent}`, borderRadius: 8, padding: '24px 24px 24px 20px' }}>
             <p style={{ margin: 0, fontSize: 18, fontWeight: 700, color: t.ink }}>{f.title}</p>
             {f.description && <p style={{ margin: '10px 0 0', fontSize: 15, lineHeight: 1.6, color: t.muted }}>{f.description}</p>}
+            {i === 0 && pull && (
+              <p style={{ margin: '16px 0 0', paddingTop: 14, borderTop: `1px solid ${accent}33`, fontStyle: 'italic', fontSize: 15, lineHeight: 1.6, color: t.ink }}>
+                « {pull.length > 90 ? `${pull.slice(0, 90).trimEnd()}…` : pull} »
+              </p>
+            )}
           </Reveal>
         ))}
       </div>
