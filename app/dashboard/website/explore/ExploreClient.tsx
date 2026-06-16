@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import type { DemoSite } from '@/lib/explore/sites';
 import DemoSiteCard from '@/components/explore/DemoSiteCard';
 import SitePreviewModal from '@/components/explore/SitePreviewModal';
-import { useDemoStyle } from './actions';
+import { applyDemoStyle } from './actions';
 
 const FAVORITES_KEY = 'aurapost_explore_favorites';
 const MAX_FAVORITES = 5;
@@ -64,7 +64,7 @@ export default function ExploreClient({ sites }: { sites: DemoSite[] }) {
 
   async function handleUse(site: DemoSite) {
     setUsingId(site.id);
-    const res = await useDemoStyle(site.id);
+    const res = await applyDemoStyle(site.id);
     if (res.ok && res.redirectTo) {
       router.push(res.redirectTo);
       return;

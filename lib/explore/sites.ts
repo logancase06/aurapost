@@ -367,7 +367,7 @@ export function adaptDemoSiteToCoachSiteData(site: DemoSite): CoachSiteData {
   };
 }
 
-/** Recherche un DemoSite par id (utilisé par la server action useDemoStyle). */
+/** Recherche un DemoSite par id (utilisé par la server action applyDemoStyle). */
 export function findDemoSite(id: string): DemoSite | undefined {
   return DEMO_SITES.find((s) => s.id === id);
 }

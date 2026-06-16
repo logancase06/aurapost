@@ -23,7 +23,7 @@ export interface UseDemoStyleResult {
  * génère le contenu depuis son profil (si suffisamment rempli) puis renvoie
  * l'URL de l'éditeur. Le tenant est dérivé de la session (jamais du client).
  */
-export async function useDemoStyle(demoId: string): Promise<UseDemoStyleResult> {
+export async function applyDemoStyle(demoId: string): Promise<UseDemoStyleResult> {
   const parsed = DemoIdSchema.safeParse(demoId);
   if (!parsed.success) return { ok: false, error: 'Démo inconnue' };
 
