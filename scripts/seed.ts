@@ -19,6 +19,7 @@ import { users, coachProfiles, websites, generatedPosts, coachPhotos } from '@/l
 import { createTenantAndOwner, hashPassword } from '@/lib/db/users-actions';
 import { generateMockContent, type CoachProfileInput } from '@/lib/content-generator';
 import { currentMonth } from '@/lib/utils';
+import { seedAgency } from './seed-agency';
 
 type Tone = 'motivant' | 'educatif' | 'personnel';
 type PostStatus = 'draft' | 'approved' | 'rejected';
@@ -250,8 +251,18 @@ async function main() {
       console.error(`✗ ${c.email} :`, err);
     }
   }
-  console.log(`\nTerminé : ${created} créés, ${skipped} ignorés.`);
-  console.log('Mot de passe commun : Demo!Aura2026');
+  console.log(`\nCoachs solo : ${created} créés, ${skipped} ignorés.`);
+
+  // Organisation de démonstration (pitch réseau / Herbalife).
+  console.log('\nSeed agence — Réseau Vitalité France');
+  try {
+    const res = await seedAgency();
+    if (res === 'skipped') console.log('· Organisation déjà présente — ignorée');
+  } catch (err) {
+    console.error('✗ Seed agence :', err);
+  }
+
+  console.log('\nTerminé. Mot de passe coachs solo : Demo!Aura2026 · Manager agence : Demo2024!');
 }
 
 main()
