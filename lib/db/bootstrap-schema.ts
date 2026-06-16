@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS tenants (
   generating_at TEXT,
   unsubscribed_at TEXT,
   unsubscribe_token TEXT,
+  is_demo INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
@@ -36,6 +37,7 @@ CREATE TABLE IF NOT EXISTS users (
   first_login_at TEXT,
   last_login_at TEXT,
   login_count INTEGER NOT NULL DEFAULT 0,
+  is_demo INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS users_tenant_idx ON users (tenant_id);
@@ -225,6 +227,7 @@ CREATE TABLE IF NOT EXISTS organizations (
   brand_color TEXT DEFAULT '#7c3aed',
   brand_tone TEXT,
   requires_approval INTEGER NOT NULL DEFAULT 0,
+  is_demo INTEGER NOT NULL DEFAULT 0,
   owner_tenant_id TEXT NOT NULL,
   created_at TEXT NOT NULL
 );

@@ -1,10 +1,21 @@
 import { db } from './index';
 import { tenants, users, coachProfiles, generatedPosts, subscriptions, supportTickets, activityLogs, websites, coachPhotos } from './schema';
-import { and, eq, sql, desc, isNotNull, count, countDistinct, max } from 'drizzle-orm';
+import { and, eq, sql, desc, isNotNull, count, countDistinct, max, notInArray, type SQL, type Column } from 'drizzle-orm';
 import { unstable_cache } from 'next/cache';
 import { currentMonth } from '@/lib/utils';
 import { isPlanActive, type PlanId } from '@/lib/plans';
 import { logActivity } from './activity';
+
+// ── Exclusion des comptes de démonstration (flag is_demo) des métriques admin ──
+// Permet de lancer `npm run seed:demo` même en production sans fausser MRR/conversion/etc.
+async function demoTenantIds(): Promise<string[]> {
+  const rows = await db.select({ id: tenants.id }).from(tenants).where(eq(tenants.isDemo, true));
+  return rows.map((r) => r.id);
+}
+/** Condition « tenant_id ∉ démo » (undefined si aucun démo → ignoré par .where/and de Drizzle). */
+function notDemo(col: Column, ids: string[]): SQL | undefined {
+  return ids.length ? notInArray(col, ids) : undefined;
+}
 
 export interface AdminStats {
   tenantCount: number;
@@ -14,12 +25,13 @@ export interface AdminStats {
 }
 
 export async function getAdminStats(): Promise<AdminStats> {
+  const demoIds = await demoTenantIds();
   const [[t], [p], [s]] = await Promise.all([
-    db.select({ c: sql<number>`count(*)` }).from(tenants),
+    db.select({ c: sql<number>`count(*)` }).from(tenants).where(eq(tenants.isDemo, false)),
     db
       .select({ c: sql<number>`count(*)` })
       .from(generatedPosts)
-      .where(eq(generatedPosts.month, currentMonth())),
+      .where(and(eq(generatedPosts.month, currentMonth()), notDemo(generatedPosts.tenantId, demoIds))),
     db
       .select({ c: sql<number>`count(*)` })
       .from(subscriptions)
@@ -68,6 +80,7 @@ export async function listCoaches(): Promise<AdminCoachRow[]> {
     .from(tenants)
     .leftJoin(users, eq(users.id, tenants.ownerId))
     .leftJoin(coachProfiles, eq(coachProfiles.tenantId, tenants.id))
+    .where(eq(tenants.isDemo, false))
     .orderBy(desc(tenants.createdAt))
     .limit(500);
 
@@ -224,12 +237,14 @@ export interface BusinessMetrics {
  * Quand la base est vide, les compteurs valent 0 et l'UI affiche un état « en attente ».
  */
 export async function getBusinessMetrics(): Promise<BusinessMetrics> {
+  const demoIds = await demoTenantIds();
+  const ndPosts = notDemo(generatedPosts.tenantId, demoIds);
   const [approvalRate, heatmap, monthRows, tenantRows, activeRows] = await Promise.all([
     getApprovalRate(),
     getGenerationHeatmap(),
-    db.select({ month: generatedPosts.month, c: count() }).from(generatedPosts).groupBy(generatedPosts.month),
-    db.select({ plan: tenants.plan, planExpiresAt: tenants.planExpiresAt }).from(tenants).limit(5000),
-    db.select({ c: countDistinct(generatedPosts.tenantId) }).from(generatedPosts),
+    db.select({ month: generatedPosts.month, c: count() }).from(generatedPosts).where(ndPosts).groupBy(generatedPosts.month),
+    db.select({ plan: tenants.plan, planExpiresAt: tenants.planExpiresAt }).from(tenants).where(eq(tenants.isDemo, false)).limit(5000),
+    db.select({ c: countDistinct(generatedPosts.tenantId) }).from(generatedPosts).where(ndPosts),
   ]);
 
   const postsByMonth = monthRows
@@ -287,9 +302,15 @@ async function computeLaunchMetrics(): Promise<LaunchMetrics> {
   const month = currentMonth(); // 'YYYY-MM'
   const monthStart = `${month}-01`; // comparaison lexicographique sûre sur des dates ISO
 
+  const demoIds = await demoTenantIds();
+  const demoSet = new Set(demoIds);
+  const ndPosts = notDemo(generatedPosts.tenantId, demoIds);
+  const ndPhotos = notDemo(coachPhotos.tenantId, demoIds);
+  const ndProfiles = notDemo(coachProfiles.tenantId, demoIds);
+
   const [
     tenantRows,
-    websiteRows,
+    websiteRowsRaw,
     postStatusRows,
     postModeRows,
     monthModeRows,
@@ -303,21 +324,23 @@ async function computeLaunchMetrics(): Promise<LaunchMetrics> {
     lastGenRow,
   ] = await Promise.all([
     // Petites tables → on lit les lignes et on agrège en mémoire (1 round-trip chacune).
-    db.select({ plan: tenants.plan, status: tenants.status, createdAt: tenants.createdAt, planExpiresAt: tenants.planExpiresAt, paymentFailedAt: tenants.paymentFailedAt }).from(tenants).limit(5000),
+    db.select({ plan: tenants.plan, status: tenants.status, createdAt: tenants.createdAt, planExpiresAt: tenants.planExpiresAt, paymentFailedAt: tenants.paymentFailedAt }).from(tenants).where(eq(tenants.isDemo, false)).limit(5000),
     db.select({ tenantId: websites.tenantId, status: websites.status, template: websites.template }).from(websites).limit(5000),
-    // Grosse table → agrégats GROUP BY.
-    db.select({ status: generatedPosts.status, c: count() }).from(generatedPosts).groupBy(generatedPosts.status),
-    db.select({ mode: generatedPosts.generatedMode, c: count() }).from(generatedPosts).groupBy(generatedPosts.generatedMode),
-    db.select({ mode: generatedPosts.generatedMode, c: count() }).from(generatedPosts).where(eq(generatedPosts.month, month)).groupBy(generatedPosts.generatedMode),
-    db.select({ c: count() }).from(generatedPosts).where(and(eq(generatedPosts.month, month), isNotNull(generatedPosts.variantOfId))),
-    db.select({ c: countDistinct(generatedPosts.tenantId) }).from(generatedPosts),
-    db.selectDistinct({ tenantId: generatedPosts.tenantId }).from(generatedPosts).where(eq(generatedPosts.status, 'approved')),
-    db.select({ c: countDistinct(coachPhotos.tenantId) }).from(coachPhotos),
-    db.select({ c: count() }).from(coachProfiles).where(isNotNull(coachProfiles.reviewsAnalysis)),
+    // Grosse table → agrégats GROUP BY (hors comptes de démo).
+    db.select({ status: generatedPosts.status, c: count() }).from(generatedPosts).where(ndPosts).groupBy(generatedPosts.status),
+    db.select({ mode: generatedPosts.generatedMode, c: count() }).from(generatedPosts).where(ndPosts).groupBy(generatedPosts.generatedMode),
+    db.select({ mode: generatedPosts.generatedMode, c: count() }).from(generatedPosts).where(and(eq(generatedPosts.month, month), ndPosts)).groupBy(generatedPosts.generatedMode),
+    db.select({ c: count() }).from(generatedPosts).where(and(eq(generatedPosts.month, month), isNotNull(generatedPosts.variantOfId), ndPosts)),
+    db.select({ c: countDistinct(generatedPosts.tenantId) }).from(generatedPosts).where(ndPosts),
+    db.selectDistinct({ tenantId: generatedPosts.tenantId }).from(generatedPosts).where(and(eq(generatedPosts.status, 'approved'), ndPosts)),
+    db.select({ c: countDistinct(coachPhotos.tenantId) }).from(coachPhotos).where(ndPhotos),
+    db.select({ c: count() }).from(coachProfiles).where(and(isNotNull(coachProfiles.reviewsAnalysis), ndProfiles)),
     db.select({ status: subscriptions.status, c: count() }).from(subscriptions).groupBy(subscriptions.status),
     db.select({ c: count() }).from(subscriptions).where(and(eq(subscriptions.status, 'canceled'), sql`${subscriptions.updatedAt} >= ${monthStart}`)),
     db.select({ last: max(activityLogs.createdAt) }).from(activityLogs).where(eq(activityLogs.action, 'content_generated')),
   ]);
+  // Sites : exclure ceux des tenants de démo (la table websites n'a pas is_demo).
+  const websiteRows = websiteRowsRaw.filter((w) => !demoSet.has(w.tenantId));
 
   // ── Vue d'ensemble ──
   const totalCoaches = tenantRows.length;

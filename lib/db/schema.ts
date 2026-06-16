@@ -33,6 +33,7 @@ export const tenants = sqliteTable(
     // `unsubscribeToken` est réservé : la vérification est stateless via HMAC (lib/unsubscribe.ts).
     unsubscribedAt: text('unsubscribed_at'),
     unsubscribeToken: text('unsubscribe_token'),
+    isDemo: integer('is_demo', { mode: 'boolean' }).notNull().default(false), // exclu des métriques admin
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull(),
   },
@@ -56,6 +57,7 @@ export const users = sqliteTable(
     firstLoginAt: text('first_login_at'), // 1ère connexion (mesure d'adoption réseau)
     lastLoginAt: text('last_login_at'),
     loginCount: integer('login_count').notNull().default(0),
+    isDemo: integer('is_demo', { mode: 'boolean' }).notNull().default(false),
     createdAt: text('created_at').notNull(),
   },
   (t) => ({
@@ -328,6 +330,7 @@ export const organizations = sqliteTable(
     brandTone: text('brand_tone'),
     /** Si true, les posts des distributeurs passent en validation manager avant publication. */
     requiresApproval: integer('requires_approval', { mode: 'boolean' }).notNull().default(false),
+    isDemo: integer('is_demo', { mode: 'boolean' }).notNull().default(false),
     /** tenant fondateur (org owner). */
     ownerTenantId: text('owner_tenant_id').notNull(),
     createdAt: text('created_at').notNull(),

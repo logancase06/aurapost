@@ -15,7 +15,7 @@
 import { nanoid } from 'nanoid';
 import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db';
-import { users, coachProfiles, websites, generatedPosts, coachPhotos } from '@/lib/db/schema';
+import { users, tenants, coachProfiles, websites, generatedPosts, coachPhotos } from '@/lib/db/schema';
 import { createTenantAndOwner, hashPassword } from '@/lib/db/users-actions';
 import { generateMockContent, type CoachProfileInput } from '@/lib/content-generator';
 import { currentMonth } from '@/lib/utils';
@@ -142,8 +142,9 @@ async function seedCoach(c: SeedCoach): Promise<'created' | 'skipped'> {
 
   await db
     .update(users)
-    .set({ onboardingCompleted: c.onboardingCompleted, emailVerifiedAt: now })
+    .set({ onboardingCompleted: c.onboardingCompleted, emailVerifiedAt: now, isDemo: true })
     .where(eq(users.id, userId));
+  await db.update(tenants).set({ isDemo: true }).where(eq(tenants.id, tenantId));
 
   const reviewsAnalysis = c.strengths.length
     ? JSON.stringify({ strengths: c.strengths, testimonial: c.testimonial, tone: c.tone })

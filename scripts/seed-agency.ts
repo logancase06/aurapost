@@ -8,7 +8,7 @@
 import { nanoid } from 'nanoid';
 import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db';
-import { users, coachProfiles, generatedPosts, organizations, orgTenants, activityLogs } from '@/lib/db/schema';
+import { users, tenants, coachProfiles, generatedPosts, organizations, orgTenants, activityLogs } from '@/lib/db/schema';
 import { createTenantAndOwner, hashPassword } from '@/lib/db/users-actions';
 import { createOrganization, upsertBrandKit, addOrgTemplate, setOrgRequiresApproval } from '@/lib/db/organizations';
 import { generateMockContent, type CoachProfileInput } from '@/lib/content-generator';
@@ -63,11 +63,13 @@ async function seedDistributor(orgId: string, d: Distributor): Promise<number> {
     .set({
       onboardingCompleted: connected,
       emailVerifiedAt: now,
+      isDemo: true,
       firstLoginAt: connected ? daysAgo(30) : null,
       lastLoginAt: connected ? daysAgo(d.lastSeenDays ?? 5) : null,
       loginCount: connected ? (d.state === 'inactive' ? 3 : 14) : 0,
     })
     .where(eq(users.id, userId));
+  await db.update(tenants).set({ isDemo: true }).where(eq(tenants.id, tenantId));
 
   await db.insert(coachProfiles).values({
     id: nanoid(),
@@ -167,10 +169,11 @@ export async function seedAgency(): Promise<'created' | 'skipped'> {
     brandName: 'Réseau Vitalité France',
     consentGivenAt: now,
   });
-  await db.update(users).set({ onboardingCompleted: true, emailVerifiedAt: now, firstLoginAt: daysAgo(40), lastLoginAt: now, loginCount: 30 }).where(eq(users.id, managerUser));
+  await db.update(users).set({ onboardingCompleted: true, emailVerifiedAt: now, isDemo: true, firstLoginAt: daysAgo(40), lastLoginAt: now, loginCount: 30 }).where(eq(users.id, managerUser));
+  await db.update(tenants).set({ isDemo: true }).where(eq(tenants.id, managerTenant));
 
   const org = await createOrganization(managerTenant, 'Réseau Vitalité France');
-  await db.update(organizations).set({ slug: 'reseau-vitalite', brandColor: '#E8A020', brandTone: 'motivant et bienveillant, centré sur le bien-être durable' }).where(eq(organizations.id, org.id));
+  await db.update(organizations).set({ slug: 'reseau-vitalite', brandColor: '#E8A020', brandTone: 'motivant et bienveillant, centré sur le bien-être durable', isDemo: true }).where(eq(organizations.id, org.id));
   await setOrgRequiresApproval(org.id, true);
   await upsertBrandKit(org.id, {
     primaryColor: '#E8A020',

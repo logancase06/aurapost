@@ -1,8 +1,22 @@
 import { NextResponse } from 'next/server';
-import { sql } from 'drizzle-orm';
+import { sql, eq } from 'drizzle-orm';
 import { db } from '@/lib/db';
+import { tenants } from '@/lib/db/schema';
 import { getIntegrationStatuses } from '@/lib/integrations';
 import { logError } from '@/lib/logger';
+
+/** Comptage tenants réels vs démo (visibilité : le seed:demo ne pollue pas les métriques). */
+async function tenantCounts(): Promise<{ real: number; demo: number }> {
+  try {
+    const [[r], [d]] = await Promise.all([
+      db.select({ c: sql<number>`count(*)` }).from(tenants).where(eq(tenants.isDemo, false)),
+      db.select({ c: sql<number>`count(*)` }).from(tenants).where(eq(tenants.isDemo, true)),
+    ]);
+    return { real: Number(r?.c ?? 0), demo: Number(d?.c ?? 0) };
+  } catch {
+    return { real: 0, demo: 0 };
+  }
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -86,7 +100,7 @@ async function probeR2(): Promise<ProbeResult> {
  * Code HTTP 200 si tout est ok/degraded/skipped, 503 si une dépendance est down.
  */
 export async function GET() {
-  const [database, redis, storage] = await Promise.all([probeDatabase(), probeRedis(), probeR2()]);
+  const [database, redis, storage, tcounts] = await Promise.all([probeDatabase(), probeRedis(), probeR2(), tenantCounts()]);
   const probes = [database, redis, storage];
   const anyDown = probes.some((p) => p.status === 'down');
 
@@ -102,6 +116,7 @@ export async function GET() {
       deployedAt: process.env.BUILD_TIME ?? null,
       time: new Date().toISOString(),
       uptimeSeconds: Math.round(process.uptime()),
+      tenants: tcounts, // { real, demo } — démo exclue des métriques business
       probes,
       integrations: getIntegrationStatuses().map(({ key, label, mode, configured }) => ({
         key,
