@@ -2,6 +2,16 @@
 
 Toutes les évolutions notables du projet. Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/).
 
+## [1.5.0] — 2026-06-16 — Génération asynchrone & métriques prod propres
+
+### Génération asynchrone (H3) — fin du timeout serverless
+- Table `generation_jobs` + `lib/generation-jobs.ts`. Derrière `GENERATION_ASYNC=true` : `POST /api/generate` crée un job, lance la génération en arrière-plan (`after()`), retourne `{ jobId }` (202) en **< 500 ms** → plus de timeout 26 s Netlify. `GET /api/generate/[jobId]` expose statut + progression + posts au fil de l'eau. `GenerateButton` : polling 2 s, barre de progression réelle + étapes. **Compat descendante totale** : sans le flag, le chemin synchrone historique est inchangé.
+
+### Flag is_demo (Fix 0) — métriques prod propres
+- Colonne `is_demo` sur `tenants`/`users`/`organizations`. `seed:demo` marque tout en démo. **Toutes les métriques admin** (stats, MRR, conversion, coachs actifs, posts, lancement, liste coachs) **excluent les comptes de démo** → `seed:demo` peut tourner en prod sans fausser les vrais chiffres. `/api/health/detailed` expose `tenants { real, demo }`.
+
+> Build vert · tsc 0 erreur · 48 tests Jest verts. `npm run seed:demo` OK (démo isolée des métriques).
+
 ## [1.4.0] — 2026-06-16 — Démo réseau complète & robustesse locale
 
 ### Démo réseau / Herbalife (le centre du pitch)

@@ -111,6 +111,14 @@ Backlog     ▸ Phase 4 (v1.x) + Phase 5 (dette)       → en continu
 
 ---
 
+# Run nocturne #5 — 2026-06-16
+
+- ✅ **Fix 0 — flag `is_demo`** : démo exclue de toutes les métriques admin (seed:demo safe en prod). Colonnes + filtres + health.
+- ✅ **H3 — génération asynchrone + streaming** : table `generation_jobs`, `GENERATION_ASYNC` flag, route 202 < 500 ms, polling + progression, compat descendante. **Fin du timeout 26 s.** Réussi du 1er coup (pas de revert).
+- ❌ **Non traités ce run** : F1 onboarding court, B2 facturation siège, E2 rétention, 6.2 outreach, H4 multi-provider, G2 CSP nonces, E1 (villes/partenaires). Priorisé les 2 plus risqués/impactants (Fix 0 + H3) pendant que frais, gardé vert.
+
+---
+
 # Run nocturne #4 — 2026-06-16
 
 - ✅ **Fix local (Item 1)** : service worker dev-only (fin de la boucle Failed to fetch). Mockups/manifest OK (n'étaient pas manquants).
