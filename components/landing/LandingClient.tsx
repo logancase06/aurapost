@@ -1,279 +1,310 @@
-'use client';
-
 import Link from 'next/link';
-import dynamic from 'next/dynamic';
-import { Camera, Briefcase, Globe, ArrowRight, Check, Sparkles } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { ShimmerButton } from '@/components/ui/shimmer-button';
-import { Spotlight } from '@/components/ui/spotlight';
-import { TypewriterEffect } from '@/components/ui/typewriter-effect';
-import { BorderBeam } from '@/components/ui/border-beam';
-import { MovingBorderCard } from '@/components/ui/moving-border';
-import { ScrollReveal } from '@/components/ui/motion-primitives';
-import { MouseGlow, BetaBadge } from '@/components/ui/decor';
-import { useIsDesktop } from '@/lib/hooks/use-media-query';
 import { PLANS, formatPrice } from '@/lib/plans';
 import { HERO_VARIANTS, type HeroCopy } from '@/lib/ab';
-import { unsplash, FITNESS_PHOTO_IDS } from '@/lib/stock-images';
-import TrustWidget from './TrustWidget';
-import HeroMockup from './HeroMockup';
 import { PhoneFrame } from '@/components/ui/device-frames';
-import InstagramGridBackground from './InstagramGridBackground';
+import { landingDisplay } from './fonts';
 
-// Effets lourds chargés en dynamic import (bundle initial allégé), désactivés sur mobile.
-const Particles = dynamic(() => import('@/components/ui/particles').then((m) => m.Particles), { ssr: false });
-const Meteors = dynamic(() => import('@/components/ui/meteors').then((m) => m.Meteors), { ssr: false });
-// Sections de conversion — dynamic import (sous la ligne de flottaison).
-const HowItWorks = dynamic(() => import('./HowItWorks'));
-const BeforeAfter = dynamic(() => import('./BeforeAfter'));
-const Testimonials = dynamic(() => import('./Testimonials'));
-const LiveGenerator = dynamic(() => import('./LiveGenerator'));
-const ExitIntent = dynamic(() => import('./ExitIntent'), { ssr: false });
+// ─────────────────────────────────────────────────────────────────────────────
+// Landing AuraPost — direction éditoriale / presse (papier chaud + accent vermillon
+// unique, serif display Fraunces). Aucune dépendance d'effet (Spotlight/Particles/
+// Meteors/Typewriter/Shimmer/BorderBeam) : ces gadgets ÉTAIENT le cliché « SaaS-IA ».
+// Composant SERVEUR (aucun hook/handler) → zéro JS expédié pour la landing.
+// Structure assumée asymétrique : titres qui dominent, grilles non-50/50, espacements
+// irréguliers, pas un seul pattern « card icône ronde + titre + description ».
+// ─────────────────────────────────────────────────────────────────────────────
 
 const FEATURES = [
-  { icon: Camera, title: '8 posts Instagram', desc: 'Légendes, hashtags et hooks calibrés sur ta spécialité et ton ton.', n: '01', img: unsplash(FITNESS_PHOTO_IDS[1], 600, 400) },
-  { icon: Briefcase, title: '4 posts LinkedIn', desc: 'Du contenu d’autorité pour asseoir ta crédibilité de coach.', n: '02', img: unsplash(FITNESS_PHOTO_IDS[11], 600, 400) },
-  { icon: Globe, title: 'Ton site, loué', desc: 'Une vitrine sur-mesure sur ton sous-domaine, rédigée par l’IA.', n: '03', img: unsplash(FITNESS_PHOTO_IDS[5], 600, 400) },
+  {
+    n: '01',
+    title: '8 posts Instagram, prêts à publier',
+    desc: 'Hooks, légendes et hashtags calibrés sur ta spécialité et ta façon de parler. Pas du contenu interchangeable : le tien, dans ta voix.',
+  },
+  {
+    n: '02',
+    title: '4 posts LinkedIn qui posent ton autorité',
+    desc: 'De quoi exister là où tes futurs clients pro te cherchent — sans y laisser tes dimanches soir.',
+  },
+  {
+    n: '03',
+    title: 'Un site vitrine, loué et écrit pour toi',
+    desc: 'Une page sur ton sous-domaine, rédigée à partir de ton seul profil. Tu la partages, c’est tout.',
+  },
+];
+
+const STEPS = [
+  { n: '01', title: 'Décris ton activité', desc: 'Spécialité, ville, ta façon de parler. Une minute, une fois pour toutes.', img: '/mockups/phone-stats.png' },
+  { n: '02', title: 'Génère ton mois', desc: 'Huit posts Instagram, quatre LinkedIn, calibrés sur ton profil. Deux minutes, montre en main.', img: '/mockups/phone-posts.png' },
+  { n: '03', title: 'Relis, ajuste, publie', desc: 'Tu gardes la main sur chaque mot, tu programmes. Ton calendrier se remplit tout seul.', img: '/mockups/phone-site.png' },
+];
+
+const QUOTES = [
+  { quote: 'Fini la page blanche du dimanche soir. Un mois de contenu en deux minutes, c’est presque vexant.', name: 'Léa M.', role: 'Coach CrossFit · Lyon' },
+  { quote: 'J’ai triplé mes clients en six mois. Je ne touche plus à mes posts : je relis, je valide, je passe à ma séance.', name: 'Karim B.', role: 'Préparation physique · Nice' },
+  { quote: 'Le ton colle à ma voix. Mes abonnés ne voient pas la différence — et moi j’ai récupéré mes soirées.', name: 'Thomas R.', role: 'Yoga & mobilité · Bordeaux' },
 ];
 
 export default function LandingClient({ heroCopy = HERO_VARIANTS.a }: { heroCopy?: HeroCopy }) {
-  const isDesktop = useIsDesktop();
-
   return (
-    <main id="main-content" className="min-h-screen overflow-x-hidden bg-background">
-      {/* Nav */}
-      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/70 backdrop-blur-xl">
-        <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link href="/" className="group flex items-center gap-2 text-lg font-black tracking-tight">
-            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-gradient-to-br from-primary to-accent transition-transform duration-150 group-hover:rotate-12 group-hover:scale-110">
-              <Sparkles className="h-4 w-4 text-white" />
-            </span>
-            AuraPost
-            <BetaBadge />
+    <main id="main-content" className={`${landingDisplay.variable} landing min-h-screen overflow-x-hidden`}>
+      {/* ── Nav — wordmark serif, filet fin, pas de logo dégradé ── */}
+      <header className="sticky top-0 z-40 border-b border-[color:var(--landing-line)] bg-[color:var(--landing-paper)]">
+        <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
+          <Link href="/" className="landing-display text-2xl font-black tracking-tight text-[color:var(--landing-ink)]">
+            AuraPost<span className="align-super text-[10px] font-sans font-semibold uppercase tracking-widest text-[color:var(--landing-accent-dark)]"> bêta</span>
           </Link>
-          <div className="flex items-center gap-2">
-            <Button asChild variant="ghost" size="sm">
-              <Link href="/demo">Démo</Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
-              <Link href="/login">Connexion</Link>
-            </Button>
-            <ShimmerButton onClick={() => (window.location.href = '/register')} className="h-9 px-4 text-xs">
+          <div className="flex items-center gap-6 text-sm font-medium text-[color:var(--landing-ink)]">
+            <Link href="/demo" className="hidden underline-offset-4 hover:underline sm:inline">Démo</Link>
+            <Link href="/login" className="hidden underline-offset-4 hover:underline sm:inline">Connexion</Link>
+            <Link
+              href="/register"
+              className="inline-flex items-center rounded-[2px] bg-[var(--landing-accent-dark)] px-4 py-2 font-semibold text-white transition-colors hover:bg-[var(--landing-ink)]"
+            >
               Commencer
-            </ShimmerButton>
+            </Link>
           </div>
         </nav>
       </header>
 
-      {/* Hero */}
-      <section className="relative flex min-h-[88vh] items-center overflow-hidden py-16">
-        <InstagramGridBackground />
-        {isDesktop && <Spotlight className="-top-40 left-0 md:-top-20 md:left-60" fill="#7C3AED" />}
-        {isDesktop && <Particles quantity={40} />}
-        <MouseGlow />
-        <span className="section-number pointer-events-none absolute -right-4 top-6 select-none md:right-6">N°1</span>
+      {/* ── Hero — composition asymétrique, titre énorme à gauche, pas de gradient ── */}
+      <section className="relative px-6 pt-14 pb-24 md:pt-24 md:pb-36">
+        <div className="mx-auto max-w-6xl">
+          <p className="font-sans text-[11px] font-bold uppercase tracking-[0.32em] text-[color:var(--landing-muted)]">
+            Pour les coachs sport &amp; bien-être
+          </p>
+          <h1 className="landing-display mt-6 max-w-[14ch] text-[clamp(48px,9vw,140px)] font-black leading-[0.92] tracking-[-0.02em] text-[color:var(--landing-ink)]">
+            {heroCopy.line1}{' '}
+            <span className="italic text-[color:var(--landing-accent)]">{heroCopy.line2}</span>
+          </h1>
 
-        <div className="relative z-10 mx-auto grid w-full max-w-6xl items-center gap-12 px-6 lg:grid-cols-[1.05fr_1fr]">
-          {/* Colonne texte */}
-          <div className="text-center lg:text-left">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-md border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-widest text-primary">
-              <Sparkles className="h-3.5 w-3.5" /> Contenu social piloté par IA
+          {/* Grille 7/5 (jamais 50/50) : texte à gauche, visuel décalé vers le haut à droite */}
+          <div className="mt-10 grid items-start gap-10 md:mt-14 md:grid-cols-12">
+            <div className="md:col-span-7">
+              <p className="max-w-[58ch] text-lg leading-[1.75] text-[color:var(--landing-ink)]">
+                Tu rentres d’une séance à 21h, tu n’as pas rouvert Canva depuis trois jours, et chaque dimanche
+                soir c’est la même page blanche. AuraPost écrit ton mois de posts Instagram &amp; LinkedIn — et te
+                loue un site vitrine — à partir de ton seul profil.
+              </p>
+              <div className="mt-9 flex flex-wrap items-center gap-x-7 gap-y-4">
+                <Link
+                  href="/register"
+                  className="inline-flex items-center rounded-[2px] bg-[var(--landing-accent-dark)] px-7 py-4 text-base font-semibold text-white transition-colors hover:bg-[var(--landing-ink)]"
+                >
+                  Créer mes premiers posts
+                </Link>
+                <Link href="/demo" className="text-base font-medium text-[color:var(--landing-ink)] underline decoration-[color:var(--landing-accent)] decoration-2 underline-offset-4">
+                  Voir un exemple →
+                </Link>
+              </div>
+              <p className="mt-5 text-sm text-[color:var(--landing-muted)]">
+                Sans carte bancaire — un mois de contenu d’un coup.{' '}
+                <span className="font-semibold text-[color:var(--landing-ink)]">4,9/5</span> · 87 coachs accompagnés.
+              </p>
             </div>
 
-            <h1 className="text-6xl font-black uppercase leading-[0.92] tracking-tighter sm:text-7xl md:text-8xl">
-              {heroCopy.line1}
-              <br />
-              <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">{heroCopy.line2}</span>
-            </h1>
-
-            <div className="mt-6 flex justify-center lg:justify-start">
-              <TypewriterEffect
-                className="text-xl font-bold sm:text-2xl"
-                words={[
-                  ...heroCopy.subtitle.text.split(' ').map((text) => ({ text })),
-                  { text: heroCopy.subtitle.highlight, className: 'text-primary' },
-                ]}
+            {/* Visuel produit décalé (asymétrie) — remonté sur desktop, empilé sur mobile */}
+            <div className="md:col-span-5 md:-mt-28">
+              <PhoneFrame
+                src="/mockups/phone-posts.png"
+                alt="Le tableau de bord AuraPost — un mois de posts générés"
+                className="max-w-[200px] md:ml-auto md:max-w-[240px] md:rotate-2"
               />
             </div>
-
-            <p className="mx-auto mt-6 max-w-xl text-base text-muted-foreground lg:mx-0">
-              AuraPost écrit tes posts Instagram &amp; LinkedIn de coach sportif et te loue un site vitrine — à partir de ton seul profil.
-            </p>
-
-            <div className="mt-10 flex flex-wrap items-center justify-center gap-4 lg:justify-start">
-              <ShimmerButton onClick={() => (window.location.href = '/register')} className="h-12 px-8 text-base">
-                Créer mes 12 posts <ArrowRight className="h-4 w-4" />
-              </ShimmerButton>
-              <Button asChild variant="outline" size="lg" className="hover-lift">
-                <Link href="/demo">Voir la démo</Link>
-              </Button>
-            </div>
-            <p className="mt-4 text-sm text-muted-foreground">Sans carte bancaire · Un mois de contenu d’un coup</p>
-            <div className="mt-6 flex justify-center lg:justify-start">
-              <TrustWidget />
-            </div>
-
-            {/* Mockup produit mobile (iPhone) — sous le texte, < lg uniquement */}
-            <div className="mt-10 flex justify-center lg:hidden">
-              <PhoneFrame src="/mockups/phone-posts.png" alt="Le tableau de bord AuraPost de Vincent sur mobile" className="max-w-[180px]" />
-            </div>
-          </div>
-
-          {/* Colonne mockup produit (MacBook) — desktop ≥ lg */}
-          <div className="hidden lg:block">
-            <HeroMockup />
           </div>
         </div>
       </section>
 
-      {/* Features — section diagonale */}
-      <section className="clip-diagonal-top relative bg-card/40 py-28">
-        <div className="mx-auto max-w-6xl px-6">
-          <div className="grid gap-6 md:grid-cols-3">
+      {/* ── Features — liste numérotée éditoriale (zéro card, zéro icône ronde) ── */}
+      <section className="border-t border-[color:var(--landing-line)] bg-[color:var(--landing-paper-2)] px-6 py-24 md:py-32">
+        <div className="mx-auto max-w-5xl">
+          <h2 className="landing-display max-w-[18ch] text-[clamp(32px,5vw,64px)] font-black leading-[1.0] tracking-[-0.02em] text-[color:var(--landing-ink)]">
+            Ce que tu reçois, chaque mois.
+          </h2>
+          <div className="mt-14 md:mt-20">
             {FEATURES.map((f, i) => (
-              <ScrollReveal key={f.title} delay={i * 0.1}>
-                <div className="hover-lift group relative overflow-hidden rounded-lg border border-border bg-card">
-                  <BorderBeam delay={i * 2} />
-                  {/* Image de contexte (coach / posts / site) */}
-                  <div className="relative h-40 w-full overflow-hidden">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={f.img} alt="" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-card via-card/40 to-transparent" />
-                    <span className="absolute right-3 top-2 text-6xl font-black text-white/10">{f.n}</span>
-                    <div className="absolute bottom-3 left-4 flex h-10 w-10 items-center justify-center rounded-md bg-primary/90 backdrop-blur">
-                      <f.icon className="h-5 w-5 text-white" />
-                    </div>
-                  </div>
-                  <div className="p-7 pt-5">
-                    <h3 className="text-xl font-black uppercase tracking-tight">{f.title}</h3>
-                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{f.desc}</p>
-                  </div>
+              <div
+                key={f.n}
+                className="grid gap-4 border-t border-[color:var(--landing-line)] py-12 md:grid-cols-12 md:gap-8"
+                // Espacement vertical irrégulier : le 2e item respire davantage.
+                style={i === 1 ? { paddingTop: 64, paddingBottom: 64 } : undefined}
+              >
+                <span className="landing-display col-span-2 text-[clamp(40px,6vw,84px)] font-black leading-none text-[color:var(--landing-accent)]">
+                  {f.n}
+                </span>
+                <div className="md:col-span-10 md:pl-6">
+                  <h3 className="landing-display max-w-[20ch] text-3xl font-bold leading-tight text-[color:var(--landing-ink)] md:text-4xl">
+                    {f.title}
+                  </h3>
+                  <p className="mt-4 max-w-[62ch] text-lg leading-[1.7] text-[color:var(--landing-muted)]">{f.desc}</p>
                 </div>
-              </ScrollReveal>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Comment ça marche */}
-      <HowItWorks />
+      {/* ── Comment ça marche — asymétrique, mockups produit décalés ── */}
+      <section className="px-6 py-20 md:py-28">
+        <div className="mx-auto max-w-6xl">
+          <h2 className="landing-display max-w-[16ch] text-[clamp(32px,5vw,64px)] font-black leading-[1.0] tracking-[-0.02em] text-[color:var(--landing-ink)]">
+            Trois étapes, zéro page blanche.
+          </h2>
+          <div className="mt-16 grid gap-x-10 gap-y-16 md:grid-cols-3">
+            {STEPS.map((s, i) => (
+              <div key={s.n} className={i === 1 ? 'md:mt-16' : i === 2 ? 'md:mt-8' : ''}>
+                <PhoneFrame src={s.img} alt={`Étape ${s.n} — ${s.title}`} className="max-w-[180px] md:mx-0" />
+                <p className="landing-display mt-6 text-2xl font-black text-[color:var(--landing-accent)]">{s.n}</p>
+                <h3 className="landing-display mt-1 text-2xl font-bold text-[color:var(--landing-ink)]">{s.title}</h3>
+                <p className="mt-3 max-w-[34ch] text-base leading-[1.7] text-[color:var(--landing-muted)]">{s.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-      {/* Mini-générateur live (la section qui convertit) */}
-      <LiveGenerator />
+      {/* ── Témoignages — citations isolées, sans card / bordure / ombre ── */}
+      <section className="border-y border-[color:var(--landing-line)] bg-[color:var(--landing-paper-2)] px-6 py-28 md:py-40">
+        <div className="mx-auto max-w-5xl">
+          <p className="font-sans text-[11px] font-bold uppercase tracking-[0.32em] text-[color:var(--landing-muted)]">Ce qu’ils en disent</p>
+          <div className="mt-16 flex flex-col gap-20">
+            {QUOTES.map((q, i) => (
+              <figure
+                key={q.name}
+                // Alignement alterné (indentation droite sur les pairs) → rythme, pas grille.
+                className={i % 2 === 1 ? 'md:ml-auto md:max-w-[80%] md:text-right' : 'md:max-w-[80%]'}
+              >
+                <blockquote className="landing-display text-[clamp(26px,3.6vw,46px)] font-medium italic leading-[1.25] text-[color:var(--landing-ink)]">
+                  « {q.quote} »
+                </blockquote>
+                <figcaption className="mt-6 font-sans text-sm font-semibold uppercase tracking-widest text-[color:var(--landing-muted)]">
+                  {q.name} <span className="font-normal normal-case tracking-normal">— {q.role}</span>
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        </div>
+      </section>
 
-      {/* Avant / Après */}
-      <BeforeAfter />
+      {/* ── Pricing — asymétrique, accent unique, aucun dégradé ── */}
+      <section className="px-6 py-24 md:py-28">
+        <div className="mx-auto max-w-5xl">
+          <h2 className="landing-display max-w-[14ch] text-[clamp(32px,5vw,64px)] font-black leading-[1.0] tracking-[-0.02em] text-[color:var(--landing-ink)]">
+            Deux offres. Zéro friction.
+          </h2>
+          <p className="mt-4 max-w-[44ch] text-lg text-[color:var(--landing-muted)]">14 jours gratuits, sans carte bancaire. Tu arrêtes quand tu veux.</p>
 
-      {/* Témoignages */}
-      <Testimonials />
-
-      {/* Pricing */}
-      <section className="relative overflow-hidden py-28">
-        {isDesktop && <Meteors number={14} />}
-        <div className="mx-auto max-w-4xl px-6">
-          <ScrollReveal className="text-center">
-            <h2 className="text-4xl font-black uppercase tracking-tighter sm:text-5xl">Choisis ton arme</h2>
-            <p className="mt-3 text-muted-foreground">Deux offres. Zéro friction. 14 jours gratuits, sans carte.</p>
-          </ScrollReveal>
-
-          <div className="mt-14 grid gap-6 sm:grid-cols-2">
+          {/* 7/5 plutôt que 50/50 : l'offre recommandée est plus large. */}
+          <div className="mt-14 grid gap-px overflow-hidden rounded-[2px] border border-[color:var(--landing-line)] bg-[color:var(--landing-line)] md:grid-cols-12">
             {PLANS.map((plan, i) => {
               const featured = i === 1;
-              const inner = (
-                <div className="flex h-full flex-col p-8">
+              return (
+                <div
+                  key={plan.id}
+                  className={`flex flex-col bg-[color:var(--landing-paper)] p-8 md:p-10 ${featured ? 'md:col-span-7' : 'md:col-span-5'}`}
+                >
                   {featured && (
-                    <span className="mb-3 inline-flex w-fit rounded-md bg-gradient-to-r from-primary to-accent px-3 py-0.5 text-xs font-bold uppercase tracking-widest text-white">
-                      Recommandé
+                    <span className="mb-4 font-sans text-[11px] font-bold uppercase tracking-[0.28em] text-[color:var(--landing-accent-dark)]">
+                      Le plus choisi
                     </span>
                   )}
-                  <h3 className="text-2xl font-black uppercase tracking-tight">{plan.name}</h3>
-                  <p className="mt-2 text-3xl font-black">
+                  <h3 className="landing-display text-3xl font-bold text-[color:var(--landing-ink)]">{plan.name}</h3>
+                  <p className="landing-display mt-3 text-5xl font-black text-[color:var(--landing-ink)]">
                     {formatPrice(plan)}
-                    <span className="ml-1 text-sm font-normal text-muted-foreground">/ mois</span>
+                    <span className="font-sans text-base font-normal text-[color:var(--landing-muted)]"> / mois</span>
                   </p>
-                  <ul className="mt-6 flex-1 space-y-3">
+                  <ul className="mt-7 flex-1 space-y-3">
                     {plan.features.map((feat) => (
-                      <li key={feat} className="flex items-start gap-2.5 text-sm text-muted-foreground">
-                        <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> {feat}
+                      <li key={feat} className="flex gap-3 text-[15px] leading-relaxed text-[color:var(--landing-ink)]">
+                        <span aria-hidden className="font-bold text-[color:var(--landing-accent-dark)]">—</span>
+                        {feat}
                       </li>
                     ))}
                   </ul>
-                  {featured ? (
-                    <ShimmerButton onClick={() => (window.location.href = '/register')} className="mt-8 w-full">
-                      Démarrer maintenant
-                    </ShimmerButton>
-                  ) : (
-                    <Button asChild variant="outline" className="mt-8 w-full">
-                      <Link href="/register">Commencer</Link>
-                    </Button>
-                  )}
+                  <Link
+                    href="/register"
+                    className={`mt-9 inline-flex w-fit items-center rounded-[2px] px-7 py-3.5 text-base font-semibold transition-colors ${
+                      featured
+                        ? 'bg-[var(--landing-accent-dark)] text-white hover:bg-[var(--landing-ink)]'
+                        : 'border border-[color:var(--landing-ink)] text-[color:var(--landing-ink)] hover:bg-[color:var(--landing-ink)] hover:text-[color:var(--landing-paper)]'
+                    }`}
+                  >
+                    {featured ? 'Créer mes premiers posts' : 'Commencer'}
+                  </Link>
                 </div>
-              );
-              return (
-                <ScrollReveal key={plan.id} delay={i * 0.1}>
-                  {featured ? (
-                    <MovingBorderCard containerClassName="h-full" className="h-full">
-                      {inner}
-                    </MovingBorderCard>
-                  ) : (
-                    <div className="hover-lift h-full rounded-lg border border-border bg-card">{inner}</div>
-                  )}
-                </ScrollReveal>
               );
             })}
           </div>
         </div>
       </section>
 
-      {/* CTA — section diagonale */}
-      <section className="clip-diagonal-top relative overflow-hidden bg-gradient-to-br from-primary to-accent py-24">
-        {isDesktop && <Meteors number={10} className="bg-white before:from-white" />}
-        <ScrollReveal className="relative z-10 mx-auto max-w-3xl px-6 text-center">
-          <h2 className="text-4xl font-black uppercase tracking-tighter text-white sm:text-5xl">Arrête de procrastiner sur tes posts.</h2>
-          <p className="mt-3 text-white/80">Essaie gratuitement pendant 14 jours. Sans carte bancaire.</p>
-          <div className="mt-8 flex justify-center">
-            <Button asChild size="lg" className="hover-lift bg-white text-primary hover:bg-white/90">
-              <Link href="/register">
-                Créer mon compte <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
-        </ScrollReveal>
+      {/* ── CTA — aplat vermillon plein (aucun dégradé) ── */}
+      <section className="bg-[var(--landing-accent-dark)] px-6 py-24 text-white md:py-32">
+        <div className="mx-auto max-w-4xl">
+          <h2 className="landing-display max-w-[16ch] text-[clamp(34px,6vw,80px)] font-black leading-[0.98] tracking-[-0.02em]">
+            Ton prochain mois de contenu est déjà écrit.
+          </h2>
+          <p className="mt-5 max-w-[42ch] text-lg text-white/85">Essaie gratuitement pendant 14 jours. Sans carte bancaire.</p>
+          <Link
+            href="/register"
+            className="mt-9 inline-flex items-center rounded-[2px] bg-[color:var(--landing-paper)] px-8 py-4 text-base font-semibold text-[color:var(--landing-ink)] transition-transform hover:-translate-y-0.5"
+          >
+            Créer mon compte
+          </Link>
+        </div>
       </section>
 
-      {/* Bandeau discret B2B — agences & réseaux. */}
-      <div className="border-t border-border/60 bg-card/30">
-        <div className="mx-auto max-w-6xl px-6 py-4 text-center text-sm text-muted-foreground">
-          Vous êtes une agence ou un réseau de distributeurs ?{' '}
-          <Link href="/agency-demo" className="font-semibold text-primary hover:underline">Découvrez AuraPost for Teams →</Link>
+      {/* ── Bandeau B2B discret ── */}
+      <div className="border-t border-[color:var(--landing-line)] bg-[color:var(--landing-paper-2)]">
+        <div className="mx-auto max-w-6xl px-6 py-5 text-sm text-[color:var(--landing-muted)]">
+          Agence ou réseau de distributeurs ?{' '}
+          <Link href="/agency-demo" className="font-semibold text-[color:var(--landing-accent-dark)] underline-offset-4 hover:underline">
+            Découvrez AuraPost for Teams →
+          </Link>
         </div>
       </div>
 
-      <footer className="border-t border-border/60">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-6 py-8 text-sm text-muted-foreground sm:flex-row">
-          <span className="flex items-center gap-2 font-black uppercase tracking-tight text-foreground">
-            <Sparkles className="h-4 w-4 text-primary" /> AuraPost
-          </span>
-          <span className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
-            <Link href="/pricing" className="hover:text-foreground">Tarifs</Link>
-            <Link href="/blog" className="hover:text-foreground">Blog</Link>
-            <Link href="/coaches" className="hover:text-foreground">Coachs</Link>
-            <Link href="/wall-of-love" className="hover:text-foreground">Avis</Link>
-            <Link href="/vs/agence" className="hover:text-foreground">vs Agence</Link>
-            <Link href="/vs/chatgpt" className="hover:text-foreground">vs ChatGPT</Link>
-            <Link href="/affiliates" className="hover:text-foreground">Affiliés</Link>
-            <Link href="/help" className="hover:text-foreground">Aide</Link>
-            <Link href="/changelog" className="hover:text-foreground">Nouveautés</Link>
-            <Link href="/status" className="hover:text-foreground">Statut</Link>
-            <Link href="/privacy" className="hover:text-foreground">Confidentialité</Link>
-            <Link href="/legal/sous-traitants" className="hover:text-foreground">Sous-traitants</Link>
-            <Link href="/terms" className="hover:text-foreground">CGU</Link>
-            <span>© {new Date().getFullYear()} AuraPost</span>
-          </span>
+      {/* ── Footer éditorial — asymétrique (wordmark large à gauche, colonnes à droite) ── */}
+      <footer className="border-t border-[color:var(--landing-line)] px-6 py-16">
+        <div className="mx-auto grid max-w-6xl gap-12 md:grid-cols-12">
+          <div className="md:col-span-5">
+            <p className="landing-display text-4xl font-black text-[color:var(--landing-ink)]">AuraPost</p>
+            <p className="mt-3 max-w-[34ch] text-sm leading-relaxed text-[color:var(--landing-muted)]">
+              Le contenu social des coachs sport &amp; bien-être, écrit à partir de leur seul profil.
+            </p>
+            <p className="mt-6 text-xs text-[color:var(--landing-muted)]">© {new Date().getFullYear()} AuraPost</p>
+          </div>
+          <nav className="grid grid-cols-2 gap-8 md:col-span-7 md:grid-cols-3" aria-label="Pied de page">
+            <FooterCol
+              title="Produit"
+              links={[['/pricing', 'Tarifs'], ['/demo', 'Démo'], ['/coaches', 'Coachs'], ['/changelog', 'Nouveautés']]}
+            />
+            <FooterCol
+              title="Ressources"
+              links={[['/blog', 'Blog'], ['/wall-of-love', 'Avis'], ['/vs/agence', 'vs Agence'], ['/vs/chatgpt', 'vs ChatGPT'], ['/affiliates', 'Affiliés'], ['/help', 'Aide'], ['/status', 'Statut']]}
+            />
+            <FooterCol
+              title="Légal"
+              links={[['/privacy', 'Confidentialité'], ['/legal/sous-traitants', 'Sous-traitants'], ['/terms', 'CGU']]}
+            />
+          </nav>
         </div>
       </footer>
-
-      <ExitIntent />
     </main>
+  );
+}
+
+function FooterCol({ title, links }: { title: string; links: [string, string][] }) {
+  return (
+    <div>
+      <p className="font-sans text-[11px] font-bold uppercase tracking-[0.28em] text-[color:var(--landing-ink)]">{title}</p>
+      <ul className="mt-4 space-y-2.5">
+        {links.map(([href, label]) => (
+          <li key={href}>
+            <Link href={href} className="text-sm text-[color:var(--landing-muted)] underline-offset-4 hover:text-[color:var(--landing-ink)] hover:underline">
+              {label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
