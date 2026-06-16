@@ -49,3 +49,5 @@ yarn-error.log*
 
 # Base SQLite locale de dev (persistance entre restarts)
 .aurapost-dev.db*
+
+dev-server.log
