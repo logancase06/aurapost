@@ -323,6 +323,8 @@ export const organizations = sqliteTable(
     logoUrl: text('logo_url'),
     brandColor: text('brand_color').default('#7c3aed'),
     brandTone: text('brand_tone'),
+    /** Si true, les posts des distributeurs passent en validation manager avant publication. */
+    requiresApproval: integer('requires_approval', { mode: 'boolean' }).notNull().default(false),
     /** tenant fondateur (org owner). */
     ownerTenantId: text('owner_tenant_id').notNull(),
     createdAt: text('created_at').notNull(),
@@ -365,6 +367,25 @@ export const orgBrandKit = sqliteTable('org_brand_kit', {
   forbiddenWords: text('forbidden_words'), // JSON: string[]
   updatedAt: text('updated_at').notNull(),
 });
+
+// File de validation des posts (conformité réseau/MLM). Une ligne par décision.
+export const postApprovals = sqliteTable(
+  'post_approvals',
+  {
+    id: text('id').primaryKey(),
+    postId: text('post_id').notNull(),
+    orgId: text('org_id').notNull(),
+    reviewerId: text('reviewer_id'), // userId du manager org
+    status: text('status').notNull().default('pending'), // 'pending' | 'approved' | 'rejected'
+    comment: text('comment'),
+    reviewedAt: text('reviewed_at'),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => ({
+    orgStatusIdx: index('post_approvals_org_status_idx').on(t.orgId, t.status),
+    postIdx: index('post_approvals_post_idx').on(t.postId),
+  })
+);
 
 // Prospects agence / réseau (formulaire /agency-demo → /api/agency-contact).
 export const agencyLeads = sqliteTable(

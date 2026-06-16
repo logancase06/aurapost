@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { auth } from '@/lib/auth';
 import { requireTenantId } from '@/lib/tenant';
-import { createOrganization, getOrgForTenant, upsertBrandKit, addOrgTemplate, listOrgMembersWithStats } from '@/lib/db/organizations';
+import { createOrganization, getOrgForTenant, upsertBrandKit, addOrgTemplate, listOrgMembersWithStats, setOrgRequiresApproval } from '@/lib/db/organizations';
 import { inviteDistributor } from '@/lib/db/org-invite';
 import { sendDistributorNudgeEmail } from '@/lib/email';
 import { sanitizeText } from '@/lib/security';
@@ -94,6 +94,15 @@ const TemplateSchema = z.object({
   content: z.string().min(5).max(4000),
   category: z.string().max(80).optional(),
 });
+
+/** Active/désactive la validation obligatoire des posts (conformité réseau). */
+export async function toggleApprovalAction(requires: boolean): Promise<{ ok: boolean; error?: string }> {
+  const c = await ownerCtx();
+  if ('error' in c) return { ok: false, error: c.error };
+  await setOrgRequiresApproval(c.orgId, requires);
+  revalidatePath('/dashboard/org');
+  return { ok: true };
+}
 
 /** Relance par email tous les distributeurs inactifs depuis ≥ 7 jours. */
 export async function relanceInactiveAction(): Promise<{ ok: boolean; sent?: number; error?: string }> {

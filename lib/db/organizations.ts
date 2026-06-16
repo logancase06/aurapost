@@ -13,6 +13,7 @@ export interface Organization {
   logoUrl: string | null;
   brandColor: string | null;
   brandTone: string | null;
+  requiresApproval: boolean;
   ownerTenantId: string;
   createdAt: string;
 }
@@ -30,9 +31,22 @@ function mapOrg(r: typeof organizations.$inferSelect): Organization {
     logoUrl: r.logoUrl,
     brandColor: r.brandColor,
     brandTone: r.brandTone,
+    requiresApproval: !!r.requiresApproval,
     ownerTenantId: r.ownerTenantId,
     createdAt: r.createdAt,
   };
+}
+
+/** L'organisation du tenant exige-t-elle une validation des posts ? + son orgId. */
+export async function orgApprovalContext(tenantId: string): Promise<{ orgId: string; requiresApproval: boolean } | null> {
+  const m = await getOrgForTenant(tenantId);
+  if (!m) return null;
+  return { orgId: m.org.id, requiresApproval: m.org.requiresApproval };
+}
+
+/** Active/désactive la validation obligatoire des posts pour une organisation. */
+export async function setOrgRequiresApproval(orgId: string, requires: boolean): Promise<void> {
+  await db.update(organizations).set({ requiresApproval: requires }).where(eq(organizations.id, orgId));
 }
 
 /** Crée une organisation et y rattache le tenant fondateur (rôle owner). Idempotent par owner. */

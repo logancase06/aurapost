@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
 import { getOrgForTenant, listOrgMembersWithStats, getBrandKit, listOrgTemplates } from '@/lib/db/organizations';
+import { countPendingApprovals } from '@/lib/db/approvals';
 import { Card } from '@/components/ui/card';
 import DashboardShell from '../DashboardShell';
 import CreateOrgForm from './CreateOrgForm';
@@ -38,15 +39,23 @@ export default async function OrgPage() {
     );
   }
 
-  const [members, brandKit, templates] = await Promise.all([
+  const [members, brandKit, templates, pendingApprovals] = await Promise.all([
     listOrgMembersWithStats(membership.org.id),
     getBrandKit(membership.org.id),
     listOrgTemplates(membership.org.id),
+    countPendingApprovals(membership.org.id),
   ]);
 
   return (
     <DashboardShell active="/dashboard/org">
-      <OrgManager orgName={membership.org.name} members={members} brandKit={brandKit} templates={templates} />
+      <OrgManager
+        orgName={membership.org.name}
+        members={members}
+        brandKit={brandKit}
+        templates={templates}
+        requiresApproval={membership.org.requiresApproval}
+        pendingApprovals={pendingApprovals}
+      />
     </DashboardShell>
   );
 }

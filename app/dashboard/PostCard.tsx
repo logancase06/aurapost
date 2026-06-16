@@ -14,10 +14,11 @@ import ApprovePostDialog from './ApprovePostDialog';
 import { WATERMARK_TEXT } from '@/lib/plans';
 import type { PostRow } from '@/lib/db/posts';
 
-const STATUS: Record<string, { label: string; variant: 'warning' | 'success' | 'destructive' }> = {
+const STATUS: Record<string, { label: string; variant: 'warning' | 'success' | 'destructive' | 'secondary' }> = {
   draft: { label: 'Brouillon', variant: 'warning' },
   approved: { label: 'Approuvé', variant: 'success' },
   rejected: { label: 'Rejeté', variant: 'destructive' },
+  pending_approval: { label: 'En validation', variant: 'secondary' },
 };
 
 export default function PostCard({
@@ -123,9 +124,15 @@ export default function PostCard({
 
       <Separator className="my-4" />
 
+      {post.status === 'pending_approval' && (
+        <p className="mb-3 rounded-md border border-border bg-secondary/40 px-3 py-2 text-xs text-muted-foreground">
+          ⏳ En attente de validation par votre organisation.
+        </p>
+      )}
+
       {/* Cibles tactiles ≥44px sur mobile (h-11), compactes sur desktop (sm:h-8). */}
       <div className="flex flex-wrap items-center gap-2">
-        {post.status !== 'approved' && (
+        {post.status === 'draft' && (
           <>
             {/* Approbation rapide en 1 clic */}
             <Button size="sm" onClick={approveQuick} disabled={pending} className="h-11 bg-success text-white hover:bg-success/90 sm:h-8">
@@ -143,14 +150,16 @@ export default function PostCard({
             )}
           </>
         )}
-        {post.status !== 'rejected' && (
+        {post.status !== 'rejected' && post.status !== 'pending_approval' && (
           <Button size="sm" variant="secondary" onClick={() => run(() => rejectPostAction(post.id), 'Post rejeté')} disabled={pending} className="h-11 sm:h-8">
             <X className="h-3.5 w-3.5" /> Rejeter
           </Button>
         )}
-        <Button size="sm" variant="outline" onClick={() => run(() => requestVariantAction(post.id), 'Variante générée ✦')} disabled={pending || !variantesLeft} title={variantesLeft ? 'Générer une variante' : 'Limite de variantes atteinte ce mois'} className="h-11 sm:h-8">
-          {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />} Variante
-        </Button>
+        {post.status !== 'pending_approval' && (
+          <Button size="sm" variant="outline" onClick={() => run(() => requestVariantAction(post.id), 'Variante générée ✦')} disabled={pending || !variantesLeft} title={variantesLeft ? 'Générer une variante' : 'Limite de variantes atteinte ce mois'} className="h-11 sm:h-8">
+            {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />} Variante
+          </Button>
+        )}
         <Button size="sm" variant="ghost" onClick={copy} className="ml-auto h-11 sm:h-8">
           <Copy className="h-3.5 w-3.5" /> {copied ? 'Copié' : 'Copier'}
         </Button>

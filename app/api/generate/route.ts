@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { requireTenantId } from '@/lib/tenant';
 import { runMonthlyGeneration } from '@/lib/db/posts';
 import { isPlanActive, getPlanLimits } from '@/lib/plans';
+import { orgApprovalContext } from '@/lib/db/organizations';
 import { checkAuthRateLimit } from '@/lib/auth-rate-limit';
 import { sendMonthlyPostsEmail } from '@/lib/email';
 import { db } from '@/lib/db';
@@ -49,9 +50,12 @@ export async function POST() {
     }
 
     const limits = getPlanLimits(session.user.plan);
+    // Si l'organisation du tenant exige une validation → posts en attente d'approbation manager.
+    const approvalCtx = await orgApprovalContext(tenantId);
+    const initialStatus = approvalCtx?.requiresApproval ? ('pending_approval' as const) : ('draft' as const);
     let result: Awaited<ReturnType<typeof runMonthlyGeneration>>;
     try {
-      result = await runMonthlyGeneration(tenantId, session.user.id, { maxPosts: limits.postsPerMonth, instagramOnly: limits.instagramOnly });
+      result = await runMonthlyGeneration(tenantId, session.user.id, { maxPosts: limits.postsPerMonth, instagramOnly: limits.instagramOnly, initialStatus });
     } finally {
       await db.update(tenants).set({ generatingAt: null }).where(eq(tenants.id, tenantId));
     }

@@ -319,6 +319,19 @@ export function sendTrialEndingEmail(to: { email: string; name: string }, daysLe
   return sendEmail(to, `Ton essai se termine dans ${daysLeft} jours`, html);
 }
 
+/** Décision de validation d'un post (réseau) : approuvé ou rejeté avec commentaire. */
+export function sendPostDecisionEmail(to: { email: string; name: string }, approved: boolean, comment?: string) {
+  const inner = approved
+    ? `<h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1e1b4b">Votre post a été approuvé ✓</h1>
+       <p style="margin:0 0 24px;color:#6b7280;font-size:15px;line-height:1.6">Bonjour ${escHtml(to.name)}, votre manager a validé votre post — vous pouvez le publier dès maintenant.</p>
+       ${comment ? `<div style="background:#f5f3ff;border-radius:10px;padding:14px;color:#374151;font-size:14px">${escHtml(comment)}</div>` : ''}`
+    : `<h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1e1b4b">Votre post doit être revu</h1>
+       <p style="margin:0 0 16px;color:#6b7280;font-size:15px;line-height:1.6">Bonjour ${escHtml(to.name)}, votre manager a demandé une modification avant publication :</p>
+       <div style="background:#fef2f2;border-radius:10px;padding:14px;color:#374151;font-size:14px">${escHtml(comment || 'Voir avec votre manager.')}</div>`;
+  return sendEmail(to, approved ? 'Votre post est approuvé ✓' : 'Votre post doit être revu', shell(`
+    <tr><td style="padding:32px">${inner}<div style="margin-top:24px">${button(`${APP_URL()}/dashboard`, 'Voir mes posts →')}</div></td></tr>`));
+}
+
 /** Relance d'un distributeur inactif (déclenchée par le manager de l'organisation). */
 export function sendDistributorNudgeEmail(to: { email: string; name: string }, orgName: string) {
   const html = shell(`

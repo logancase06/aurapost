@@ -9,7 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { inviteMemberAction, saveBrandKitAction, addTemplateAction, relanceInactiveAction } from './actions';
+import { inviteMemberAction, saveBrandKitAction, addTemplateAction, relanceInactiveAction, toggleApprovalAction } from './actions';
+import { ShieldCheck } from 'lucide-react';
 import type { OrgMemberStats, BrandKit, OrgTemplate } from '@/lib/db/organizations';
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -22,12 +23,15 @@ interface Props {
   members: OrgMemberStats[];
   brandKit: BrandKit | null;
   templates: OrgTemplate[];
+  requiresApproval: boolean;
+  pendingApprovals: number;
 }
 
 const area = 'flex w-full rounded-md border border-input bg-background/50 px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
-export default function OrgManager({ orgName, members, brandKit, templates }: Props) {
+export default function OrgManager({ orgName, members, brandKit, templates, requiresApproval, pendingApprovals }: Props) {
   const [pending, start] = useTransition();
+  const [approval, setApproval] = useState(requiresApproval);
 
   // Invite
   const [inv, setInv] = useState({ email: '', firstName: '', city: '', speciality: '' });
@@ -75,10 +79,39 @@ export default function OrgManager({ orgName, members, brandKit, templates }: Pr
           <h1 className="text-2xl font-bold">{orgName}</h1>
           <p className="text-sm text-muted-foreground">{members.length} distributeur(s)</p>
         </div>
-        <Button asChild variant="outline" size="sm">
-          <Link href="/dashboard/org/reporting"><BarChart3 className="h-4 w-4" /> Reporting global</Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link href="/dashboard/org/approvals">
+              <ShieldCheck className="h-4 w-4" /> Validation
+              {pendingApprovals > 0 && <span className="ml-1 rounded-full bg-destructive px-1.5 text-[10px] font-bold text-destructive-foreground">{pendingApprovals}</span>}
+            </Link>
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/dashboard/org/reporting"><BarChart3 className="h-4 w-4" /> Reporting global</Link>
+          </Button>
+        </div>
       </div>
+
+      {/* Conformité : validation obligatoire des posts */}
+      <Card className="flex flex-wrap items-center justify-between gap-3 p-5">
+        <div>
+          <p className="flex items-center gap-2 font-bold"><ShieldCheck className="h-4 w-4 text-primary" /> Validation des posts</p>
+          <p className="mt-1 text-sm text-muted-foreground">Si activé, chaque post d’un distributeur passe par votre validation avant publication.</p>
+        </div>
+        <Button
+          variant={approval ? 'gradient' : 'outline'}
+          size="sm"
+          disabled={pending}
+          onClick={() => start(async () => {
+            const next = !approval;
+            const res = await toggleApprovalAction(next);
+            if (res.ok) { setApproval(next); toast.success(next ? 'Validation activée' : 'Validation désactivée'); }
+            else toast.error(res.error || 'Action impossible');
+          })}
+        >
+          {pending && <Loader2 className="h-4 w-4 animate-spin" />} {approval ? 'Activée' : 'Désactivée'}
+        </Button>
+      </Card>
 
       {/* Membres */}
       <Card className="overflow-hidden">

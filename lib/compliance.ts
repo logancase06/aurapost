@@ -2,8 +2,9 @@
 // + mots interdits propres à l'organisation. Utilisé à la génération (prompt) et pour
 // l'affichage du badge « Conforme marque ✅ ».
 
-/** Liste noire MLM par défaut — allégations de revenus interdites (cadre légal). */
+/** Liste noire MLM par défaut — allégations interdites (revenus, santé, garanties). */
 export const DEFAULT_MLM_FORBIDDEN = [
+  // Allégations de revenus
   'revenus',
   'gagner de l’argent',
   "gagner de l'argent",
@@ -11,6 +12,18 @@ export const DEFAULT_MLM_FORBIDDEN = [
   'devenir riche',
   'argent facile',
   'revenu passif',
+  // Allégations de santé (cadre légal strict, secteur surveillé)
+  'guérir',
+  'guérit',
+  'traiter',
+  'soigne',
+  'cliniquement prouvé',
+  'certifié',
+  // Garanties / promesses de résultats
+  'résultats garantis',
+  'garanti',
+  'perdre 10 kg',
+  'perdre 5 kg',
 ];
 
 /** Fusionne la liste noire par défaut avec les mots propres à l'org (dédupliqué, minuscules). */

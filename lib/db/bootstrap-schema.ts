@@ -221,6 +221,7 @@ CREATE TABLE IF NOT EXISTS organizations (
   logo_url TEXT,
   brand_color TEXT DEFAULT '#7c3aed',
   brand_tone TEXT,
+  requires_approval INTEGER NOT NULL DEFAULT 0,
   owner_tenant_id TEXT NOT NULL,
   created_at TEXT NOT NULL
 );
@@ -257,6 +258,19 @@ CREATE TABLE IF NOT EXISTS org_brand_kit (
   forbidden_words TEXT,
   updated_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS post_approvals (
+  id TEXT PRIMARY KEY,
+  post_id TEXT NOT NULL,
+  org_id TEXT NOT NULL,
+  reviewer_id TEXT,
+  status TEXT NOT NULL DEFAULT 'pending',
+  comment TEXT,
+  reviewed_at TEXT,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS post_approvals_org_status_idx ON post_approvals (org_id, status);
+CREATE INDEX IF NOT EXISTS post_approvals_post_idx ON post_approvals (post_id);
 
 CREATE TABLE IF NOT EXISTS agency_leads (
   id TEXT PRIMARY KEY,

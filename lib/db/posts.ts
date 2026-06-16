@@ -23,7 +23,7 @@ import { logError, logEvent } from '@/lib/logger';
 import { parseAnalysis, InstagramAnalysisSchema, ReviewsAnalysisSchema } from '@/lib/validation';
 import { getBrandConstraintsForTenant } from './organizations';
 
-export type PostStatus = 'draft' | 'approved' | 'rejected';
+export type PostStatus = 'draft' | 'approved' | 'rejected' | 'pending_approval';
 
 export interface PostRow {
   id: string;
@@ -188,6 +188,7 @@ export interface PostStats {
   draft: number;
   approved: number;
   rejected: number;
+  pendingApproval: number;
   instagram: number;
   linkedin: number;
 }
@@ -200,11 +201,12 @@ export async function getPostStats(tenantId: string, month?: string): Promise<Po
     .from(generatedPosts)
     .where(and(...conds));
 
-  const stats: PostStats = { total: 0, draft: 0, approved: 0, rejected: 0, instagram: 0, linkedin: 0 };
+  const stats: PostStats = { total: 0, draft: 0, approved: 0, rejected: 0, pendingApproval: 0, instagram: 0, linkedin: 0 };
   for (const r of rows) {
     stats.total++;
     if (r.status === 'approved') stats.approved++;
     else if (r.status === 'rejected') stats.rejected++;
+    else if (r.status === 'pending_approval') stats.pendingApproval++;
     else stats.draft++;
     if (r.network === 'linkedin') stats.linkedin++;
     else stats.instagram++;
@@ -270,7 +272,7 @@ export type GenerateResult =
 export async function runMonthlyGeneration(
   tenantId: string,
   userId: string,
-  opts?: { maxPosts?: number; instagramOnly?: boolean }
+  opts?: { maxPosts?: number; instagramOnly?: boolean; initialStatus?: PostStatus }
 ): Promise<GenerateResult> {
   const profile = await getProfileInput(tenantId);
   if (!profile) return { ok: false, error: 'no_profile' };
@@ -302,11 +304,12 @@ export async function runMonthlyGeneration(
   if (opts?.maxPosts && drafts.length > opts.maxPosts) drafts = drafts.slice(0, opts.maxPosts);
 
   const now = new Date().toISOString();
+  const initialStatus: PostStatus = opts?.initialStatus ?? 'draft';
   const values = drafts.map((d) => ({
     id: nanoid(),
     tenantId,
     network: d.network,
-    status: 'draft' as const,
+    status: initialStatus,
     title: d.title,
     theme: d.theme,
     content: d.content,
