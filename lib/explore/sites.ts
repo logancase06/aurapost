@@ -343,10 +343,15 @@ const DEMO_PHOTO_IDX: Record<string, number> = {
   'anna-mental': 5, // sprint / focus
 };
 
-/** URL de la photo d'un site démo (Unsplash). Portrait par défaut pour le hero. */
+/**
+ * URL de la photo d'un site démo (Unsplash). Portrait par défaut pour le hero.
+ * `crop=faces,entropy` : recadrage automatique sur le visage (sinon zone saillante) →
+ * la photo n'est plus coupée au centre arbitraire, le sujet reste cadré quel que soit
+ * le ratio du conteneur (hero plein cadre, arche, portrait…).
+ */
 export function demoPhoto(site: DemoSite, w = 1000, h = 1250): string {
   const idx = DEMO_PHOTO_IDX[site.id] ?? 0;
-  return unsplash(FITNESS_PHOTO_IDS[idx], w, h);
+  return `${unsplash(FITNESS_PHOTO_IDS[idx], w, h, 76)}&crop=faces,entropy`;
 }
 
 /** Témoignages portant un résultat concret → section « Ce que ça change ». */
