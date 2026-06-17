@@ -72,9 +72,13 @@ export default function ExploreClient({ sites }: { sites: DemoSite[] }) {
     clarte: sites.filter((s) => s.style === 'clarte').length,
     authenticite: sites.filter((s) => s.style === 'authenticite').length,
   };
-  const filters: Filter[] = ['all', 'impact', 'clarte', 'authenticite'];
-  const visible = activeFilter === 'all' ? sites : sites.filter((s) => s.style === activeFilter);
-  const favoriteSites = sites.filter((s) => favorites.includes(s.id));
+  const filters: Filter[] = ['all', 'clarte', 'authenticite', 'impact'];
+  // Ordre d'affichage : on met en avant les styles clairs/épurés (Clarté, Authenticité)
+  // avant Impact (plus sombre/énergique) — la 1re impression n'est plus le style le plus agressif.
+  const STYLE_RANK: Record<DemoSite['style'], number> = { clarte: 0, authenticite: 1, impact: 2 };
+  const ordered = [...sites].sort((a, b) => STYLE_RANK[a.style] - STYLE_RANK[b.style]);
+  const visible = activeFilter === 'all' ? ordered : ordered.filter((s) => s.style === activeFilter);
+  const favoriteSites = ordered.filter((s) => favorites.includes(s.id));
 
   const cardProps = (site: DemoSite) => ({
     site,
