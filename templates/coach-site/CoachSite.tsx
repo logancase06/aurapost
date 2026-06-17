@@ -61,7 +61,7 @@ export default function CoachSite({ data }: { data: CoachSiteData }) {
       {SECTION_ORDER[style].map((key) => (
         <div key={key}>{sections[key]}</div>
       ))}
-      <SiteFooter data={data} accent={accent} />
+      <SiteFooter data={data} style={style} accent={accent} />
 
       {/* Hover CTA (scale + ombre) — injecté une fois, sans lib. */}
       <style>{`.cs-cta{transition:transform .18s ease, box-shadow .18s ease}.cs-cta:hover{transform:scale(1.02);box-shadow:0 14px 34px -12px ${accent}99}`}</style>
