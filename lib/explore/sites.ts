@@ -358,6 +358,61 @@ export function demoPhoto(site: DemoSite, w = 1000, h = 1250): string {
   return `${unsplash(id, w, h, 76)}&crop=faces,entropy`;
 }
 
+// Offres concrètes par démo (section « Ce qu'on fait ensemble ») — donner de la substance
+// pour que le coach se projette. Formats/inclusions réels, jamais de fausses stats chiffrées.
+const DEMO_SERVICES: Record<string, { title: string; description: string }[]> = {
+  'alex-fitness': [
+    { title: 'Coaching individuel', description: 'Bilan complet (posture, mobilité, objectifs) puis programme sur-mesure ajusté chaque semaine. En salle ou en visio.' },
+    { title: 'Suivi à distance', description: 'Programme mensuel détaillé, corrections vidéo de tes exercices et un point hebdo sur WhatsApp pour garder le cap.' },
+    { title: 'Prépa événement', description: 'Préparation ciblée (compétition, échéance, été) sur 8 à 12 semaines, nutrition incluse.' },
+  ],
+  'marco-boxe': [
+    { title: 'Cours particulier', description: 'Technique, sac et pattes d’ours à ton rythme. On part de zéro si besoin, gants prêtés.' },
+    { title: 'Small group (4 max)', description: 'L’énergie du collectif sans perdre la correction technique. Cardio garanti.' },
+    { title: 'Pack remise en forme', description: '10 séances boxe & cardio pour se défouler et reprendre confiance, suivi inclus.' },
+  ],
+  'sarah-run': [
+    { title: 'Plan running personnalisé', description: 'Du 5 km au premier trail : plan progressif calé sur tes dispos et ton terrain, ajusté chaque semaine.' },
+    { title: 'Sortie technique trail', description: 'On travaille la descente, le dénivelé et le pacing directement sur les sentiers.' },
+    { title: 'Prépa objectif', description: 'Semi, marathon ou trail : préparation dédiée avec gestion de la charge pour arriver sans blessure.' },
+  ],
+  'crossfit-lyon': [
+    { title: 'Séance découverte', description: 'Premier WOD encadré et apprentissage des mouvements de base, sans pression, à ton niveau du jour.' },
+    { title: 'Abonnement box', description: 'Accès aux WOD coachés, programmation force + conditioning, et une communauté qui te pousse.' },
+    { title: 'Coaching haltéro', description: 'Arraché / épaulé filmés et corrigés, progression chargée en sécurité.' },
+  ],
+  'marie-nutrition': [
+    { title: 'Bilan nutritionnel', description: 'Analyse de tes habitudes, de ton mode de vie et de tes objectifs, sans jugement. Tu repars avec un plan d’action concret.' },
+    { title: 'Suivi rééquilibrage', description: 'Accompagnement mensuel : repas adaptés à ton quotidien et ton budget, ajustés ensemble au fil des séances.' },
+    { title: 'Consultation ponctuelle', description: 'Une question, un cap à passer, une situation précise : un rendez-vous ciblé sans engagement.' },
+  ],
+  'studio-zen': [
+    { title: 'Cours collectif', description: 'Petits groupes (8 max) pour un vrai accompagnement, du débutant à l’initié. Tapis et matériel fournis.' },
+    { title: 'Cours particulier', description: 'Une pratique calée sur ton corps et tes besoins (dos, stress, sommeil), au studio ou chez toi.' },
+    { title: 'Atelier respiration', description: 'Une parenthèse de 90 min pour apprendre à relâcher et repartir apaisé.' },
+  ],
+  'emma-bienetre': [
+    { title: 'Bilan bien-être 360°', description: 'Sommeil, mouvement, alimentation, mental : on regarde tout et on définit 2-3 priorités tenables.' },
+    { title: 'Accompagnement habitudes', description: 'Suivi sur plusieurs semaines pour installer des routines simples qui s’ancrent vraiment.' },
+    { title: 'Séance découverte', description: 'Un premier échange pour faire le point et voir si on avance bien ensemble.' },
+  ],
+  'julie-vie': [
+    { title: 'Séance individuelle', description: 'Un espace confidentiel pour déposer ce que tu portes et repartir avec des pistes concrètes.' },
+    { title: 'Accompagnement transition', description: 'Changement de cap, décision difficile, nouveau départ : un suivi sur la durée, à ton rythme.' },
+    { title: 'Premier échange offert', description: '30 minutes pour faire connaissance et voir si le courant passe, sans engagement.' },
+  ],
+  'thomas-perso': [
+    { title: 'Coaching mindset', description: 'On travaille les croyances qui te freinent et on installe des habitudes qui tiennent dans le temps.' },
+    { title: 'Programme objectifs', description: 'Un cap clair, des étapes mesurables, un point régulier pour ne pas lâcher en route.' },
+    { title: 'Session découverte', description: 'Un premier rendez-vous pour cerner où tu en es et où tu veux aller.' },
+  ],
+  'anna-mental': [
+    { title: 'Préparation mentale sportive', description: 'Gestion de la pression, routine de concentration, confiance le jour J — à l’entraînement comme en compétition.' },
+    { title: 'Performance pro', description: 'Prise de parole, examens, échéances : les mêmes leviers mentaux appliqués à ta vie professionnelle.' },
+    { title: 'Bilan mental', description: 'Un point complet pour identifier ce qui bloque sous pression et construire ton plan.' },
+  ],
+};
+
 /** Témoignages portant un résultat concret → section « Ce que ça change ». */
 function demoResults(site: DemoSite): CoachSiteData['results'] {
   const list = site.testimonials
@@ -385,7 +440,7 @@ export function adaptDemoSiteToCoachSiteData(site: DemoSite): CoachSiteData {
     bookingUrl: site.contact.calendly ?? null,
     instagramUrl: site.contact.instagram ?? null,
     whatsapp: site.contact.whatsapp ?? null,
-    services: [],
+    services: DEMO_SERVICES[site.id] ?? [],
     testimonials: site.testimonials.map((t) => ({ name: t.author, quote: t.quote })),
     forces: site.strengths
       .filter((s) => s.enabled && s.title.trim())
