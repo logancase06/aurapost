@@ -2,10 +2,11 @@ import type { SiteStyle } from '../types';
 
 /**
  * Grain (bruit fractal SVG) en superposition fixe, plein écran, non interactif.
- * Réservé aux styles Impact et Authenticité (Clarté reste épuré, sans grain).
+ * Réservé au seul style Impact (sombre). Clarté et Authenticité sont désormais des
+ * styles CLAIRS/épurés : un grain en mixBlendMode salirait leur rendu.
  */
 export default function GrainOverlay({ style }: { style: SiteStyle }) {
-  if (style === 'clarte') return null;
+  if (style !== 'impact') return null;
   return (
     <div
       aria-hidden
@@ -14,7 +15,7 @@ export default function GrainOverlay({ style }: { style: SiteStyle }) {
         inset: 0,
         pointerEvents: 'none',
         zIndex: 9999,
-        opacity: style === 'authenticite' ? 0.065 : 0.035,
+        opacity: 0.035,
         mixBlendMode: 'overlay',
       }}
     >
