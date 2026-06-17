@@ -327,21 +327,25 @@ export const DEMO_SITES: DemoSite[] = [
   },
 ];
 
-// Photo de coach par démo (Unsplash vérifié, hôte autorisé dans next.config). Sans photo,
-// le hero retombe sur le placeholder initiales/SVG → rendu « wireframe / généré ». On mappe
-// chaque démo vers un cliché sport/bien-être cohérent avec sa spécialité.
-const DEMO_PHOTO_IDX: Record<string, number> = {
-  'alex-fitness': 11, // coach / haltères
-  'marco-boxe': 1, // box jump / training
-  'sarah-run': 2, // course / cardio
-  'crossfit-lyon': 8, // squat barre
-  'marie-nutrition': 6, // plein air / lifestyle sain
-  'studio-zen': 9, // yoga
-  'emma-bienetre': 3, // route / nature
-  'julie-vie': 13, // salle / ambiance
-  'thomas-perso': 0, // haltères
-  'anna-mental': 5, // sprint / focus
+// Photo de coach par démo — Unsplash VÉRIFIÉ (HTTP 200), choisi pour être COHÉRENT
+// avec la spécialité (plus de musculation pour une diététicienne) et VARIÉ d'une démo à
+// l'autre (4 activités distinctes pour les Impacts, portraits pro pour le coaching).
+const DEMO_PHOTO_ID: Record<string, string> = {
+  // Impact (fitness) — 4 activités différentes pour éviter la ressemblance entre démos.
+  'alex-fitness': '1581009146145-b5ef050c2e1e', // coach / haltères
+  'marco-boxe': '1571019613454-1cb2f99b2d8b', // entraînement explosif / box
+  'sarah-run': '1517836357463-d25dfeac3438', // course / cardio
+  'crossfit-lyon': '1599058917212-d750089bc07e', // conditioning / corde
+  // Clarté (wellness) — alimentation, yoga, méditation.
+  'marie-nutrition': '1512621776951-a57141f2eefd', // bol healthy / nutrition
+  'studio-zen': '1506126613408-eca07ce68773', // yoga / méditation
+  'emma-bienetre': '1599901860904-17e6ed7083a0', // méditation / calme
+  // Authenticité (coaching) — portraits pro, genre cohérent avec le prénom.
+  'julie-vie': '1438761681033-6461ffad8d80', // portrait femme
+  'thomas-perso': '1507003211169-0a1dd7228f2d', // portrait homme
+  'anna-mental': '1494790108377-be9c29b29330', // portrait femme
 };
+const FALLBACK_PHOTO_ID = FITNESS_PHOTO_IDS[0];
 
 /**
  * URL de la photo d'un site démo (Unsplash). Portrait par défaut pour le hero.
@@ -350,8 +354,8 @@ const DEMO_PHOTO_IDX: Record<string, number> = {
  * le ratio du conteneur (hero plein cadre, arche, portrait…).
  */
 export function demoPhoto(site: DemoSite, w = 1000, h = 1250): string {
-  const idx = DEMO_PHOTO_IDX[site.id] ?? 0;
-  return `${unsplash(FITNESS_PHOTO_IDS[idx], w, h, 76)}&crop=faces,entropy`;
+  const id = DEMO_PHOTO_ID[site.id] ?? FALLBACK_PHOTO_ID;
+  return `${unsplash(id, w, h, 76)}&crop=faces,entropy`;
 }
 
 /** Témoignages portant un résultat concret → section « Ce que ça change ». */
