@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
 import { getSiteEditorData } from '@/lib/db/coach-site';
 import SiteEditor from './SiteEditor';
+import { aiTextAvailable } from '@/lib/content-generator';
 
 export const metadata = { title: 'Personnaliser mon site' };
 // L'éditeur déclenche des Server Actions (autosave, upload) — timeout confortable.
@@ -21,5 +22,5 @@ export default async function SiteEditorPage({ searchParams }: { searchParams: P
   const { focus } = await searchParams;
   const initialFocus = focus === 'offers' || focus === 'photos' ? focus : undefined;
 
-  return <SiteEditor initial={data} appDomain={APP_DOMAIN} aiEnabled={!!process.env.ANTHROPIC_API_KEY} initialFocus={initialFocus} />;
+  return <SiteEditor initial={data} appDomain={APP_DOMAIN} aiEnabled={aiTextAvailable()} initialFocus={initialFocus} />;
 }

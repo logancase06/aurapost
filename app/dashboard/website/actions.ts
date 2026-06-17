@@ -14,6 +14,7 @@ import { logError, logEvent } from '@/lib/logger';
 import { canGenerateSite } from '@/lib/plans';
 import { checkAuthRateLimit } from '@/lib/auth-rate-limit';
 import { extractJson } from '@/lib/parse-json';
+import { callModel, aiTextAvailable } from '@/lib/content-generator';
 
 const StyleSchema = z.enum(['impact', 'clarte', 'authenticite']);
 
@@ -99,8 +100,6 @@ const AIEditSchema = z.object({
   currentContent: SiteContentSchema,
 });
 
-const AI_EDIT_MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6';
-
 const AI_EDIT_SYSTEM = `Tu es un expert en copywriting pour coachs sportifs et professionnels du bien-être.
 Tu reçois le contenu actuel d'un site vitrine (JSON) et une instruction de modification en langage naturel du coach.
 Tu renvoies UNIQUEMENT le contenu modifié en JSON valide, sans explication, sans markdown, sans balises de code.
@@ -135,25 +134,6 @@ Instruction du coach : "${instruction}"
 Renvoie le contenu modifié en JSON valide.`;
 }
 
-/** Appel direct à l'API Anthropic (claude-sonnet-4-6). Lève si la clé est absente. */
-async function runAIEdit(system: string, user: string): Promise<string> {
-  const mod = await import('@anthropic-ai/sdk');
-  const Anthropic = mod.default;
-  const client = new Anthropic(); // lit ANTHROPIC_API_KEY dans l'environnement
-  const message = await client.messages.create({
-    model: AI_EDIT_MODEL,
-    max_tokens: 1000,
-    system,
-    messages: [{ role: 'user', content: user }],
-  });
-  let text = '';
-  for (const block of message.content) {
-    if (block.type === 'text') text += block.text + '\n';
-  }
-  if (!text.trim()) throw new Error('Réponse vide de l’API Anthropic');
-  return text;
-}
-
 export interface AIEditResult {
   ok: boolean;
   content?: SiteContent;
@@ -173,7 +153,7 @@ export async function applyAIEdit(instruction: string, currentContent: unknown):
   if ('error' in c) return { ok: false, error: c.error };
   if (!canGenerateSite(c.plan)) return { ok: false, error: 'upgrade_required' };
 
-  if (!process.env.ANTHROPIC_API_KEY) {
+  if (!aiTextAvailable()) {
     return { ok: false, error: 'L’édition IA n’est pas disponible en ce moment.' };
   }
 
@@ -189,9 +169,9 @@ export async function applyAIEdit(instruction: string, currentContent: unknown):
 
   let raw: string;
   try {
-    raw = await runAIEdit(AI_EDIT_SYSTEM, user);
+    raw = await callModel(AI_EDIT_SYSTEM, user, 1200);
   } catch (err) {
-    logError('[applyAIEdit] appel Anthropic échoué', { error: String(err) });
+    logError('[applyAIEdit] appel modèle échoué', { error: String(err) });
     logEvent('ai_edit.failed', c.tenantId, { reason: 'api_error' });
     return { ok: false, error: 'L’IA est indisponible — réessaie dans quelques minutes' };
   }

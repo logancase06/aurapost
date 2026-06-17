@@ -15,6 +15,7 @@ import DashboardShell from '../DashboardShell';
 import TemplateChooser from './TemplateChooser';
 import CopyUrlButton from './CopyUrlButton';
 import CreateSiteEntry from './CreateSiteEntry';
+import { aiTextAvailable } from '@/lib/content-generator';
 import PublishToggle from './PublishToggle';
 import CoachSite, { styleForTone, type SiteStyle } from '@/templates/coach-site/CoachSite';
 
@@ -93,7 +94,7 @@ export default async function WebsitePage({ searchParams }: { searchParams: Prom
             </p>
             <div className="mt-4">
               <CreateSiteEntry
-                aiEnabled={!!process.env.ANTHROPIC_API_KEY}
+                aiEnabled={aiTextAvailable()}
                 specialty={prof?.speciality}
                 tone={prof?.tone}
                 city={prof?.city}

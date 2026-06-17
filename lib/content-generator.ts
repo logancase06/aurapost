@@ -91,17 +91,19 @@ const TONE_LABELS: Record<string, string> = {
 
 // ── Appel texte selon le chemin actif ────────────────────────────────────────
 
-/** Chemin 1 — API Anthropic directe (claude-sonnet-4-6). */
-async function generateViaAnthropic(prompt: string, maxTokens: number): Promise<string> {
+const DEFAULT_GEN_SYSTEM =
+  'Tu es un expert en copywriting et marketing de contenu pour coachs sportifs. ' +
+  'Tu réponds TOUJOURS avec du JSON valide strict, sans aucun texte avant ou après le JSON.';
+
+/** Chemin 1 — API Anthropic directe (claude-sonnet-4-6). `system` personnalisable. */
+async function generateViaAnthropic(prompt: string, maxTokens: number, system: string = DEFAULT_GEN_SYSTEM): Promise<string> {
   const mod = await import('@anthropic-ai/sdk');
   const Anthropic = mod.default;
   const client = new Anthropic(); // lit ANTHROPIC_API_KEY dans l'environnement
   const message = await client.messages.create({
     model: API_MODEL,
     max_tokens: maxTokens,
-    system:
-      'Tu es un expert en copywriting et marketing de contenu pour coachs sportifs. ' +
-      'Tu réponds TOUJOURS avec du JSON valide strict, sans aucun texte avant ou après le JSON.',
+    system,
     messages: [{ role: 'user', content: prompt }],
   });
   let text = '';
@@ -139,6 +141,24 @@ async function generateViaTunnel(prompt: string, timeoutMs = 150_000): Promise<s
 async function generateText(prompt: string, maxTokens = 8000): Promise<string> {
   if (GENERATION_MODE === 'anthropic-api') return generateViaAnthropic(prompt, maxTokens);
   if (GENERATION_MODE === 'cloudflare-tunnel') return generateViaTunnel(prompt);
+  throw new Error('mode mock-enrichi — aucun appel externe');
+}
+
+/** Vrai si un modèle texte est joignable (API directe OU tunnel Claude Code local).
+ *  Faux en mode mock pur (ni ANTHROPIC_API_KEY ni CLAUDE_TUNNEL_URL) → l'édition IA
+ *  n'est alors pas possible et l'UI invite à éditer manuellement. */
+export function aiTextAvailable(): boolean {
+  return GENERATION_MODE !== 'mock-enrichi';
+}
+
+/**
+ * Complétion modèle générique avec system prompt personnalisé (édition IA du site, etc.).
+ * Emprunte le MÊME chemin que la génération — API directe OU tunnel Claude Code local
+ * (key-less) — au lieu d'exiger spécifiquement une ANTHROPIC_API_KEY. Lève en mode mock.
+ */
+export async function callModel(system: string, user: string, maxTokens = 2000): Promise<string> {
+  if (GENERATION_MODE === 'anthropic-api') return generateViaAnthropic(user, maxTokens, system);
+  if (GENERATION_MODE === 'cloudflare-tunnel') return generateViaTunnel(`${system}\n\n---\n\n${user}`);
   throw new Error('mode mock-enrichi — aucun appel externe');
 }
 
