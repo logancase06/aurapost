@@ -125,6 +125,9 @@ export default function HeroSection({ data, style, accent, t }: { data: CoachSit
   const words = accroche.trim().split(/\s+/);
   let italicIdx = words.findIndex((w, i) => i > 0 && w.replace(/[^\p{L}]/gu, '').length >= 4);
   if (italicIdx === -1) italicIdx = words.length - 1;
+  // Paragraphe narratif tronqué proprement (frontière de mot + ellipse), jamais en plein mot.
+  const narrativeRaw = (data.heroSubtitle || data.bio || '').trim();
+  const narrative = narrativeRaw.length > 220 ? `${narrativeRaw.slice(0, 220).replace(/\s+\S*$/, '')}…` : narrativeRaw;
   return (
     <section id="accueil" className="cs-hero-auth" style={{ position: 'relative', background: t.bg, color: t.ink }}>
       <div className="cs-hero-auth-grid" style={{ maxWidth: 1080, margin: '0 auto', padding: '92px 24px', display: 'grid', gridTemplateColumns: hasPhoto ? 'minmax(0,1.1fr) minmax(0,0.9fr)' : '1fr', gap: 56, alignItems: 'center' }}>
@@ -136,9 +139,9 @@ export default function HeroSection({ data, style, accent, t }: { data: CoachSit
           <h1 style={{ ...headFont, margin: '14px 0 0', fontSize: 'clamp(32px, 4vw, 60px)', lineHeight: 1.16, letterSpacing: '-0.01em' }}>
             {words.map((w, i) => (i === italicIdx ? <em key={i} style={{ fontStyle: 'italic', color: accent }}>{w} </em> : <span key={i}>{w} </span>))}
           </h1>
-          {(data.heroSubtitle || data.bio) && (
-            <p style={{ margin: hasPhoto ? '22px 0 0' : '22px auto 0', maxWidth: 560, fontSize: 'clamp(1.02rem, 1.8vw, 1.2rem)', lineHeight: 1.75, color: t.muted }}>
-              {(data.heroSubtitle || data.bio || '').slice(0, 240)}
+          {narrative && (
+            <p style={{ margin: hasPhoto ? '22px 0 0' : '22px auto 0', maxWidth: 560, fontSize: 'clamp(1.02rem, 1.8vw, 1.2rem)', lineHeight: 1.75, color: t.muted, overflowWrap: 'break-word' }}>
+              {narrative}
             </p>
           )}
           <div style={{ marginTop: 26 }}>
