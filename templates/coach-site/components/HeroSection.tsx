@@ -106,18 +106,17 @@ export default function HeroSection({ data, style, accent, t }: { data: CoachSit
         {/* Photo en arche, centrée, dessous */}
         <div style={{ maxWidth: 540, margin: '48px auto 0', padding: '0 24px' }}>
           {hasPhoto ? (
-            <div className="cs-arch" style={{ position: 'relative', aspectRatio: '4/5', borderRadius: '270px 270px 28px 28px', overflow: 'hidden', boxShadow: '0 36px 80px -32px rgba(0,0,0,0.25)' }}>
+            <div className="cs-arch" style={{ position: 'relative', aspectRatio: '4/5', borderRadius: '50% 50% 16px 16px / 62% 62% 16px 16px', overflow: 'hidden', boxShadow: '0 36px 80px -32px rgba(0,0,0,0.25)' }}>
               <Image src={data.photoUrl!} alt={data.displayName} fill priority sizes="(max-width: 768px) 92vw, 540px" style={{ objectFit: 'cover', objectPosition: 'top center' }} />
             </div>
           ) : (
-            <div className="cs-arch" style={{ aspectRatio: '4/5', borderRadius: '270px 270px 28px 28px', background: `${accent}12`, border: `1px solid ${accent}22`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14 }}>
+            <div className="cs-arch" style={{ aspectRatio: '4/5', borderRadius: '50% 50% 16px 16px / 62% 62% 16px 16px', background: `${accent}12`, border: `1px solid ${accent}22`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14 }}>
               <span style={{ ...headFont, display: 'flex', width: 96, height: 96, borderRadius: '50%', background: `${accent}22`, color: accent, alignItems: 'center', justifyContent: 'center', fontSize: 34, fontWeight: 800 }}>{initials(data.displayName)}</span>
               <p style={{ margin: 0, fontWeight: 700, color: t.ink }}>{data.displayName}</p>
             </div>
           )}
         </div>
         <div id="hero-sentinel" aria-hidden style={{ position: 'absolute', bottom: 0, left: 0, width: 1, height: 1 }} />
-        <style>{`@media (max-width:768px){.cs-arch{border-radius:180px 180px 20px 20px!important;aspect-ratio:4/5!important}}`}</style>
       </section>
     );
   }

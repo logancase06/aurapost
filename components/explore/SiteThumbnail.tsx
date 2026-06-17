@@ -48,15 +48,16 @@ export default function SiteThumbnail({ site }: { site: DemoSite }) {
   // ── CLARTÉ : centré, titre + pill, photo en ARCHE dessous ──
   if (site.style === 'clarte') {
     return (
-      <div className="relative flex aspect-[16/10] w-full flex-col items-center overflow-hidden rounded-xl px-3 pt-3" style={{ background: '#F6F4EC' }}>
+      <div className="relative flex aspect-[16/10] w-full flex-col items-center justify-center gap-1.5 overflow-hidden rounded-xl px-3 py-2.5" style={{ background: '#F6F4EC' }}>
         <StyleBadge accent={accent} style={site.style} />
         <p className="line-clamp-1 text-center text-[11px] font-bold leading-tight" style={{ color: '#2A2A28' }}>{title}</p>
-        <span className="mt-1 inline-block rounded-full px-2 py-0.5 text-[8px] font-bold text-white" style={{ background: accent }}>
+        <span className="inline-block rounded-full px-2 py-0.5 text-[8px] font-bold text-white" style={{ background: accent }}>
           Prendre RDV
         </span>
-        <div className="mt-2 w-full flex-1 overflow-hidden" style={{ borderRadius: '60px 60px 6px 6px', maxWidth: 150, marginInline: 'auto' }}>
+        {/* Arche : aspect FIXE 3/4 + rayon en % → vraie arche, cadrage identique à toute largeur */}
+        <div style={{ width: '34%', aspectRatio: '3/4', borderRadius: '50% 50% 6px 6px / 60% 60% 6px 6px', overflow: 'hidden' }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={demoPhoto(site, 360, 300)} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" style={{ objectPosition: 'top center' }} />
+          <img src={demoPhoto(site, 240, 320)} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" style={{ objectPosition: 'top center' }} />
         </div>
       </div>
     );
