@@ -32,19 +32,19 @@ export default function HeroSection({ data, style, accent, t }: { data: CoachSit
     return (
       <section id="accueil" className="cs-hero-impact" style={{ position: 'relative', background: '#0A0A0A', color: '#fff', overflow: 'hidden' }}>
         <div className="cs-hero-impact-inner" style={{ position: 'relative', zIndex: 2, width: '100%', maxWidth: 1120, margin: '0 auto', padding: '110px 24px' }}>
-          <div className="cs-hero-impact-text" style={{ maxWidth: hasPhoto ? '52%' : '100%' }}>
-            <p style={{ margin: 0, fontSize: 12, fontWeight: 600, letterSpacing: '0.26em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.55)' }}>
+          <div className="cs-hero-impact-text" style={{ maxWidth: hasPhoto ? '46%' : '100%' }}>
+            <p style={{ margin: 0, fontSize: 12, fontWeight: 600, letterSpacing: '0.26em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.55)', overflowWrap: 'break-word' }}>
               {data.displayName}{meta ? ` — ${meta}` : ''}
             </p>
-            <h1 style={{ ...headFont, margin: '18px 0 0', fontSize: 'clamp(46px, 7vw, 104px)', lineHeight: 0.95, letterSpacing: '-0.03em', textTransform: 'uppercase', whiteSpace: 'pre-line' }}>
+            <h1 style={{ ...headFont, margin: '18px 0 0', fontSize: 'clamp(46px, 6vw, 92px)', lineHeight: 0.98, letterSpacing: '-0.03em', textTransform: 'uppercase', whiteSpace: 'pre-line', overflowWrap: 'break-word' }}>
               {head ? <>{head} </> : null}
               <span style={{ color: accent }}>{last}</span>
             </h1>
             {microStats.length > 0 && (
               <div style={{ marginTop: 28, display: 'flex', flexWrap: 'wrap', gap: 18 }}>
                 {microStats.map((f, i) => (
-                  <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 14, color: 'rgba(255,255,255,0.85)' }}>
-                    <Check size={16} color="#fff" strokeWidth={2.5} /> {f.title}
+                  <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, maxWidth: '100%', fontSize: 14, color: 'rgba(255,255,255,0.85)', overflowWrap: 'break-word' }}>
+                    <Check size={16} color="#fff" strokeWidth={2.5} style={{ flexShrink: 0 }} /> {f.title}
                   </span>
                 ))}
               </div>
