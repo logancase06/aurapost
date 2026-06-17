@@ -34,7 +34,7 @@ export default function AProposSection({ data, style, accent, t }: { data: Coach
         </div>
         {data.photoUrl && (
           <div className="cs-apropos-media site-image-zoom" style={{ position: 'relative', maxWidth: 400, marginLeft: 'auto', width: '100%', aspectRatio: '4/5', ...photoStyle }}>
-            <Image src={data.photoUrl} alt={data.displayName} fill sizes="(max-width: 768px) 100vw, 40vw" style={{ objectFit: 'cover' }} />
+            <Image src={data.photoUrl} alt={data.displayName} fill sizes="(max-width: 768px) 100vw, 40vw" style={{ objectFit: 'cover', objectPosition: 'top center' }} />
           </div>
         )}
       </div>
