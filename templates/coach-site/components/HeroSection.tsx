@@ -87,13 +87,13 @@ export default function HeroSection({ data, style, accent, t }: { data: CoachSit
       <section id="accueil" className="cs-hero-clarte" style={{ position: 'relative', background: t.bg, color: t.ink }}>
         <div style={{ maxWidth: 760, margin: '0 auto', padding: '96px 24px 0', textAlign: 'center' }}>
           {meta && (
-            <p style={{ margin: 0, fontSize: 12, fontWeight: 600, letterSpacing: '0.24em', textTransform: 'uppercase', color: t.muted }}>· {meta} ·</p>
+            <p style={{ margin: 0, fontSize: 12, fontWeight: 600, letterSpacing: '0.24em', textTransform: 'uppercase', color: t.muted, overflowWrap: 'break-word' }}>· {meta} ·</p>
           )}
-          <h1 style={{ ...headFont, margin: '18px 0 0', fontSize: 'clamp(32px, 4.4vw, 58px)', lineHeight: 1.12, letterSpacing: '-0.02em' }}>
+          <h1 style={{ ...headFont, margin: '18px 0 0', fontSize: 'clamp(32px, 4.4vw, 58px)', lineHeight: 1.12, letterSpacing: '-0.02em', overflowWrap: 'break-word' }}>
             {accroche}
           </h1>
           {data.heroSubtitle && (
-            <p style={{ margin: '20px auto 0', maxWidth: 540, fontSize: 'clamp(1.05rem, 2vw, 1.2rem)', lineHeight: 1.65, color: t.muted }}>
+            <p style={{ margin: '20px auto 0', maxWidth: 540, fontSize: 'clamp(1.05rem, 2vw, 1.2rem)', lineHeight: 1.65, color: t.muted, overflowWrap: 'break-word' }}>
               {data.heroSubtitle}
             </p>
           )}
@@ -133,10 +133,10 @@ export default function HeroSection({ data, style, accent, t }: { data: CoachSit
       <div className="cs-hero-auth-grid" style={{ maxWidth: 1080, margin: '0 auto', padding: '92px 24px', display: 'grid', gridTemplateColumns: hasPhoto ? 'minmax(0,1.1fr) minmax(0,0.9fr)' : '1fr', gap: 56, alignItems: 'center' }}>
         <div style={{ maxWidth: hasPhoto ? undefined : 720, marginInline: hasPhoto ? undefined : 'auto', textAlign: hasPhoto ? 'left' : 'center' }}>
           <div aria-hidden style={{ width: 44, height: 3, background: accent, margin: hasPhoto ? '0 0 20px' : '0 auto 20px' }} />
-          <p style={{ margin: 0, fontSize: 12, fontWeight: 600, letterSpacing: '0.2em', textTransform: 'uppercase', color: t.muted }}>
+          <p style={{ margin: 0, fontSize: 12, fontWeight: 600, letterSpacing: '0.2em', textTransform: 'uppercase', color: t.muted, overflowWrap: 'break-word' }}>
             {data.displayName}{meta ? ` — ${meta}` : ''}
           </p>
-          <h1 style={{ ...headFont, margin: '14px 0 0', fontSize: 'clamp(32px, 4vw, 60px)', lineHeight: 1.16, letterSpacing: '-0.01em' }}>
+          <h1 style={{ ...headFont, margin: '14px 0 0', fontSize: 'clamp(32px, 4vw, 60px)', lineHeight: 1.16, letterSpacing: '-0.01em', overflowWrap: 'break-word' }}>
             {words.map((w, i) => (i === italicIdx ? <em key={i} style={{ fontStyle: 'italic', color: accent }}>{w} </em> : <span key={i}>{w} </span>))}
           </h1>
           {narrative && (
