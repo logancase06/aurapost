@@ -1,9 +1,9 @@
 import { demoPhoto, type DemoSite } from '@/lib/explore/sites';
-import { cn } from '@/lib/utils';
 
-// Miniature du hero d'un site démo (ratio 16:10) : VRAIE photo coach + titre superposé.
-// Pas d'iframe (10 rendus React complets seraient trop lourds dans la grille) mais plus
-// de maquette filaire grise « générée » : on capture l'esprit d'un vrai site.
+// Mini-MAQUETTE du site (pas juste une photo) : reflète la STRUCTURE du hero propre à
+// chaque style, pour que l'explorateur montre la vraie différence de mise en page.
+// Pas d'iframe (10 rendus React complets seraient trop lourds) — une maquette légère
+// fidèle à la composition. Photos recadrées par zone + object-position top (visages).
 
 const STYLE_LABEL: Record<DemoSite['style'], string> = {
   impact: 'Impact',
@@ -11,49 +11,72 @@ const STYLE_LABEL: Record<DemoSite['style'], string> = {
   authenticite: 'Authenticité',
 };
 
+function StyleBadge({ accent, style }: { accent: string; style: DemoSite['style'] }) {
+  return (
+    <span
+      className="absolute right-2 top-2 z-10 rounded-full px-1.5 py-0.5 text-[9px] font-semibold text-white backdrop-blur-sm"
+      style={{ background: `${accent}D9` }}
+    >
+      {STYLE_LABEL[style]}
+    </span>
+  );
+}
+
 export default function SiteThumbnail({ site }: { site: DemoSite }) {
   const accent = site.accentColor;
-  // Le \n des titres démo n'a pas de sens en miniature → on aplatit.
   const title = site.heroTitle.replace(/\n+/g, ' ');
-  // Voile dégradé selon le style pour garder le texte lisible sur la photo.
-  const overlay =
-    site.style === 'clarte'
-      ? 'linear-gradient(to top, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.45) 45%, rgba(255,255,255,0.05) 100%)'
-      : 'linear-gradient(to top, rgba(10,10,12,0.88) 0%, rgba(10,10,12,0.35) 50%, rgba(10,10,12,0.05) 100%)';
-  const dark = site.style !== 'clarte';
 
-  return (
-    <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl bg-zinc-200">
-      {/* Photo de fond */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={demoPhoto(site, 480, 300)}
-        alt=""
-        loading="lazy"
-        decoding="async"
-        className="absolute inset-0 h-full w-full object-cover"
-      />
-      {/* Voile dégradé pour la lisibilité */}
-      <div aria-hidden className="absolute inset-0" style={{ background: overlay }} />
-      {/* Barre de couleur accent en haut */}
-      <div className="absolute inset-x-0 top-0 h-1" style={{ background: accent }} />
-
-      {/* Titre superposé en bas */}
-      <div className="absolute inset-x-0 bottom-0 p-3.5">
-        <div className="mb-1.5 h-1 w-8 rounded-full" style={{ background: accent }} />
-        <p className={cn('line-clamp-2 text-xs font-bold leading-tight', dark ? 'text-white' : 'text-gray-900')}>{title}</p>
-        <p className={cn('mt-0.5 truncate text-[10px]', dark ? 'text-white/70' : 'text-gray-600')}>
-          {site.heroSubtitle.replace(/\n+/g, ' ')}
-        </p>
+  // ── IMPACT : photo plein cadre + scrim bas-gauche + titre CAPS + bouton ──
+  if (site.style === 'impact') {
+    return (
+      <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl bg-zinc-950">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={demoPhoto(site, 640, 400)} alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" style={{ objectPosition: 'top center' }} />
+        <div aria-hidden className="absolute inset-0" style={{ background: 'linear-gradient(to top right, rgba(10,10,12,0.92) 0%, rgba(10,10,12,0.5) 42%, rgba(10,10,12,0) 72%)' }} />
+        <StyleBadge accent={accent} style={site.style} />
+        <div className="absolute inset-x-0 bottom-0 p-3">
+          <div className="mb-1.5 h-1 w-7 rounded-full" style={{ background: accent }} />
+          <p className="line-clamp-2 text-xs font-extrabold uppercase leading-tight tracking-tight text-white">{title}</p>
+          <span className="mt-2 inline-block rounded px-2 py-0.5 text-[8px] font-bold uppercase tracking-wide text-white" style={{ background: accent }}>
+            Réserver
+          </span>
+        </div>
       </div>
+    );
+  }
 
-      {/* Badge style en coin haut droite */}
-      <span
-        className="absolute right-2 top-2 rounded-full px-1.5 py-0.5 text-[9px] font-semibold text-white backdrop-blur-sm"
-        style={{ background: `${accent}D9` }}
-      >
-        {STYLE_LABEL[site.style]}
-      </span>
+  // ── CLARTÉ : centré, titre + pill, photo en ARCHE dessous ──
+  if (site.style === 'clarte') {
+    return (
+      <div className="relative flex aspect-[16/10] w-full flex-col items-center overflow-hidden rounded-xl px-3 pt-3" style={{ background: '#F6F4EC' }}>
+        <StyleBadge accent={accent} style={site.style} />
+        <p className="line-clamp-1 text-center text-[11px] font-bold leading-tight" style={{ color: '#2A2A28' }}>{title}</p>
+        <span className="mt-1 inline-block rounded-full px-2 py-0.5 text-[8px] font-bold text-white" style={{ background: accent }}>
+          Prendre RDV
+        </span>
+        <div className="mt-2 w-full flex-1 overflow-hidden" style={{ borderRadius: '60px 60px 6px 6px', maxWidth: 150, marginInline: 'auto' }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={demoPhoto(site, 360, 300)} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" style={{ objectPosition: 'top center' }} />
+        </div>
+      </div>
+    );
+  }
+
+  // ── AUTHENTICITÉ : texte à gauche + portrait à droite ──
+  return (
+    <div className="relative grid aspect-[16/10] w-full grid-cols-[1fr_0.8fr] items-center gap-2 overflow-hidden rounded-xl p-3" style={{ background: '#FAF6F0' }}>
+      <StyleBadge accent={accent} style={site.style} />
+      <div className="min-w-0">
+        <div className="mb-1.5 h-0.5 w-6 rounded-full" style={{ background: accent }} />
+        <p className="line-clamp-3 text-[11px] font-semibold italic leading-tight" style={{ color: '#2A2622', fontFamily: 'Georgia, serif' }}>{title}</p>
+        <span className="mt-1.5 inline-block text-[8px] font-bold underline" style={{ color: accent, textUnderlineOffset: 2 }}>
+          Me contacter →
+        </span>
+      </div>
+      <div className="aspect-[4/5] overflow-hidden rounded-lg">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={demoPhoto(site, 280, 350)} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" style={{ objectPosition: 'top center' }} />
+      </div>
     </div>
   );
 }
