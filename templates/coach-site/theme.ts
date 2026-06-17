@@ -78,10 +78,11 @@ export interface Theme {
 
 export function themeFor(style: SiteStyle): Theme {
   if (style === 'clarte') {
+    // Palette « wellness » : beige chaud épuré (réf. yoga/bien-être), pas un blanc froid.
     return {
-      bg: '#FAFAFA', surface: '#FFFFFF', ink: '#111827', muted: '#6B7280', border: '#E5E7EB',
+      bg: '#F6F4EC', surface: '#FFFFFF', ink: '#2A2A28', muted: '#6F6B61', border: '#E6E1D5',
       fontBody: inter.style.fontFamily, fontHead: jakarta.style.fontFamily,
-      headWeight: 800, headTransform: 'none', headTracking: '-0.02em', heroDark: false,
+      headWeight: 700, headTransform: 'none', headTracking: '-0.02em', heroDark: false,
     };
   }
   if (style === 'authenticite') {
