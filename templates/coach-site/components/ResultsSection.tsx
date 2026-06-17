@@ -15,7 +15,7 @@ export default function ResultsSection({ data, style, accent, t }: { data: Coach
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 40 }}>
           {results.map((r, i) => (
             <div key={i} style={{ borderTop: `3px solid ${accent}`, paddingTop: 24 }}>
-              <p style={{ fontSize: 'clamp(1.2rem, 2.6vw, 1.5rem)', fontWeight: 600, lineHeight: 1.4, margin: 0 }}>{r.result}</p>
+              <p style={{ fontSize: 'clamp(1.2rem, 2.6vw, 1.5rem)', fontWeight: 600, lineHeight: 1.4, margin: 0, overflowWrap: 'break-word' }}>{r.result}</p>
               <p style={{ margin: '16px 0 0', fontSize: 14, letterSpacing: '0.04em', color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase' }}>
                 {r.name}{r.city ? ` · ${r.city}` : ''}
               </p>

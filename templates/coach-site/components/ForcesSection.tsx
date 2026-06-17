@@ -41,7 +41,7 @@ export default function ForcesSection({ data, style, accent, t }: { data: CoachS
             <Reveal key={i} delay={(i + 1) * 100}>
               <div className="cs-force-impact" style={{ position: 'relative', overflow: 'hidden', background: '#111111', border: '1px solid rgba(255,255,255,0.06)', borderLeft: '4px solid transparent', borderRadius: 12, padding: 28 }}>
                 <span aria-hidden style={{ ...headFont, position: 'absolute', top: -16, right: 16, fontSize: 88, lineHeight: 1, color: accent, opacity: 0.07, pointerEvents: 'none', userSelect: 'none' }}>{String(i + 1).padStart(2, '0')}</span>
-                <p style={{ position: 'relative', margin: 0, fontSize: 17, fontWeight: 700, color: '#fff' }}>{f.title}</p>
+                <p style={{ position: 'relative', margin: 0, fontSize: 17, fontWeight: 700, color: '#fff', overflowWrap: 'break-word' }}>{f.title}</p>
                 {f.description && <p style={{ position: 'relative', margin: '8px 0 0', fontSize: 14, lineHeight: 1.55, color: '#9ca3af' }}>{f.description}</p>}
               </div>
             </Reveal>
@@ -67,7 +67,7 @@ export default function ForcesSection({ data, style, accent, t }: { data: CoachS
                   style={{ display: 'grid', gridTemplateColumns: '34px minmax(0,0.85fr) minmax(0,1.45fr)', gap: 28, alignItems: 'baseline', padding: '30px 0', borderTop: i === 0 ? 'none' : `1px solid ${t.border}` }}
                 >
                   <Icon size={22} color={accent} style={{ position: 'relative', top: 4 }} />
-                  <h3 style={{ margin: 0, fontSize: 'clamp(1.15rem,2.2vw,1.45rem)', fontWeight: 800, color: t.ink, lineHeight: 1.25 }}>{f.title}</h3>
+                  <h3 style={{ margin: 0, fontSize: 'clamp(1.15rem,2.2vw,1.45rem)', fontWeight: 800, color: t.ink, lineHeight: 1.25, overflowWrap: 'break-word' }}>{f.title}</h3>
                   {f.description ? <p style={{ margin: 0, fontSize: 16, lineHeight: 1.7, color: t.muted }}>{f.description}</p> : <span />}
                 </div>
               </Reveal>
@@ -88,8 +88,8 @@ export default function ForcesSection({ data, style, accent, t }: { data: CoachS
       <div id="forces" className="cs-forces-auth" style={{ display: 'grid', gridTemplateColumns: forces.length === 3 ? '2fr 1fr' : 'repeat(auto-fit, minmax(240px, 1fr))', gap: 20 }}>
         {forces.map((f, i) => (
           <Reveal key={i} delay={(i + 1) * 100} style={{ gridRow: forces.length === 3 && i === 0 ? 'span 2' : 'auto', background: '#FDFBF7', borderLeft: `3px solid ${accent}`, borderRadius: 8, padding: '24px 24px 24px 20px' }}>
-            <p style={{ margin: 0, fontSize: 18, fontWeight: 700, color: t.ink }}>{f.title}</p>
-            {f.description && <p style={{ margin: '10px 0 0', fontSize: 15, lineHeight: 1.6, color: t.muted }}>{f.description}</p>}
+            <p style={{ margin: 0, fontSize: 18, fontWeight: 700, color: t.ink, overflowWrap: 'break-word' }}>{f.title}</p>
+            {f.description && <p style={{ margin: '10px 0 0', fontSize: 15, lineHeight: 1.6, color: t.muted, overflowWrap: 'break-word' }}>{f.description}</p>}
             {i === 0 && pull && (
               <p style={{ margin: '16px 0 0', paddingTop: 14, borderTop: `1px solid ${accent}33`, fontStyle: 'italic', fontSize: 15, lineHeight: 1.6, color: t.ink }}>
                 « {pull.length > 90 ? `${pull.slice(0, 90).trimEnd()}…` : pull} »

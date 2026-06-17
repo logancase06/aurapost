@@ -28,6 +28,7 @@ export default function SectionTitle({
     lineHeight: 1.1,
     margin: '0 0 48px',
     color: color ?? t.ink,
+    overflowWrap: 'break-word',
   };
 
   if (style === 'clarte') {
