@@ -10,6 +10,7 @@ import { logActivity } from './db/activity';
 import { sendMonthlyPostsEmail } from './email';
 import { currentMonth } from './utils';
 import { logError, logEvent } from './logger';
+import { notifyAdminFailure, notifyJobsReconciled } from './alerting';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Génération asynchrone : un job en base, exécuté en arrière-plan (after()), avec
@@ -64,6 +65,7 @@ export async function getJob(jobId: string, tenantId: string): Promise<Generatio
 
 export async function failJob(jobId: string, error: string): Promise<void> {
   await db.update(generationJobs).set({ status: 'failed', errorMessage: error.slice(0, 500), completedAt: new Date().toISOString() }).where(eq(generationJobs.id, jobId));
+  void notifyAdminFailure('generation-job-failed', { jobId, error: error.slice(0, 200) });
 }
 
 /** Supprime les jobs de plus de 7 jours (nettoyage). */
@@ -103,6 +105,9 @@ export async function reconcileStuckJobs(): Promise<{ failed: number; locksRelea
   const tenantIds = [...new Set(stuck.map((s) => s.tenantId))];
   await db.update(tenants).set({ generatingAt: null }).where(inArray(tenants.id, tenantIds));
 
+  if (stuck.length > 0) {
+    void notifyJobsReconciled(stuck.length, tenantIds.length);
+  }
   return { failed: stuck.length, locksReleased: tenantIds.length };
 }
 
