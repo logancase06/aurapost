@@ -1,5 +1,5 @@
 import { Redis } from '@upstash/redis';
-import { logError } from './logger';
+import { logError, logWarn } from './logger';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Garde distribué de génération (multi-lambda) via Upstash Redis.
@@ -19,7 +19,14 @@ function getRedis(): Redis | null {
   if (_redis !== undefined) return _redis;
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-  _redis = url && token ? new Redis({ url, token }) : null;
+  if (!url || !token) {
+    if (process.env.NODE_ENV === 'production') {
+      logWarn('[rate-limit] fallback mémoire actif — rate limiting inopérant en multi-Lambda. Configurer UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN en prod.');
+    }
+    _redis = null;
+  } else {
+    _redis = new Redis({ url, token });
+  }
   return _redis;
 }
 
