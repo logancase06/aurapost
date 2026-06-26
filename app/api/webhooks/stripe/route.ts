@@ -110,8 +110,10 @@ export async function POST(req: NextRequest) {
         const inv = event.data.object as { customer: string };
         const tenantId = await findTenantByStripeCustomer(inv.customer);
         if (tenantId) {
-          // Période de grâce : on note l'échec, on garde l'accès (l'expiration dure
-          // jouera via planExpiresAt). On prévient le coach.
+          // Période de grâce : on note l'échec, on garde l'accès et on prévient le coach.
+          // Stripe relance automatiquement (Smart Retries). Quand les retries s'épuisent,
+          // Stripe émet customer.subscription.deleted → plan='starter'. Filet côté serveur :
+          // /api/cron/payment-grace vérifie paymentFailedAt > GRACE_PERIOD_DAYS (1×/jour).
           await db.update(tenants).set({ paymentFailedAt: new Date().toISOString(), updatedAt: new Date().toISOString() }).where(eq(tenants.id, tenantId));
           const o = await owner(tenantId);
           if (o) await sendPaymentFailedEmail(o, GRACE_DAYS);
