@@ -1,9 +1,10 @@
-import { nanoid } from 'nanoid';
+﻿import { nanoid } from 'nanoid';
 import { and, desc, eq, sql } from 'drizzle-orm';
 import { db } from './index';
 import { referralCodes, referrals, tenants, users } from './schema';
 import { logError } from '@/lib/logger';
 import { sendReferralJoinedEmail } from '@/lib/email';
+import { REFERRAL_MAX_MONTHS } from '@/lib/constants';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Parrainage : chaque coach a un code unique (lien /ref/[code]). Un filleul qui
@@ -86,11 +87,19 @@ export async function recordReferral(input: {
       createdAt: now,
     });
 
-    // Crédite 1 mois gratuit à chacun (prolonge planExpiresAt).
-    await Promise.all([
-      extendFreeMonth(owner.tenantId),
-      extendFreeMonth(input.refereeTenantId),
-    ]);
+    // Crédite 1 mois gratuit : le filleul toujours ; le parrain seulement s'il n'a
+    // pas atteint le plafond REFERRAL_MAX_MONTHS (compte après l'insert ci-dessus).
+    const referrerCountRow = await db
+      .select({ n: sql<number>`count(*)` })
+      .from(referrals)
+      .where(and(eq(referrals.referrerTenantId, owner.tenantId), eq(referrals.status, 'credited')));
+    const referrerCredited = Number(referrerCountRow[0]?.n ?? 0);
+
+    const ops: Promise<void>[] = [extendFreeMonth(input.refereeTenantId)];
+    if (referrerCredited <= REFERRAL_MAX_MONTHS) {
+      ops.push(extendFreeMonth(owner.tenantId));
+    }
+    await Promise.all(ops);
 
     return owner.tenantId;
   } catch (err) {

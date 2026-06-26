@@ -1,4 +1,4 @@
-import { logError, logInfo, logEvent } from './logger';
+﻿import { logError, logInfo, logEvent } from './logger';
 import { isUnsubscribed, getUnsubscribeUrl } from './unsubscribe';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -245,7 +245,23 @@ export function referralJoinedHtml(name: string, refereeName: string): string {
 }
 
 export function sendReferralJoinedEmail(to: { email: string; name: string }, refereeName: string) {
-  return sendEmail(to, 'Quelqu’un a rejoint AuraPost grâce à vous ✦', referralJoinedHtml(to.name, refereeName));
+  return sendEmail(to, "Quelqu'un a rejoint AuraPost grâce à vous ✦", referralJoinedHtml(to.name, refereeName));
+}
+
+export function referralWelcomeHtml(name: string, referrerName: string): string {
+  return shell(`
+    <tr><td style="padding:32px">
+      <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1e1b4b">Bienvenue — 1 mois offert ✦</h1>
+      <p style="margin:0 0 24px;color:#6b7280;font-size:15px;line-height:1.6">
+        Bonjour ${escHtml(name)}, vous venez de rejoindre AuraPost grâce à <strong>${escHtml(referrerName)}</strong>.
+        <strong>1 mois gratuit</strong> a été crédité sur votre compte. Profitez-en pour découvrir la plateforme !
+      </p>
+      ${button(`${APP_URL()}/onboarding`, 'Configurer mon profil →')}
+    </td></tr>`);
+}
+
+export function sendReferralWelcomeEmail(to: { email: string; name: string }, referrerName: string) {
+  return sendEmail(to, 'Bienvenue sur AuraPost — 1 mois offert ✦', referralWelcomeHtml(to.name, referrerName));
 }
 
 // ── Cycle de vie facturation ─────────────────────────────────────────────────
@@ -411,4 +427,32 @@ export function sendContactEmail(
       <div style="background:#f5f3ff;border-radius:10px;padding:16px;color:#374151;font-size:14px;line-height:1.6;white-space:pre-line">${escHtml(from.message)}</div>
     </td></tr>`);
   return sendEmail(to, `Nouveau message de ${from.name} — AuraPost`, html);
+}
+
+/** Accusé de réception envoyé à l'utilisateur après création d'un ticket de support. */
+export function sendSupportConfirmationEmail(
+  to: { email: string; name: string },
+  ticket: { id: string; subject: string; message: string }
+) {
+  const html = shell(`
+    <tr><td style="padding:32px">
+      <h1 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#1e1b4b">Votre demande a bien été reçue ✦</h1>
+      <p style="margin:0 0 16px;color:#6b7280;font-size:15px;line-height:1.6">
+        Bonjour ${escHtml(to.name)},<br><br>
+        Nous avons bien enregistré votre demande et nous vous répondrons <strong>sous 24–48 h</strong> (jours ouvrés).
+      </p>
+      <div style="background:#f5f3ff;border-radius:10px;padding:16px;color:#374151;font-size:14px;line-height:1.6;margin-bottom:24px">
+        <p style="margin:0 0 8px;font-weight:600;color:#1e1b4b">Récapitulatif de votre demande</p>
+        <p style="margin:0 0 4px"><strong>Référence :</strong> <span style="font-family:monospace">${escHtml(ticket.id.slice(0, 8).toUpperCase())}</span></p>
+        <p style="margin:0 0 4px"><strong>Sujet :</strong> ${escHtml(ticket.subject)}</p>
+        <p style="margin:4px 0 0;color:#6b7280;font-size:13px;white-space:pre-line">${escHtml(ticket.message.slice(0, 300))}${ticket.message.length > 300 ? '…' : ''}</p>
+      </div>
+      ${button(`${APP_URL()}/dashboard`, 'Accéder à mon espace →')}
+    </td></tr>`);
+  return sendEmail(
+    to,
+    'Votre demande a bien été reçue — AuraPost',
+    html,
+    `Bonjour ${to.name},\n\nVotre demande a bien été reçue.\nRéférence : ${ticket.id.slice(0, 8).toUpperCase()}\nSujet : ${ticket.subject}\n\nNous vous répondrons sous 24–48 h (jours ouvrés).\n\nL'équipe AuraPost`
+  );
 }
