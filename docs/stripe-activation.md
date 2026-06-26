@@ -107,3 +107,17 @@ Aucune action supplémentaire requise.
 | Grâce sur `invoice.payment_failed` | ✅ Plan conservé, email envoyé, Stripe gère les retries |
 | Passage `starter` sur annulation | ✅ `customer.subscription.deleted` → `plan='starter'` |
 | Middleware exclut la route webhook du JWT | ✅ `proxy.ts` ligne 111 — early return avant tout contrôle JWT |
+
+---
+
+## Variables d'environnement obligatoires en prod (hors Stripe)
+
+Ces variables ne sont pas liées à Stripe mais sont **bloquantes au lancement** :
+
+| Variable | Rôle | Conséquence si absente |
+|---|---|---|
+| `GENERATION_ASYNC=true` | Mode async génération IA | Timeout Netlify 26s sur ~50 % des générations |
+| `R2_PUBLIC_URL` | Domaine CDN photos | Photos des sites vitrines bloquées par CSP |
+| `UPSTASH_REDIS_REST_URL` + `TOKEN` | Rate limiting distribué | Rate limiting inopérant sur multi-Lambda |
+| `ADMIN_ALERT_EMAIL` | Alertes jobs échoués | Alertes silencieuses (logError uniquement) |
+| `CRON_SECRET` | Protection des crons | Routes `/api/cron/*` accessibles sans auth |
