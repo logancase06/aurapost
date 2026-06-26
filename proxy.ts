@@ -32,6 +32,14 @@ function isMemRateLimited(ip: string): boolean {
 // (Resend est appelé côté serveur uniquement — pas besoin de l'autoriser ici.)
 const APP_DOMAIN = process.env.APP_DOMAIN ?? 'aurapost.fr';
 
+// Domaine CDN/R2 pour les photos des sites vitrines (obligatoire en prod).
+// ex: https://media.aurapost.fr → on extrait l'origine pour img-src.
+const R2_ORIGIN = (() => {
+  const raw = process.env.R2_PUBLIC_URL;
+  if (!raw) return '';
+  try { return new URL(raw).origin; } catch { return ''; }
+})();
+
 // `framable` : autorise le cadrage par notre propre app (aperçu live du site dans
 // l'éditeur). Réservé aux routes /site/* — restreint à 'self' + nos sous-domaines,
 // jamais ouvert à tous (anti-clickjacking).
@@ -51,7 +59,7 @@ function buildCSP(framable: boolean): string {
     "default-src 'self'",
     scriptSrc,
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob: https://images.unsplash.com https://i.pravatar.cc https://picsum.photos",
+    `img-src 'self' data: blob: https://images.unsplash.com https://i.pravatar.cc https://picsum.photos${R2_ORIGIN ? ` ${R2_ORIGIN}` : ''}`,
     "font-src 'self' data:",
     connectSrc,
     "object-src 'none'",
