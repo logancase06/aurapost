@@ -60,6 +60,9 @@ export async function POST(req: NextRequest) {
         };
         const tenantId = s.metadata?.tenantId;
         if (tenantId) {
+          if (!s.metadata?.plan) {
+            logError('[stripe] metadata.plan absente — fallback content_only', { sessionId: s.id, tenantId });
+          }
           await upsertSubscription({
             tenantId,
             plan: s.metadata?.plan ?? 'content_only',
@@ -67,6 +70,8 @@ export async function POST(req: NextRequest) {
             stripeCustomerId: s.customer ?? null,
             stripeSubscriptionId: s.subscription ?? null,
           });
+        } else {
+          logError('[stripe] checkout.session.completed sans tenantId', { sessionId: s.id });
         }
         break;
       }
