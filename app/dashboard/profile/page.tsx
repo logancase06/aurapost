@@ -4,6 +4,8 @@ import { db } from '@/lib/db';
 import { coachProfiles } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { listPhotos } from '@/lib/db/photos';
+import { countEditedThisMonth } from '@/lib/db/edited-photos';
+import { getPlanLimits } from '@/lib/plans';
 import { parseAnalysis, InstagramAnalysisSchema, ReviewsAnalysisSchema } from '@/lib/validation';
 import DashboardShell from '../DashboardShell';
 import ProfileEditor, { type InitialProfile } from './ProfileEditor';
@@ -42,6 +44,8 @@ export default async function ProfilePage() {
   if (!prof) redirect('/onboarding');
 
   const photos = await listPhotos(tenantId, 20);
+  const aiEditsMax = getPlanLimits(session.user.plan).aiEditsMax;
+  const aiEditsUsed = aiEditsMax > 0 ? await countEditedThisMonth(tenantId) : 0;
   const ig = parseAnalysis(prof.instagramAnalysis, InstagramAnalysisSchema);
   const rv = parseAnalysis(prof.reviewsAnalysis, ReviewsAnalysisSchema);
 
@@ -61,6 +65,8 @@ export default async function ProfilePage() {
     reviewsText: prof.reviewsText ?? '',
     reviewStrengths: rv?.strengths ?? [],
     photos,
+    aiEditsMax,
+    aiEditsUsed,
   };
 
   return (
