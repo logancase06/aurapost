@@ -1,5 +1,5 @@
 ﻿import type { NextRequest } from 'next/server';
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import { db } from '@/lib/db';
 import { users, magicTokens } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
@@ -103,7 +103,6 @@ export async function POST(req: NextRequest) {
           body: "1 mois gratuit vient d'être crédité sur votre compte.",
           href: '/dashboard/referral',
         });
-        void notifyReferrerByEmail(referrerTenantId, name.trim());
 
         // Notifie le filleul (nouveau) — email + in-app
         await createNotification({
@@ -113,19 +112,20 @@ export async function POST(req: NextRequest) {
           body: 'Vous avez rejoint AuraPost via un lien de parrainage. 1 mois offert sur votre compte.',
           href: '/dashboard',
         });
-        // Récupère le nom du parrain pour l'email filleul (best-effort)
-        void (async () => {
+        // Emails parrain + filleul dans after() pour survivre au freeze Lambda (fix #10)
+        const capturedReferrerTenantId = referrerTenantId;
+        const capturedRefereeName = name.trim();
+        const capturedRefereeEmail = normalizedEmail;
+        after(async () => {
+          await notifyReferrerByEmail(capturedReferrerTenantId, capturedRefereeName);
           try {
-            const { db: dbInst } = await import('@/lib/db');
-            const { users: usersTable } = await import('@/lib/db/schema');
-            const { eq: eqFn } = await import('drizzle-orm');
-            const rows = await dbInst.select({ name: usersTable.fullName }).from(usersTable).where(eqFn(usersTable.tenantId, referrerTenantId)).limit(1);
+            const rows = await db.select({ name: users.fullName }).from(users).where(eq(users.tenantId, capturedReferrerTenantId)).limit(1);
             const referrerName = rows[0]?.name || 'un coach AuraPost';
-            await sendReferralWelcomeEmail({ email: normalizedEmail, name: name.trim() }, referrerName);
+            await sendReferralWelcomeEmail({ email: capturedRefereeEmail, name: capturedRefereeName }, referrerName);
           } catch (err) {
             logError('[register] referral welcome email', { error: String(err) });
           }
-        })();
+        });
       }
     }
 
@@ -137,28 +137,31 @@ export async function POST(req: NextRequest) {
       welcomeEmail(name.trim(), undefined, parsed.data.locale ?? 'fr')
     ).catch((err) => logError('[register] welcome email', { error: String(err) }));
 
-    // Email de vérification — séquencé pour garantir la persistance du token avant envoi.
-    (async () => {
+    // Email de vérification — dans after() pour garantir que l'insert token ET l'envoi
+    // email survivent au freeze Lambda post-réponse (fix #1).
+    const capturedEmail = normalizedEmail;
+    const capturedName = name.trim();
+    after(async () => {
       try {
         const verifyToken = nanoid(32);
         const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
         await db.insert(magicTokens).values({
           id: nanoid(),
-          email: normalizedEmail,
+          email: capturedEmail,
           token: verifyToken,
           expiresAt,
           createdAt: new Date().toISOString(),
         });
         const verifyUrl = `${APP_URL}/api/auth/verify-email?token=${verifyToken}`;
         await sendEmail(
-          { email: normalizedEmail, name: name.trim() },
+          { email: capturedEmail, name: capturedName },
           'Vérifiez votre adresse email — AuraPost',
-          verifyEmailHtml(name.trim(), verifyUrl)
+          verifyEmailHtml(capturedName, verifyUrl)
         );
       } catch (err) {
         logError('[register] verify email flow', { error: String(err) });
       }
-    })();
+    });
 
     logInfo('[register] Compte créé', { userId, tenantId });
     logEvent('auth.register', tenantId, { userId });
