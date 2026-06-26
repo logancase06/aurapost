@@ -1,8 +1,10 @@
 ﻿import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { siteVisits } from '@/lib/db/schema';
+import { siteVisits, websites } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { websites } from '@/lib/db/schema';
+import { checkAuthRateLimit } from '@/lib/auth-rate-limit';
+
+const SUBDOMAIN_RE = /^[a-z0-9-]{1,63}$/;
 
 /**
  * POST /api/track/site-visit
@@ -25,9 +27,18 @@ import { websites } from '@/lib/db/schema';
  */
 export async function POST(req: Request) {
   try {
+    // Rate limit dédié : 8 pings/min/IP — plus strict que le global proxy (30/min)
+    // pour décourager le flooding des stats de visite.
+    const ip =
+      (req.headers.get('x-nf-client-connection-ip') ??
+        req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
+        'unknown');
+    const rl = await checkAuthRateLimit(`track:${ip}`, 8, 60_000);
+    if (!rl.allowed) return new NextResponse(null, { status: 429 });
+
     const body = await req.json();
-    const subdomain = (body.subdomain || '').trim().toLowerCase().slice(0, 64);
-    if (!subdomain) return new NextResponse(null, { status: 204 });
+    const subdomain = (body.subdomain || '').trim().toLowerCase().slice(0, 63);
+    if (!subdomain || !SUBDOMAIN_RE.test(subdomain)) return new NextResponse(null, { status: 204 });
 
     // Résolution tenantId depuis le subdomain (nécessaire pour isoler les stats).
     const rows = await db
