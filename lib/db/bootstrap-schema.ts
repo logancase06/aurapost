@@ -118,7 +118,7 @@ CREATE TABLE IF NOT EXISTS subscriptions (
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
-CREATE INDEX IF NOT EXISTS subscriptions_tenant_idx ON subscriptions (tenant_id);
+CREATE UNIQUE INDEX IF NOT EXISTS subscriptions_tenant_unique_idx ON subscriptions (tenant_id);
 
 CREATE TABLE IF NOT EXISTS websites (
   id TEXT PRIMARY KEY,
