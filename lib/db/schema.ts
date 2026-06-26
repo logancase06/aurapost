@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, index, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AuraPost — schéma multi-tenant strict (Drizzle / Turso).
@@ -165,7 +165,7 @@ export const subscriptions = sqliteTable(
     updatedAt: text('updated_at').notNull(),
   },
   (t) => ({
-    tenantIdx: index('subscriptions_tenant_idx').on(t.tenantId),
+    tenantIdx: uniqueIndex('subscriptions_tenant_unique_idx').on(t.tenantId),
   })
 );
 

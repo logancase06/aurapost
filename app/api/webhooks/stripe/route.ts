@@ -54,6 +54,7 @@ export async function POST(req: NextRequest) {
     switch (event.type) {
       case 'checkout.session.completed': {
         const s = event.data.object as {
+          id: string;
           customer?: string;
           subscription?: string;
           metadata?: { tenantId?: string; plan?: string };

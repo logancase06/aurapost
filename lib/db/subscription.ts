@@ -40,26 +40,15 @@ export interface UpsertSubscriptionInput {
   currentPeriodEnd?: string | null;
 }
 
-/** Crée/met à jour la ligne subscriptions ET synchronise tenants.plan. */
+/** Crée/met à jour la ligne subscriptions ET synchronise tenants.plan.
+ *  Atomique via INSERT … ON CONFLICT(tenant_id) DO UPDATE — deux webhooks Stripe
+ *  simultanés ne peuvent pas créer deux lignes (race condition éliminée).
+ */
 export async function upsertSubscription(input: UpsertSubscriptionInput): Promise<void> {
   const now = new Date().toISOString();
-  const existing = await getSubscription(input.tenantId);
-
-  if (existing) {
-    await db
-      .update(subscriptions)
-      .set({
-        plan: input.plan,
-        status: input.status,
-        stripeCustomerId: input.stripeCustomerId ?? existing.stripeCustomerId,
-        stripeSubscriptionId: input.stripeSubscriptionId ?? existing.stripeSubscriptionId,
-        stripePriceId: input.stripePriceId ?? undefined,
-        currentPeriodEnd: input.currentPeriodEnd ?? existing.currentPeriodEnd,
-        updatedAt: now,
-      })
-      .where(eq(subscriptions.id, existing.id));
-  } else {
-    await db.insert(subscriptions).values({
+  await db
+    .insert(subscriptions)
+    .values({
       id: nanoid(),
       tenantId: input.tenantId,
       plan: input.plan,
@@ -70,8 +59,19 @@ export async function upsertSubscription(input: UpsertSubscriptionInput): Promis
       currentPeriodEnd: input.currentPeriodEnd ?? null,
       createdAt: now,
       updatedAt: now,
+    })
+    .onConflictDoUpdate({
+      target: subscriptions.tenantId,
+      set: {
+        plan: input.plan,
+        status: input.status,
+        stripeCustomerId: input.stripeCustomerId ?? undefined,
+        stripeSubscriptionId: input.stripeSubscriptionId ?? undefined,
+        stripePriceId: input.stripePriceId ?? undefined,
+        currentPeriodEnd: input.currentPeriodEnd ?? undefined,
+        updatedAt: now,
+      },
     });
-  }
 
   // Synchronise le plan effectif du tenant (source de vérité pour le gating).
   // 'past_due' garde le plan actif pendant la période de grâce (l'expiration réelle
