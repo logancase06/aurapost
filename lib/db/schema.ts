@@ -208,6 +208,37 @@ export const magicTokens = sqliteTable(
   })
 );
 
+/**
+ * Visites des sites vitrines des coachs (Chantier 3 — Analytics Volet A).
+ *
+ * RGPD/CNIL : aucune IP stockée, aucun cookie, aucun identifiant persistant lié
+ * à une personne physique. Seuls pays, catégorie d'appareil et referrer (domaine,
+ * tronqué) sont conservés. La combinaison pays+device ne permet pas d'identifier
+ * un individu avec une probabilité élevée (exigence CNIL 2020-091 art. 5).
+ *
+ * Exemption "audience measurement" CNIL délibération 2020-091 art. 5 :
+ *  - finalité unique : mesure d'audience propriétaire
+ *  - pas de croisement avec d'autres traitements
+ *  - pas de ré-identification possible
+ * La détermination de licéité finale incombe au responsable de traitement (humain/DPO).
+ */
+export const siteVisits = sqliteTable(
+  'site_visits',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    tenantId: text('tenant_id').notNull(),
+    subdomain: text('subdomain').notNull(),
+    visitedAt: integer('visited_at', { mode: 'timestamp' }).notNull(),
+    referrer: text('referrer'),    // domaine source (ex: "google.com"), pas URL complète
+    country: text('country'),      // code ISO-2 dérivé de l'en-tête CF-IPCountry (Cloudflare)
+    device: text('device'),        // 'mobile' | 'tablet' | 'desktop' — User-Agent catégorisé
+  },
+  (t) => ({
+    tenantDateIdx: index('site_visits_tenant_date_idx').on(t.tenantId, t.visitedAt),
+    subdomainIdx: index('site_visits_subdomain_idx').on(t.subdomain),
+  })
+);
+
 // Mapping code de parrainage → coach (référent). Un code unique par tenant.
 export const referralCodes = sqliteTable(
   'referral_codes',

@@ -148,6 +148,18 @@ CREATE TABLE IF NOT EXISTS magic_tokens (
 CREATE INDEX IF NOT EXISTS magic_tokens_token_idx ON magic_tokens (token);
 CREATE INDEX IF NOT EXISTS magic_tokens_email_idx ON magic_tokens (email);
 
+CREATE TABLE IF NOT EXISTS site_visits (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  tenant_id   TEXT    NOT NULL,
+  subdomain   TEXT    NOT NULL,
+  visited_at  INTEGER NOT NULL,
+  referrer    TEXT,
+  country     TEXT,
+  device      TEXT
+);
+CREATE INDEX IF NOT EXISTS site_visits_tenant_date_idx ON site_visits (tenant_id, visited_at);
+CREATE INDEX IF NOT EXISTS site_visits_subdomain_idx ON site_visits (subdomain);
+
 CREATE TABLE IF NOT EXISTS referral_codes (
   code TEXT PRIMARY KEY,
   tenant_id TEXT NOT NULL,

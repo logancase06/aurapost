@@ -1,6 +1,6 @@
-import { db } from './index';
-import { generatedPosts, coachProfiles } from './schema';
-import { and, eq, sql } from 'drizzle-orm';
+﻿import { db } from './index';
+import { generatedPosts, coachProfiles, siteVisits } from './schema';
+import { and, eq, gte, sql } from 'drizzle-orm';
 
 export interface CoachAnalytics {
   total: number;
@@ -65,6 +65,76 @@ export async function getCoachAnalytics(tenantId: string): Promise<CoachAnalytic
   }
 
   return { total, approved, rejected, approvalRate, byTheme, byMonth, suggestion };
+}
+
+export interface SiteVisitStats {
+  totalVisits: number;
+  last30Days: number;
+  byDay: { day: string; count: number }[];          // 30 derniers jours, format YYYY-MM-DD
+  byDevice: { device: string; count: number }[];
+  byCountry: { country: string; count: number }[];
+  topReferrers: { referrer: string; count: number }[];
+}
+
+/**
+ * Stats de visite pour le site vitrine d'un tenant.
+ * Données agrégées uniquement — aucune donnée personnelle dans la réponse.
+ */
+export async function getSiteVisitStats(tenantId: string): Promise<SiteVisitStats> {
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+  const [totalRow] = await db
+    .select({ c: sql<number>`count(*)` })
+    .from(siteVisits)
+    .where(eq(siteVisits.tenantId, tenantId));
+
+  const [last30Row] = await db
+    .select({ c: sql<number>`count(*)` })
+    .from(siteVisits)
+    .where(and(eq(siteVisits.tenantId, tenantId), gte(siteVisits.visitedAt, thirtyDaysAgo)));
+
+  const rawDays = await db
+    .select({
+      day: sql<string>`strftime('%Y-%m-%d', datetime(visited_at, 'unixepoch'))`,
+      count: sql<number>`count(*)`,
+    })
+    .from(siteVisits)
+    .where(and(eq(siteVisits.tenantId, tenantId), gte(siteVisits.visitedAt, thirtyDaysAgo)))
+    .groupBy(sql`strftime('%Y-%m-%d', datetime(visited_at, 'unixepoch'))`)
+    .orderBy(sql`1`);
+
+  const rawDevices = await db
+    .select({ device: siteVisits.device, count: sql<number>`count(*)` })
+    .from(siteVisits)
+    .where(eq(siteVisits.tenantId, tenantId))
+    .groupBy(siteVisits.device)
+    .orderBy(sql`count(*) desc`)
+    .limit(5);
+
+  const rawCountries = await db
+    .select({ country: siteVisits.country, count: sql<number>`count(*)` })
+    .from(siteVisits)
+    .where(eq(siteVisits.tenantId, tenantId))
+    .groupBy(siteVisits.country)
+    .orderBy(sql`count(*) desc`)
+    .limit(10);
+
+  const rawReferrers = await db
+    .select({ referrer: siteVisits.referrer, count: sql<number>`count(*)` })
+    .from(siteVisits)
+    .where(and(eq(siteVisits.tenantId, tenantId), sql`referrer IS NOT NULL`))
+    .groupBy(siteVisits.referrer)
+    .orderBy(sql`count(*) desc`)
+    .limit(10);
+
+  return {
+    totalVisits: Number(totalRow?.c ?? 0),
+    last30Days: Number(last30Row?.c ?? 0),
+    byDay: rawDays.map((r) => ({ day: r.day, count: Number(r.count) })),
+    byDevice: rawDevices.map((r) => ({ device: r.device ?? 'inconnu', count: Number(r.count) })),
+    byCountry: rawCountries.map((r) => ({ country: r.country ?? '??', count: Number(r.count) })),
+    topReferrers: rawReferrers.map((r) => ({ referrer: r.referrer ?? '', count: Number(r.count) })),
+  };
 }
 
 /** Nombre de posts en attente d'approbation (badge). */
