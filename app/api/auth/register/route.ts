@@ -1,4 +1,4 @@
-import type { NextRequest } from 'next/server';
+﻿import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { users, magicTokens } from '@/lib/db/schema';
@@ -13,6 +13,7 @@ import { parseBody, RegisterSchema } from '@/lib/validation';
 import { csrfGuard } from '@/lib/security';
 import { recordReferral, notifyReferrerByEmail } from '@/lib/db/referrals';
 import { createNotification } from '@/lib/db/notifications';
+import { sendReferralWelcomeEmail } from '@/lib/email';
 import { logError, logInfo, logEvent } from '@/lib/logger';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
@@ -84,22 +85,47 @@ export async function POST(req: NextRequest) {
 
     await logActivity(tenantId, userId, 'register', userId, { email: normalizedEmail });
 
-    // Parrainage : si inscrit via /ref/[code], crédite 1 mois aux deux coachs.
-    if (parsed.data.ref) {
+    // Parrainage : priorité au code dans le body, fallback sur le cookie d'attribution
+    // (posé par GET /ref/[code] et persistant 30 jours même si l'onglet est fermé).
+    const refCode = parsed.data.ref || req.cookies.get('aurapost_ref')?.value || '';
+    if (refCode) {
       const referrerTenantId = await recordReferral({
-        code: parsed.data.ref,
+        code: refCode,
         refereeTenantId: tenantId,
         refereeEmail: normalizedEmail,
       });
       if (referrerTenantId) {
+        // Notifie le parrain
         await createNotification({
           tenantId: referrerTenantId,
           type: 'referral',
-          title: 'Quelqu’un a rejoint AuraPost grâce à vous ✦',
-          body: '1 mois gratuit vient d’être crédité sur votre compte.',
+          title: "Quelqu'un a rejoint AuraPost grâce à vous ✦",
+          body: "1 mois gratuit vient d'être crédité sur votre compte.",
           href: '/dashboard/referral',
         });
         void notifyReferrerByEmail(referrerTenantId, name.trim());
+
+        // Notifie le filleul (nouveau) — email + in-app
+        await createNotification({
+          tenantId,
+          type: 'referral',
+          title: '1 mois gratuit crédité ✦',
+          body: 'Vous avez rejoint AuraPost via un lien de parrainage. 1 mois offert sur votre compte.',
+          href: '/dashboard',
+        });
+        // Récupère le nom du parrain pour l'email filleul (best-effort)
+        void (async () => {
+          try {
+            const { db: dbInst } = await import('@/lib/db');
+            const { users: usersTable } = await import('@/lib/db/schema');
+            const { eq: eqFn } = await import('drizzle-orm');
+            const rows = await dbInst.select({ name: usersTable.fullName }).from(usersTable).where(eqFn(usersTable.tenantId, referrerTenantId)).limit(1);
+            const referrerName = rows[0]?.name || 'un coach AuraPost';
+            await sendReferralWelcomeEmail({ email: normalizedEmail, name: name.trim() }, referrerName);
+          } catch (err) {
+            logError('[register] referral welcome email', { error: String(err) });
+          }
+        })();
       }
     }
 
