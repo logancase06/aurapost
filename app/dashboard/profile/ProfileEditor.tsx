@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Camera, Briefcase, Star, Upload, Loader2, Trash2, Save, User, ImageIcon } from 'lucide-react';
+import { Camera, Briefcase, Star, Upload, Loader2, Trash2, Save, User, ImageIcon, Wand2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,6 +12,7 @@ import { SPECIALITY_SUGGESTIONS } from '@/lib/specialities';
 import type { PhotoRow } from '@/lib/db/photos';
 import { saveProfileDraft, importInstagramAction, analyzeReviewsAction, type ProfileDraft } from '@/app/onboarding/actions';
 import { deletePhotoAction } from './actions';
+import AIPhotoEditDialog, { type EditedPhoto } from '@/components/photos/AIPhotoEditDialog';
 
 export interface InitialProfile {
   displayName: string;
@@ -29,6 +30,8 @@ export interface InitialProfile {
   reviewsText: string;
   reviewStrengths: string[];
   photos: PhotoRow[];
+  aiEditsMax: number;
+  aiEditsUsed: number;
 }
 
 const TONES = [
@@ -59,6 +62,8 @@ export default function ProfileEditor({ initial }: { initial: InitialProfile }) 
 
   const [photos, setPhotos] = useState<PhotoRow[]>(initial.photos);
   const [uploading, setUploading] = useState(false);
+  const [editedPhotos, setEditedPhotos] = useState<EditedPhoto[]>([]);
+  const [activeEditPhoto, setActiveEditPhoto] = useState<{ id: string; url: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
@@ -100,6 +105,19 @@ export default function ProfileEditor({ initial }: { initial: InitialProfile }) 
     if (section) document.getElementById(`section-${section}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, []);
 
+  // Charge les photos éditées par IA si le plan le permet.
+  useEffect(() => {
+    if (initial.aiEditsMax === 0) return;
+    let active = true;
+    fetch('/api/photos/edit')
+      .then((r) => r.json())
+      .then((d) => {
+        if (active && d?.ok && Array.isArray(d.photos)) setEditedPhotos(d.photos as EditedPhoto[]);
+      })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [initial.aiEditsMax]);
+
   async function reanalyzeIg() {
     if (!igUrl.trim()) return;
     setIgLoading(true);
@@ -115,7 +133,7 @@ export default function ProfileEditor({ initial }: { initial: InitialProfile }) 
 
   async function reanalyzeRv() {
     if (reviewsText.trim().length < 20) {
-      toast.error('Colle au moins quelques lignes d’avis.');
+      toast.error("Colle au moins quelques lignes d'avis.");
       return;
     }
     setRvLoading(true);
@@ -264,28 +282,91 @@ export default function ProfileEditor({ initial }: { initial: InitialProfile }) 
             <p className="text-xs text-muted-foreground">JPG, PNG, HEIC · 10 Mo max</p>
             <input ref={fileRef} type="file" multiple accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif" className="hidden" onChange={(e) => { if (e.target.files?.length) void uploadFiles(e.target.files); e.target.value = ''; }} />
           </div>
-          {photos.length > 0 ? (
-            <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-5">
-              {photos.map((p) => (
-                <div key={p.id} className="group relative aspect-square overflow-hidden rounded-lg border border-border">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={p.thumbnailUrl || p.r2Url} alt="" className="h-full w-full object-cover" />
-                  <button type="button" onClick={() => void removePhoto(p.id)} aria-label="Supprimer la photo" className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100">
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              ))}
+
+          {initial.aiEditsMax > 0 && (
+            <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Sparkles className="h-3.5 w-3.5 text-primary" />
+              Édition IA disponible — {initial.aiEditsMax - editedPhotos.length}/{initial.aiEditsMax} modifications ce mois.
+              Survole une photo pour modifier.
+            </p>
+          )}
+
+          {photos.length > 0 || editedPhotos.filter((e) => e.validatedAt).length > 0 ? (
+            <div className="mt-1 grid grid-cols-3 gap-2 sm:grid-cols-5">
+              {/* Photos éditées validées (en tête de galerie, badge IA) */}
+              {editedPhotos
+                .filter((e) => e.validatedAt)
+                .map((e) => (
+                  <div key={e.id} className="group relative aspect-square overflow-hidden rounded-lg border border-primary/40">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={e.r2Url} alt="" className="h-full w-full object-cover" style={{ objectPosition: 'top center' }} />
+                    <span className="absolute bottom-1 left-1 flex items-center gap-0.5 rounded bg-primary px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white">
+                      <Sparkles className="h-2.5 w-2.5" /> IA
+                    </span>
+                    <div className="absolute inset-0 hidden items-end bg-black/40 px-2 pb-7 group-hover:flex">
+                      <p className="line-clamp-2 text-[10px] leading-snug text-white">{e.prompt}</p>
+                    </div>
+                  </div>
+                ))}
+
+              {/* Photos originales avec bouton IA sur hover */}
+              {photos.map((p) => {
+                const hasEdit = editedPhotos.some((e) => e.sourcePhotoId === p.id && e.validatedAt);
+                return (
+                  <div key={p.id} className="group relative aspect-square overflow-hidden rounded-lg border border-border">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={p.thumbnailUrl || p.r2Url} alt="" className="h-full w-full object-cover" style={{ objectPosition: 'top center' }} />
+
+                    {/* Bouton supprimer */}
+                    <button type="button" onClick={() => void removePhoto(p.id)} aria-label="Supprimer la photo" className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+
+                    {/* Bouton Modifier avec l'IA */}
+                    <button
+                      type="button"
+                      disabled={initial.aiEditsMax === 0}
+                      onClick={() => initial.aiEditsMax > 0 && setActiveEditPhoto({ id: p.id, url: p.r2Url })}
+                      title={initial.aiEditsMax === 0 ? 'Disponible dans le plan Coach+Site' : "Modifier avec l'IA"}
+                      aria-label="Modifier avec l'IA"
+                      className="absolute bottom-1 left-1 flex h-7 w-7 items-center justify-center rounded-full bg-primary/90 text-white opacity-0 transition-opacity group-hover:opacity-100 disabled:cursor-not-allowed disabled:bg-black/40 disabled:text-white/50"
+                    >
+                      <Wand2 className="h-3.5 w-3.5" />
+                    </button>
+
+                    {/* Indicateur : photo déjà éditée */}
+                    {hasEdit && (
+                      <span className="absolute right-1 bottom-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] text-white" title="Version IA disponible">
+                        ✦
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           ) : (
-            <p className="mt-3 flex items-center gap-2 text-xs text-muted-foreground"><ImageIcon className="h-4 w-4" /> Aucune photo pour l’instant.</p>
+            <p className="mt-3 flex items-center gap-2 text-xs text-muted-foreground"><ImageIcon className="h-4 w-4" /> Aucune photo pour l'instant.</p>
           )}
         </Section>
+
+        {/* Dialog d'édition IA */}
+        {activeEditPhoto && (
+          <AIPhotoEditDialog
+            open={!!activeEditPhoto}
+            onOpenChange={(v) => { if (!v) setActiveEditPhoto(null); }}
+            photoId={activeEditPhoto.id}
+            photoUrl={activeEditPhoto.url}
+            aiEditsMax={initial.aiEditsMax}
+            aiEditsUsed={editedPhotos.length}
+            onValidated={(edited) => setEditedPhotos((prev) => [edited, ...prev])}
+          />
+        )}
 
         {/* Résultats & bio */}
         <Section id="results" title="Résultats & bio">
           <FieldArea label="Bio" value={bio} onChange={setBio} placeholder="Décris ce que tu fais en quelques phrases." />
           <FieldArea label="Tes clients cibles" value={targetAudience} onChange={setTargetAudience} placeholder="Qui accompagnes-tu ? Ex: sportifs 30-45 ans visant leur premier Hyrox." />
-          <FieldArea label="Résultats concrets" value={results} onChange={setResults} placeholder="Qu’obtiennent concrètement tes clients ?" />
+          <FieldArea label="Résultats concrets" value={results} onChange={setResults} placeholder="Qu'obtiennent concrètement tes clients ?" />
         </Section>
 
         <p className="text-center text-xs text-muted-foreground">
