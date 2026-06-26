@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, Clock } from 'lucide-react';
 import { ARTICLES, readingTimeMinutes } from '@/lib/blog';
+import { safeJsonLd } from '@/lib/utils';
 
 export const metadata: Metadata = {
   title: 'Blog — Conseils contenu pour coachs sportifs',
@@ -15,11 +16,32 @@ export const metadata: Metadata = {
   },
 };
 
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://aurapost.fr';
+
 export default function BlogIndex() {
   const sorted = [...ARTICLES].sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Blog',
+    name: 'Blog AuraPost',
+    description: 'Stratégies de contenu, croissance Instagram et LinkedIn pour coachs sportifs.',
+    url: `${APP_URL}/blog`,
+    publisher: { '@type': 'Organization', name: 'AuraPost', url: APP_URL },
+    blogPost: sorted.map((a) => ({
+      '@type': 'BlogPosting',
+      headline: a.title,
+      description: a.excerpt,
+      datePublished: a.publishedAt,
+      url: `${APP_URL}/blog/${a.slug}`,
+      author: { '@type': 'Organization', name: a.author },
+    })),
+  };
+
   return (
     <main className="mx-auto min-h-screen max-w-4xl px-6 py-16">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
+
       <header className="mb-12">
         <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">
           ← AuraPost

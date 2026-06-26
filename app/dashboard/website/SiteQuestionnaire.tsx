@@ -41,6 +41,7 @@ export default function SiteQuestionnaire({
   useEffect(() => {
     if (!open) return;
     const presetTone = profileTone ? TONE_CHIP_FOR_PROFILE[profileTone] : undefined;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- resets form state when dialog opens; intentional synchronous init
     setAnswers(presetTone ? { tone: presetTone } : {});
     setBrief('');
   }, [open, profileTone]);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import {
@@ -108,7 +108,6 @@ export default function OnboardingWizard({ initial }: { initial: InitialDraft })
       markSaved(res.ok);
     }, 1000);
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayName, speciality, city, tone, language, bio, targetAudience, results, linkedinHeadline, linkedinSummary, canAdvance1]);
 
   function go(next: number) {

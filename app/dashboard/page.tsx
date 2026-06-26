@@ -96,7 +96,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
   // Carte « Analyse de profil » (score Instagram le plus récent + nudge si > 30 j).
   const latestIg = await getLatestAnalysis(tenantId, 'instagram');
   const analyzeCard = latestIg
-    ? { score: latestIg.scoreGlobal ?? 0, staleDays: Math.floor((Date.now() - new Date(latestIg.createdAt).getTime()) / 86400000) }
+    ? { score: latestIg.scoreGlobal ?? 0, staleDays: Math.floor((Date.now() - new Date(latestIg.createdAt).getTime()) / 86400000) } // eslint-disable-line react-hooks/purity -- server component, not a hook
     : null;
 
   // Bandeau « nouveau mois » : a déjà généré au moins une fois, mais pas ce mois-ci.

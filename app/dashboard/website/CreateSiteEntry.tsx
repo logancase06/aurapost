@@ -40,6 +40,7 @@ export default function CreateSiteEntry({
   useEffect(() => {
     if (autoOpenDemoId) {
       demoIdRef.current = autoOpenDemoId;
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- "open on URL param" pattern; intentional one-time trigger
       setOpen(true);
     }
   }, [autoOpenDemoId]);

@@ -25,7 +25,9 @@ const Particles = dynamic(() => import('@/components/ui/particles').then((m) => 
 const Meteors = dynamic(() => import('@/components/ui/meteors').then((m) => m.Meteors), { ssr: false });
 // Sections de conversion — dynamic import (sous la ligne de flottaison).
 const HowItWorks = dynamic(() => import('./HowItWorks'));
+const BentoFeatures = dynamic(() => import('./BentoFeatures'));
 const BeforeAfter = dynamic(() => import('./BeforeAfter'));
+const StaggerTestimonials = dynamic(() => import('./StaggerTestimonials'));
 const Testimonials = dynamic(() => import('./Testimonials'));
 const LiveGenerator = dynamic(() => import('./LiveGenerator'));
 const ExitIntent = dynamic(() => import('./ExitIntent'), { ssr: false });
@@ -158,13 +160,19 @@ export default function LandingClient({ heroCopy = HERO_VARIANTS.a }: { heroCopy
       {/* Comment ça marche */}
       <HowItWorks />
 
+      {/* Aperçu complet des fonctionnalités (bento grid 21st.dev) */}
+      <BentoFeatures />
+
       {/* Mini-générateur live (la section qui convertit) */}
       <LiveGenerator />
 
       {/* Avant / Après */}
       <BeforeAfter />
 
-      {/* Témoignages */}
+      {/* Témoignages statiques SEO-friendly (grille stagger 21st.dev) */}
+      <StaggerTestimonials />
+
+      {/* Témoignages défilants (marquee visuel) */}
       <Testimonials />
 
       {/* Pricing */}

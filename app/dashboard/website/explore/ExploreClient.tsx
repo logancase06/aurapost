@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { cn } from '@/lib/utils';
@@ -22,22 +22,19 @@ const FILTER_LABEL: Record<Filter, string> = {
 
 export default function ExploreClient({ sites }: { sites: DemoSite[] }) {
   const router = useRouter();
-  const [favorites, setFavorites] = useState<string[]>([]);
-  const [activeFilter, setActiveFilter] = useState<Filter>('all');
-  const [selectedSite, setSelectedSite] = useState<DemoSite | null>(null);
-
-  // Favoris persistés en localStorage (jamais de server action pour ça).
-  useEffect(() => {
+  const [favorites, setFavorites] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return [];
     try {
       const raw = localStorage.getItem(FAVORITES_KEY);
       if (raw) {
-        const arr = JSON.parse(raw);
-        if (Array.isArray(arr)) setFavorites(arr.filter((x) => typeof x === 'string').slice(0, MAX_FAVORITES));
+        const arr = JSON.parse(raw) as unknown[];
+        if (Array.isArray(arr)) return arr.filter((x): x is string => typeof x === 'string').slice(0, MAX_FAVORITES);
       }
-    } catch {
-      /* localStorage indisponible / JSON corrompu → on ignore */
-    }
-  }, []);
+    } catch { /* localStorage indisponible / JSON corrompu → on ignore */ }
+    return [];
+  });
+  const [activeFilter, setActiveFilter] = useState<Filter>('all');
+  const [selectedSite, setSelectedSite] = useState<DemoSite | null>(null);
 
   function persist(next: string[]) {
     setFavorites(next);

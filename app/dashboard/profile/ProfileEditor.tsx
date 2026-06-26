@@ -70,6 +70,7 @@ export default function ProfileEditor({ initial }: { initial: InitialProfile }) 
   }
 
   const draftRef = useRef<ProfileDraft>(null as unknown as ProfileDraft);
+  // eslint-disable-next-line react-hooks/refs -- captures latest draft for useCallback without stale closure; intentional pattern
   draftRef.current = { displayName, speciality, city, tone, language, bio, targetAudience, results, linkedinHeadline, linkedinSummary };
 
   const save = useCallback(async (): Promise<boolean> => {

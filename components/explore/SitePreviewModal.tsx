@@ -33,6 +33,7 @@ export default function SitePreviewModal({ site, isFavorite, using = false, onCl
   // Réinitialise l'appareil + déclenche l'animation d'ouverture à chaque nouveau site.
   useEffect(() => {
     if (!site) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reset de l'état d'animation quand le modal se ferme; intentionnel
       setShown(false);
       return;
     }

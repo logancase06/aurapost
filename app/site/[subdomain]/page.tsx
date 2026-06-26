@@ -84,10 +84,21 @@ export default async function PublicSitePage({ params, searchParams }: { params:
   if (isPreview) noStore();
   const data = await getCoachSiteData(subdomain, { requireActive: !isPreview });
   if (!data) notFound();
+  // Script de tracking minimal — chargé en `defer` pour ne pas retarder le LCP.
+  // sendBeacon est non-bloquant et n'attend pas la réponse du serveur.
+  // Aucun cookie déposé, aucune IP transmise → exemption CNIL 2020-091 audience measurement.
+  // Le tracking est ignoré en mode aperçu (isPreview) pour ne pas fausser les stats.
+  const trackingScript = !isPreview
+    ? `(function(){var s='${subdomain}';var r=document.referrer;try{navigator.sendBeacon('/api/track/site-visit',JSON.stringify({subdomain:s,referrer:r}));}catch(e){}})();`
+    : null;
+
   return (
     <>
       {!isPreview && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd(data, subdomain)) }} />
+      )}
+      {trackingScript && (
+        <script defer dangerouslySetInnerHTML={{ __html: trackingScript }} />
       )}
       <CoachSite data={data} />
     </>

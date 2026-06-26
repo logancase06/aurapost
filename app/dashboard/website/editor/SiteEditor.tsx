@@ -34,6 +34,7 @@ export default function SiteEditor({ initial, appDomain, aiEnabled, initialFocus
 
   const firstRun = useRef(true);
   const contentRef = useRef(content);
+  // eslint-disable-next-line react-hooks/refs -- captures latest content for autosave callback without stale closure; intentional pattern
   contentRef.current = content;
 
   function markSaved(ok: boolean) {
