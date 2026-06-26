@@ -80,6 +80,44 @@ export async function uploadCoachPhoto(
   }
 }
 
+/** Upload d'une image éditée par IA (résultat d'editImage, déjà en Buffer). */
+export async function uploadEditedPhoto(
+  tenantId: string,
+  sourcePhotoId: string,
+  buffer: Buffer
+): Promise<{ ok: true; url: string; key: string | null } | { ok: false; reason: string }> {
+  let data: Buffer;
+  let ct: string;
+  try {
+    const r = await resize(buffer);
+    data = r.data;
+    ct = r.contentType;
+  } catch (err) {
+    logError('[r2] re-encodage édition (sharp) échoué', { error: String(err) });
+    return { ok: false, reason: 'resize_failed' };
+  }
+  const key = `coaches/${tenantId}/edited/${Date.now()}-${sourcePhotoId.slice(-8)}.jpg`;
+
+  if (!IS_R2_CONFIGURED) {
+    return { ok: true, url: `data:${ct};base64,${data.toString('base64')}`, key: null };
+  }
+
+  try {
+    const { PutObjectCommand, GetObjectCommand } = await import('@aws-sdk/client-s3');
+    const { client, bucket } = await s3Client();
+    await client.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: data, ContentType: ct }));
+    if (process.env.R2_PUBLIC_URL) {
+      return { ok: true, url: `${process.env.R2_PUBLIC_URL.replace(/\/$/, '')}/${key}`, key };
+    }
+    const { getSignedUrl } = await import('@aws-sdk/s3-request-presigner');
+    const url = await getSignedUrl(client, new GetObjectCommand({ Bucket: bucket, Key: key }), { expiresIn: SIGNED_URL_TTL });
+    return { ok: true, url, key };
+  } catch (err) {
+    logError('[r2] upload édition échoué', { error: String(err) });
+    return { ok: false, reason: 'upload_failed' };
+  }
+}
+
 /** Supprime un objet R2 (best-effort). Ne lève jamais — l'orphelin est moins grave. */
 export async function deleteR2Object(key: string | null): Promise<void> {
   if (!key || !IS_R2_CONFIGURED) return;

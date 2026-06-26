@@ -464,6 +464,51 @@ export const agencyLeads = sqliteTable(
   })
 );
 
+// Images de coach éditées par IA (EU AI Act Art.50 — provenance complète stockée).
+// La photo source (coachPhotos) n'est JAMAIS écrasée.
+export const editedPhotos = sqliteTable(
+  'edited_photos',
+  {
+    id: text('id').primaryKey(),
+    tenantId: text('tenant_id').notNull(),
+    sourcePhotoId: text('source_photo_id').notNull(), // FK → coachPhotos.id
+    r2Key: text('r2_key'),
+    r2Url: text('r2_url').notNull(),
+    prompt: text('prompt').notNull(),       // instruction de modification (traçabilité)
+    model: text('model').notNull(),         // ex: "gpt-image-1.5"
+    status: text('status').notNull().default('pending'), // pending | done | failed
+    validatedAt: text('validated_at'),      // null = attente validation coach
+    errorMessage: text('error_message'),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => ({
+    tenantIdx: index('edited_photos_tenant_idx').on(t.tenantId),
+    tenantMonthIdx: index('edited_photos_tenant_month_idx').on(t.tenantId, t.createdAt),
+    sourceIdx: index('edited_photos_source_idx').on(t.sourcePhotoId),
+  })
+);
+
+// Jobs d'édition automatique — séparés du job texte pour éviter les timeouts serverless.
+export const imageEditJobs = sqliteTable(
+  'image_edit_jobs',
+  {
+    id: text('id').primaryKey(),
+    tenantId: text('tenant_id').notNull(),
+    generationJobId: text('generation_job_id'), // job texte déclencheur
+    status: text('status').notNull().default('pending'), // pending | running | done | failed
+    photosRequested: integer('photos_requested').notNull().default(0),
+    photosDone: integer('photos_done').notNull().default(0),
+    errorMessage: text('error_message'),
+    startedAt: text('started_at'),
+    completedAt: text('completed_at'),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => ({
+    tenantIdx: index('image_edit_jobs_tenant_idx').on(t.tenantId),
+    statusIdx: index('image_edit_jobs_status_idx').on(t.status),
+  })
+);
+
 export const activityLogs = sqliteTable(
   'activity_logs',
   {

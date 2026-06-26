@@ -107,6 +107,12 @@ export interface PlanLimits {
   /** Ajoute un watermark « Créé avec AuraPost » aux posts copiés/exportés. */
   watermark: boolean;
   profileSections: ProfileSection[];
+  /**
+   * Nombre d'éditions IA d'images par mois.
+   * Réservé à pack_complet (0 pour starter et content_only en v1).
+   * Calcul : 20 img × €0.046/img = €0.92 → coût IA total = €0.98 = 1.24% du plan (objectif < 2%).
+   */
+  aiEditsMax: number;
 }
 
 // Les deux plans payants partagent la même limite de variantes intentionnellement.
@@ -116,9 +122,9 @@ const VARIANTS_UNLIMITED = 9_999;
 // 'starter' = Découverte (gratuit, hameçon) : 4 posts Instagram avec watermark, pas de
 // site, pas d'export, pas de variantes. Payer débloque le volume, LinkedIn, l'export, le site.
 const LIMITS: Record<PlanId, PlanLimits> = {
-  starter: { postsPerMonth: 4, instagramOnly: true, sitesEnabled: false, photosMax: 1, variantesMax: 0, exportEnabled: false, watermark: true, profileSections: ['base'] },
-  content_only: { postsPerMonth: 12, instagramOnly: false, sitesEnabled: false, photosMax: 10, variantesMax: VARIANTS_UNLIMITED, exportEnabled: true, watermark: false, profileSections: ['base', 'presence', 'photos', 'results'] },
-  pack_complet: { postsPerMonth: 12, instagramOnly: false, sitesEnabled: true, photosMax: 10, variantesMax: VARIANTS_UNLIMITED, exportEnabled: true, watermark: false, profileSections: ['base', 'presence', 'photos', 'results'] },
+  starter:      { postsPerMonth: 4,  instagramOnly: true,  sitesEnabled: false, photosMax: 1,  variantesMax: 0,                exportEnabled: false, watermark: true,  profileSections: ['base'],                                      aiEditsMax: 0  },
+  content_only: { postsPerMonth: 12, instagramOnly: false, sitesEnabled: false, photosMax: 10, variantesMax: VARIANTS_UNLIMITED, exportEnabled: true,  watermark: false, profileSections: ['base', 'presence', 'photos', 'results'],    aiEditsMax: 0  },
+  pack_complet: { postsPerMonth: 12, instagramOnly: false, sitesEnabled: true,  photosMax: 10, variantesMax: VARIANTS_UNLIMITED, exportEnabled: true,  watermark: false, profileSections: ['base', 'presence', 'photos', 'results'],    aiEditsMax: 20 },
 };
 
 export function getPlanLimits(plan: string | null | undefined): PlanLimits {
