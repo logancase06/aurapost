@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Sparkles, ArrowRight, UserCog, Wand2, CalendarCheck } from 'lucide-react';
 import Confetti from '@/components/Confetti';
+import SessionRefresher from '@/components/SessionRefresher';
 
 export const metadata: Metadata = {
   title: 'Bienvenue à bord ✦',
@@ -18,6 +19,7 @@ const STEPS = [
 export default function SuccessPage() {
   return (
     <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-16 text-center">
+      <SessionRefresher />
       <Confetti />
       <div className="aura-glow absolute inset-0" aria-hidden />
 
