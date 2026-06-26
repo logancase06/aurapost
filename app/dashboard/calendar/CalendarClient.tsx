@@ -3,9 +3,11 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
-import { ChevronLeft, ChevronRight, CalendarDays, Download, Camera, Briefcase } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CalendarDays, Download, Camera, Briefcase, Link2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { schedulePostAction } from '../post-actions';
+import { getCalendarSubscriptionUrlAction } from './actions';
+import { canExportPost } from '@/lib/plans';
 
 export interface CalPost {
   id: string;
@@ -21,6 +23,7 @@ interface Props {
   monthLabel: string;
   initialScheduled: CalPost[];
   reservoir: CalPost[];
+  plan: string;
 }
 
 const WEEKDAYS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
@@ -30,10 +33,29 @@ function NetIcon({ network }: { network: string }) {
 }
 
 /** Calendrier éditorial : grille mensuelle + drag & drop natif + export iCal. */
-export default function CalendarClient({ month, prevMonth, nextMonth, monthLabel, initialScheduled, reservoir }: Props) {
+export default function CalendarClient({ month, prevMonth, nextMonth, monthLabel, initialScheduled, reservoir, plan }: Props) {
   const [scheduled, setScheduled] = useState<CalPost[]>(initialScheduled);
   const [pool, setPool] = useState<CalPost[]>(reservoir);
   const [dragId, setDragId] = useState<string | null>(null);
+  const [copyState, setCopyState] = useState<'idle' | 'loading' | 'copied'>('idle');
+
+  async function copySubscriptionUrl() {
+    setCopyState('loading');
+    try {
+      const res = await getCalendarSubscriptionUrlAction();
+      if (!res.ok || !res.url) {
+        toast.error(res.error ?? 'Lien indisponible');
+        setCopyState('idle');
+        return;
+      }
+      await navigator.clipboard.writeText(res.url);
+      setCopyState('copied');
+      setTimeout(() => setCopyState('idle'), 2000);
+    } catch {
+      toast.error('Impossible de copier le lien');
+      setCopyState('idle');
+    }
+  }
 
   const [year, mon] = month.split('-').map(Number);
   const firstDay = new Date(year, mon - 1, 1);
@@ -120,6 +142,18 @@ export default function CalendarClient({ month, prevMonth, nextMonth, monthLabel
               <Download className="h-4 w-4" /> Export iCal
             </a>
           </Button>
+          {canExportPost(plan) && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void copySubscriptionUrl()}
+              disabled={copyState === 'loading'}
+              aria-label="Copier le lien d'abonnement calendrier"
+            >
+              <Link2 className="h-4 w-4" />
+              {copyState === 'copied' ? 'Copié !' : 'Abonnement'}
+            </Button>
+          )}
         </div>
       </div>
 

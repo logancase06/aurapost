@@ -50,6 +50,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
         monthLabel={monthLabel}
         initialScheduled={scheduled.map(toCal)}
         reservoir={reservoir.map(toCal)}
+        plan={session.user.plan ?? 'starter'}
       />
     </DashboardShell>
   );
