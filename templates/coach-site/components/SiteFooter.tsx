@@ -1,5 +1,6 @@
 import { Mail, MessageCircle, MapPin } from 'lucide-react';
 import type { CoachSiteData, SiteStyle } from '../types';
+import { assertStyleUnreachable } from '../types';
 
 /** Glyphe Instagram inline (l'icône n'existe pas dans cette version de lucide-react). */
 function InstagramGlyph({ size = 16 }: { size?: number }) {
@@ -21,7 +22,10 @@ function footerPalette(style: SiteStyle) {
   if (style === 'authenticite') {
     return { bg: '#F0E7DB', name: '#2A2622', text: '#6B6256', faint: '#8C8275', border: 'rgba(0,0,0,0.10)', hover: '#2A2622' };
   }
-  return { bg: '#0a0a0a', name: '#ffffff', text: '#a1a1aa', faint: '#71717a', border: 'rgba(255,255,255,0.08)', hover: '#ffffff' };
+  if (style === 'impact') {
+    return { bg: '#0a0a0a', name: '#ffffff', text: '#a1a1aa', faint: '#71717a', border: 'rgba(255,255,255,0.08)', hover: '#ffffff' };
+  }
+  return assertStyleUnreachable(style);
 }
 
 export default function SiteFooter({ data, style, accent }: { data: CoachSiteData; style: SiteStyle; accent: string }) {

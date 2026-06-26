@@ -13,7 +13,8 @@ const TONE_TITLE: Record<string, string> = {
 export default function ContactSection({ data, style, accent, t }: { data: CoachSiteData; style: SiteStyle; accent: string; t: Theme }) {
   const headFont = headStyle(t);
   const sectionH2 = { ...headFont, fontSize: 'clamp(1.9rem, 5vw, 3rem)', lineHeight: 1.1, margin: '0 0 10px', overflowWrap: 'break-word' } as const;
-  const radius = style === 'clarte' ? 12 : style === 'authenticite' ? 8 : 2;
+  const radiusByStyle: Record<SiteStyle, number> = { impact: 2, clarte: 12, authenticite: 8 };
+  const radius = radiusByStyle[style];
   const title = TONE_TITLE[data.tone ?? ''] ?? 'Prenons contact';
 
   const booking = (data.bookingUrl || '').trim();

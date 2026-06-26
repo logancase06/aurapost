@@ -1,6 +1,7 @@
 import type React from 'react';
 import { headStyle, splitLastWord, type Theme } from '../theme';
 import type { SiteStyle } from '../types';
+import { assertStyleUnreachable } from '../types';
 
 // Titre de section dont le TRAITEMENT typographique varie par style (B.3) — chaque style
 // rejoue la signature de son hero sur le dernier mot, plutôt qu'un H2 uniforme :
@@ -48,10 +49,13 @@ export default function SectionTitle({
     );
   }
   // impact (headStyle applique déjà uppercase)
-  return (
-    <h2 style={base}>
-      {head ? `${head} ` : ''}
-      <span style={{ color: accent }}>{last}</span>
-    </h2>
-  );
+  if (style === 'impact') {
+    return (
+      <h2 style={base}>
+        {head ? `${head} ` : ''}
+        <span style={{ color: accent }}>{last}</span>
+      </h2>
+    );
+  }
+  return assertStyleUnreachable(style);
 }

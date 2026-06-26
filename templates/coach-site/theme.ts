@@ -2,6 +2,7 @@ import type React from 'react';
 import { inter, bebas, jakarta, lato, playfair } from './fonts';
 import { getCoachTheme } from '@/lib/coach-site-theme';
 import type { SiteStyle, CoachServiceItem, CoachTestimonialItem, CoachResultItem, CoachSiteData } from './types';
+import { assertStyleUnreachable } from './types';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Thème + helpers purs du site vitrine (sans React DOM). Importé par l'assembleur
@@ -92,11 +93,14 @@ export function themeFor(style: SiteStyle): Theme {
       headWeight: 700, headTransform: 'none', headTracking: '-0.01em', heroDark: true,
     };
   }
-  return {
-    bg: '#0A0A0A', surface: '#111111', ink: '#FFFFFF', muted: '#8A8A8A', border: '#222222',
-    fontBody: inter.style.fontFamily, fontHead: bebas.style.fontFamily,
-    headWeight: 400, headTransform: 'uppercase', headTracking: '0.01em', heroDark: true,
-  };
+  if (style === 'impact') {
+    return {
+      bg: '#0A0A0A', surface: '#111111', ink: '#FFFFFF', muted: '#8A8A8A', border: '#222222',
+      fontBody: inter.style.fontFamily, fontHead: bebas.style.fontFamily,
+      headWeight: 400, headTransform: 'uppercase', headTracking: '0.01em', heroDark: true,
+    };
+  }
+  return assertStyleUnreachable(style);
 }
 
 /** Style typographique des titres pour un thème donné. */

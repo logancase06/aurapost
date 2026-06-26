@@ -11,12 +11,12 @@ export default function AProposSection({ data, style, accent, t }: { data: Coach
   const paragraphs = story.split('\n').map((p) => p.trim()).filter(Boolean);
   const headline = (data.storyQuote || '').trim();
 
-  const photoStyle: React.CSSProperties =
-    style === 'impact'
-      ? { clipPath: 'polygon(8% 0, 100% 0, 100% 100%, 0% 100%)', borderRadius: 0 }
-      : style === 'clarte'
-        ? { border: '6px solid #fff', borderRadius: 16, boxShadow: '0 24px 60px -20px rgba(0,0,0,0.2)' }
-        : { borderRadius: 8, boxShadow: '0 16px 40px -16px rgba(0,0,0,0.15)' };
+  const photoStyleByStyle: Record<SiteStyle, React.CSSProperties> = {
+    impact: { clipPath: 'polygon(8% 0, 100% 0, 100% 100%, 0% 100%)', borderRadius: 0 },
+    clarte: { border: '6px solid #fff', borderRadius: 16, boxShadow: '0 24px 60px -20px rgba(0,0,0,0.2)' },
+    authenticite: { borderRadius: 8, boxShadow: '0 16px 40px -16px rgba(0,0,0,0.15)' },
+  };
+  const photoStyle: React.CSSProperties = photoStyleByStyle[style];
 
   return (
     <Reveal as="section" style={wrap}>

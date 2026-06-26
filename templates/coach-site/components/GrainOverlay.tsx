@@ -1,12 +1,15 @@
 import type { SiteStyle } from '../types';
+import { assertStyleUnreachable } from '../types';
 
 /**
  * Grain (bruit fractal SVG) en superposition fixe, plein écran, non interactif.
- * Réservé au seul style Impact (sombre). Clarté et Authenticité sont désormais des
- * styles CLAIRS/épurés : un grain en mixBlendMode salirait leur rendu.
+ * Réservé au seul style Impact (sombre). Clarté et Authenticité sont des styles CLAIRS :
+ * un grain en mixBlendMode salirait leur rendu. Tout nouveau style doit être ajouté
+ * explicitement — le assertStyleUnreachable ci-dessous force cette décision.
  */
 export default function GrainOverlay({ style }: { style: SiteStyle }) {
-  if (style !== 'impact') return null;
+  if (style === 'clarte' || style === 'authenticite') return null;
+  if (style !== 'impact') return assertStyleUnreachable(style);
   return (
     <div
       aria-hidden

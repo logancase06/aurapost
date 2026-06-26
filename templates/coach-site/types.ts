@@ -3,6 +3,18 @@
 
 export type SiteStyle = 'impact' | 'clarte' | 'authenticite';
 
+/**
+ * Garde-fou TypeScript pour l'ajout de nouveaux styles.
+ * Toute branche switch/if-else qui gère SiteStyle doit se terminer par :
+ *   `return assertStyleUnreachable(style);`
+ * TypeScript vérifie alors que `style` est bien `never` à ce point — si un nouveau
+ * style est ajouté à l'union sans être traité dans la branche, la compilation échoue.
+ * En production le throw ne sera jamais atteint (styles exhaustivement couverts).
+ */
+export function assertStyleUnreachable(style: never): never {
+  throw new Error(`[coach-site] Style non géré : ${String(style)}`);
+}
+
 export interface CoachServiceItem {
   title: string;
   description: string;

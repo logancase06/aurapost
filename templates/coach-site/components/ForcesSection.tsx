@@ -2,6 +2,7 @@ import { Sliders, MessageCircle, BookOpen, TrendingUp, Zap, Heart, Star, type Lu
 import Reveal from '../Reveal';
 import { headStyle, type Theme } from '../theme';
 import type { CoachSiteData, SiteStyle, Force } from '../types';
+import { assertStyleUnreachable } from '../types';
 
 /** Forces affichées : data.forces, sinon strengths, sinon les services (3 max). */
 export function forcesOf(data: CoachSiteData): Force[] {
@@ -82,6 +83,7 @@ export default function ForcesSection({ data, style, accent, t }: { data: CoachS
   // ── AUTHENTICITÉ : grille asymétrique, fond chaud, bordure gauche accent.
   //    La force PRINCIPALE (la plus grande) intègre une citation client (B.2) → relie
   //    les sections plutôt que des blocs indépendants. ──
+  if (style !== 'authenticite') return assertStyleUnreachable(style);
   const pull = (data.testimonials?.find((q) => q.quote?.trim())?.quote ?? '').trim();
   return (
     <Reveal as="section" style={wrap}>
