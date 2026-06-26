@@ -109,12 +109,16 @@ export interface PlanLimits {
   profileSections: ProfileSection[];
 }
 
+// Les deux plans payants partagent la même limite de variantes intentionnellement.
+// Si on différencie un jour, changer cette valeur + le message d'erreur dans post-actions.ts.
+const VARIANTS_UNLIMITED = 9_999;
+
 // 'starter' = Découverte (gratuit, hameçon) : 4 posts Instagram avec watermark, pas de
 // site, pas d'export, pas de variantes. Payer débloque le volume, LinkedIn, l'export, le site.
 const LIMITS: Record<PlanId, PlanLimits> = {
   starter: { postsPerMonth: 4, instagramOnly: true, sitesEnabled: false, photosMax: 1, variantesMax: 0, exportEnabled: false, watermark: true, profileSections: ['base'] },
-  content_only: { postsPerMonth: 12, instagramOnly: false, sitesEnabled: false, photosMax: 10, variantesMax: 999, exportEnabled: true, watermark: false, profileSections: ['base', 'presence', 'photos', 'results'] },
-  pack_complet: { postsPerMonth: 12, instagramOnly: false, sitesEnabled: true, photosMax: 10, variantesMax: 999, exportEnabled: true, watermark: false, profileSections: ['base', 'presence', 'photos', 'results'] },
+  content_only: { postsPerMonth: 12, instagramOnly: false, sitesEnabled: false, photosMax: 10, variantesMax: VARIANTS_UNLIMITED, exportEnabled: true, watermark: false, profileSections: ['base', 'presence', 'photos', 'results'] },
+  pack_complet: { postsPerMonth: 12, instagramOnly: false, sitesEnabled: true, photosMax: 10, variantesMax: VARIANTS_UNLIMITED, exportEnabled: true, watermark: false, profileSections: ['base', 'presence', 'photos', 'results'] },
 };
 
 export function getPlanLimits(plan: string | null | undefined): PlanLimits {

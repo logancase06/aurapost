@@ -72,3 +72,4 @@
 #   /api/cron/distributor-activation→ 1×/jour
 #   /api/cron/monthly-reminder      → 1×/jour
 #   /api/cron/data-retention        → 1×/jour
+#   /api/cron/payment-grace         → 1×/jour (downgrade tenants en retard de paiement > 7j)
