@@ -211,8 +211,10 @@ export async function verifyZernioWebhookSignature(
   const secret = process.env.ZERNIO_WEBHOOK_SECRET;
   if (!secret || !signatureHeader) return false;
   const expected = signatureHeader.replace(/^sha256=/, '');
-  const { createHmac } = await import('crypto');
-  const computed = createHmac('sha256', secret).update(rawBody, 'utf8').digest('hex');
-  // Comparaison en temps constant pour éviter les timing attacks.
-  return computed.length === expected.length && computed === expected;
+  const { createHmac, timingSafeEqual } = await import('crypto');
+  const computed = createHmac('sha256', secret).update(rawBody, 'utf8').digest();
+  const expectedBuf = Buffer.from(expected, 'hex');
+  // timingSafeEqual exige des buffers de même longueur.
+  if (computed.length !== expectedBuf.length) return false;
+  return timingSafeEqual(computed, expectedBuf);
 }
