@@ -4,6 +4,8 @@ import { db } from '@/lib/db';
 import { tenants } from '@/lib/db/schema';
 import { getIntegrationStatuses } from '@/lib/integrations';
 import { logError } from '@/lib/logger';
+import { auth } from '@/lib/auth';
+import { isAdminSession } from '@/lib/admin';
 
 /** Comptage tenants réels vs démo (visibilité : le seed:demo ne pollue pas les métriques). */
 async function tenantCounts(): Promise<{ real: number; demo: number }> {

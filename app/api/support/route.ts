@@ -7,6 +7,7 @@ import { supportTickets } from '@/lib/db/schema';
 import { auth } from '@/lib/auth';
 import { parseBody } from '@/lib/validation';
 import { csrfGuard, sanitizeText, isHoneypotTriggered, HONEYPOT_FIELD } from '@/lib/security';
+import { checkAuthRateLimit } from '@/lib/auth-rate-limit';
 import { logActivity } from '@/lib/db/activity';
 import { logError } from '@/lib/logger';
 import { sendSupportConfirmationEmail } from '@/lib/email';
@@ -24,6 +25,15 @@ const TicketSchema = z.object({
 export async function POST(req: NextRequest) {
   const csrf = csrfGuard(req);
   if (csrf) return csrf;
+
+  const ip =
+    req.headers.get('x-nf-client-connection-ip') ??
+    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
+    'unknown';
+  const rl = await checkAuthRateLimit(`support:${ip}`, 5, 60 * 60 * 1000);
+  if (!rl.allowed) {
+    return NextResponse.json({ error: 'Trop de tentatives. Réessayez dans une heure.' }, { status: 429 });
+  }
 
   const raw = await req.json().catch(() => null);
   if (raw && isHoneypotTriggered((raw as Record<string, unknown>)[HONEYPOT_FIELD])) {

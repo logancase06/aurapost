@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { parseBody } from '@/lib/validation';
 import { sanitizeText } from '@/lib/security';
 import { generateSingleDemoPost } from '@/lib/content-generator';
+import { checkAuthRateLimit } from '@/lib/auth-rate-limit';
 import { logError } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
@@ -19,6 +20,16 @@ const LiveSchema = z.object({
  * Génère UN post Instagram via le chemin actif (api/tunnel) ou le mock enrichi.
  */
 export async function POST(req: NextRequest) {
+  // Rate limit strict : endpoint public qui appelle Claude en prod.
+  const ip =
+    req.headers.get('x-nf-client-connection-ip') ??
+    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
+    'unknown';
+  const rl = await checkAuthRateLimit(`demo-live:${ip}`, 5, 10 * 60 * 1000);
+  if (!rl.allowed) {
+    return NextResponse.json({ error: `Trop de tentatives. Réessayez dans ${rl.retryAfterSec}s.` }, { status: 429 });
+  }
+
   const raw = await req.json().catch(() => null);
   const parsed = parseBody(LiveSchema, raw);
   if (!parsed.ok) return parsed.response;

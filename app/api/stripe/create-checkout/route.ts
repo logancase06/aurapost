@@ -1,4 +1,4 @@
-import type { NextRequest } from 'next/server';
+﻿import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { requireTenantId } from '@/lib/tenant';
@@ -31,10 +31,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Plan invalide' }, { status: 400 });
     }
 
+    // Sélection du Price ID : annuel si demandé ET disponible, sinon mensuel.
+    const wantsAnnual = body?.annual === true;
+    const priceId = wantsAnnual && plan.annualPriceId ? plan.annualPriceId : plan.priceId;
+
     // Mock propre : Stripe non configuré → on renvoie un message clair (pas d'erreur 500).
-    if (!stripe || !plan.priceId) {
+    if (!stripe || !priceId) {
       return NextResponse.json(
-        { mocked: true, message: 'Le paiement n’est pas encore activé. Configuration Stripe à venir.' },
+        { mocked: true, message: "Le paiement n'est pas encore activé. Configuration Stripe à venir." },
         { status: 200 }
       );
     }
@@ -43,12 +47,12 @@ export async function POST(req: NextRequest) {
 
     const checkout = await stripe.checkout.sessions.create({
       mode: 'subscription',
-      line_items: [{ price: plan.priceId, quantity: 1 }],
+      line_items: [{ price: priceId, quantity: 1 }],
       customer_email: u?.email,
       success_url: `${APP_URL}/dashboard/billing?success=1`,
       cancel_url: `${APP_URL}/dashboard/billing?canceled=1`,
       // Essai gratuit 14 jours (cohérent avec FREE_TRIAL_LABEL affiché partout).
-      subscription_data: { trial_period_days: FREE_TRIAL_DAYS, metadata: { tenantId, plan: plan.id } },
+      subscription_data: { trial_period_days: FREE_TRIAL_DAYS, metadata: { tenantId, plan: plan.id, billing: wantsAnnual ? 'annual' : 'monthly' } },
       metadata: { tenantId, plan: plan.id },
     });
 

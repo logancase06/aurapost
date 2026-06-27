@@ -6,6 +6,7 @@ import { db } from '@/lib/db';
 import {
   users, coachProfiles, generatedPosts, websites, subscriptions,
   referrals, referralCodes, notifications, activityLogs,
+  siteLeads, coachPhotos, editedPhotos, socialConnections, socialPublications, profileAnalyses,
 } from '@/lib/db/schema';
 import { logActivity } from '@/lib/db/activity';
 import { logUnauthorized } from '@/lib/security';
@@ -24,7 +25,7 @@ export async function GET() {
   }
   const tenantId = await requireTenantId();
 
-  const [user, profile, posts, sites, subs, refs, refCodes, notifs, logs] = await Promise.all([
+  const [user, profile, posts, sites, subs, refs, refCodes, notifs, logs, leads, photos, editedPics, socialConns, publications, analyses] = await Promise.all([
     db.select().from(users).where(eq(users.id, session.user.id)),
     db.select().from(coachProfiles).where(eq(coachProfiles.tenantId, tenantId)),
     db.select().from(generatedPosts).where(eq(generatedPosts.tenantId, tenantId)),
@@ -34,6 +35,12 @@ export async function GET() {
     db.select().from(referralCodes).where(eq(referralCodes.tenantId, tenantId)),
     db.select().from(notifications).where(eq(notifications.tenantId, tenantId)),
     db.select().from(activityLogs).where(eq(activityLogs.tenantId, tenantId)),
+    db.select().from(siteLeads).where(eq(siteLeads.tenantId, tenantId)),
+    db.select().from(coachPhotos).where(eq(coachPhotos.tenantId, tenantId)),
+    db.select().from(editedPhotos).where(eq(editedPhotos.tenantId, tenantId)),
+    db.select().from(socialConnections).where(eq(socialConnections.tenantId, tenantId)),
+    db.select().from(socialPublications).where(eq(socialPublications.tenantId, tenantId)),
+    db.select().from(profileAnalyses).where(eq(profileAnalyses.tenantId, tenantId)),
   ]);
 
   // On retire les hash de mot de passe de l'export.
@@ -53,6 +60,12 @@ export async function GET() {
     referralCodes: refCodes,
     notifications: notifs,
     activityLogs: logs,
+    siteLeads: leads,
+    photos,
+    editedPhotos: editedPics,
+    socialConnections: socialConns,
+    socialPublications: publications,
+    profileAnalyses: analyses,
   };
 
   return new NextResponse(JSON.stringify(payload, null, 2), {

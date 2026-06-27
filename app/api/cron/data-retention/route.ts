@@ -2,16 +2,21 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { lt } from 'drizzle-orm';
 import { db } from '@/lib/db';
-import { activityLogs } from '@/lib/db/schema';
+import { activityLogs, siteVisits } from '@/lib/db/schema';
 import { isAuthorizedCron } from '@/lib/cron-auth';
 import { logError, logInfo } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
-const RETENTION_DAYS = 90;
+const LOGS_RETENTION_DAYS = 90;
+// CNIL délibération 2020-091 art. 5 — exemption audience measurement :
+// durée de conservation maximale recommandée = 13 mois.
+const VISITS_RETENTION_DAYS = 395;
 
 /**
- * GET|POST /api/cron/data-retention — purge des logs d'activité de plus de 90 jours.
+ * GET|POST /api/cron/data-retention — purge RGPD des données à durée limitée.
+ * - Logs d'activité : 90 jours.
+ * - Visites du site vitrine (siteVisits) : 13 mois (CNIL).
  * À planifier 1×/jour. `Authorization: Bearer $CRON_SECRET`.
  */
 async function handle(req: NextRequest) {
@@ -19,10 +24,16 @@ async function handle(req: NextRequest) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }
   try {
-    const cutoff = new Date(Date.now() - RETENTION_DAYS * 24 * 60 * 60 * 1000).toISOString();
-    await db.delete(activityLogs).where(lt(activityLogs.createdAt, cutoff));
-    logInfo('[cron:data-retention] purge effectuée', { cutoff });
-    return NextResponse.json({ ok: true, cutoff, retentionDays: RETENTION_DAYS });
+    const logsCutoff = new Date(Date.now() - LOGS_RETENTION_DAYS * 24 * 60 * 60 * 1000).toISOString();
+    const visitsCutoff = new Date(Date.now() - VISITS_RETENTION_DAYS * 24 * 60 * 60 * 1000);
+
+    await Promise.all([
+      db.delete(activityLogs).where(lt(activityLogs.createdAt, logsCutoff)),
+      db.delete(siteVisits).where(lt(siteVisits.visitedAt, visitsCutoff)),
+    ]);
+
+    logInfo('[cron:data-retention] purge effectuée', { logsCutoff, visitsCutoff: visitsCutoff.toISOString() });
+    return NextResponse.json({ ok: true, logsCutoff, visitsCutoff: visitsCutoff.toISOString() });
   } catch (err) {
     logError('[cron:data-retention] échec', { error: String(err) });
     return NextResponse.json({ error: 'Erreur interne' }, { status: 500 });

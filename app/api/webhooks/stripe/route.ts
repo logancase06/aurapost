@@ -4,8 +4,9 @@ import { stripe } from '@/lib/stripe';
 import { upsertSubscription, findTenantByStripeCustomer } from '@/lib/db/subscription';
 import { planIdForPrice } from '@/lib/plans';
 import { db } from '@/lib/db';
-import { tenants, users } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { tenants, users, activityLogs } from '@/lib/db/schema';
+import { and, eq } from 'drizzle-orm';
+import { nanoid } from 'nanoid';
 import { sendPaymentFailedEmail, sendPaymentSucceededEmail, sendCancellationEmail, sendTrialEndingEmail } from '@/lib/email';
 import { logError, logInfo } from '@/lib/logger';
 import { GRACE_PERIOD_DAYS as GRACE_DAYS } from '@/lib/constants';
@@ -48,6 +49,22 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     logError('[stripe:webhook] signature invalide', { error: String(err) });
     return NextResponse.json({ error: 'Signature invalide' }, { status: 400 });
+  }
+
+  // Idempotence : un event Stripe peut être rejoué si la réponse 200 n'a pas été reçue.
+  // On déduplique via activityLogs avant tout traitement pour éviter les emails en double.
+  try {
+    const [alreadyProcessed] = await db
+      .select({ id: activityLogs.id })
+      .from(activityLogs)
+      .where(and(eq(activityLogs.action, 'stripe_webhook'), eq(activityLogs.targetId, event.id)))
+      .limit(1);
+    if (alreadyProcessed) {
+      logInfo('[stripe:webhook] event déjà traité (duplicate)', { eventId: event.id, type: event.type });
+      return NextResponse.json({ received: true, duplicate: true });
+    }
+  } catch {
+    // Échec de la vérification de dédup — on laisse passer pour ne pas perdre l'event.
   }
 
   try {
@@ -153,6 +170,21 @@ export async function POST(req: NextRequest) {
       default:
         break;
     }
+
+    // Marquer l'event comme traité pour l'idempotence (best-effort).
+    try {
+      await db.insert(activityLogs).values({
+        id: nanoid(),
+        tenantId: null,
+        action: 'stripe_webhook',
+        targetId: event.id,
+        details: JSON.stringify({ type: event.type }),
+        createdAt: new Date().toISOString(),
+      });
+    } catch {
+      // Non bloquant : la déduplication est best-effort.
+    }
+
     return NextResponse.json({ received: true });
   } catch (err) {
     logError('[stripe:webhook] traitement échoué', { type: event.type, error: String(err) });
