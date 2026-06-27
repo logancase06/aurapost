@@ -1,7 +1,7 @@
 // Helpers DB pour les connexions sociales Zernio et l'historique de publication.
 // Toutes les mutations passent par requireTenantId() côté API — pas de vérification ici.
 
-import { eq, and } from 'drizzle-orm';
+import { eq, and, inArray } from 'drizzle-orm';
 import { db } from '.';
 import { socialConnections, socialPublications, tenants } from './schema';
 import type { SocialPlatform } from '../zernio';
@@ -160,4 +160,39 @@ export async function getPublicationsByPost(postId: string, tenantId: string) {
     .select()
     .from(socialPublications)
     .where(and(eq(socialPublications.postId, postId), eq(socialPublications.tenantId, tenantId)));
+}
+
+/** Connexion sérialisée — safe à passer à un Client Component. */
+export interface SerializedConnection {
+  id: string;
+  platform: string;
+  accountName: string | null;
+  accountAvatar: string | null;
+}
+
+/** Statut de publication par post × connexion — pour les badges de statut dans les cartes. */
+export interface PublicationSummary {
+  postId: string;
+  connectionId: string;
+  platform: string;
+  status: string; // 'pending' | 'published' | 'failed'
+}
+
+/**
+ * Récupère les statuts de publication pour une liste de posts en une seule requête.
+ * Utilisé dans le dashboard pour afficher les badges ✅/❌/⏳ sans N+1.
+ */
+export async function getPublicationsBatch(tenantId: string, postIds: string[]): Promise<PublicationSummary[]> {
+  if (postIds.length === 0) return [];
+  const rows = await db
+    .select({
+      postId: socialPublications.postId,
+      connectionId: socialPublications.connectionId,
+      platform: socialConnections.platform,
+      status: socialPublications.status,
+    })
+    .from(socialPublications)
+    .innerJoin(socialConnections, eq(socialPublications.connectionId, socialConnections.id))
+    .where(and(eq(socialPublications.tenantId, tenantId), inArray(socialPublications.postId, postIds)));
+  return rows as PublicationSummary[];
 }

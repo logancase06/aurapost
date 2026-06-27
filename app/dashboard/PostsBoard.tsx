@@ -4,12 +4,16 @@ import { Camera, Briefcase, LayoutGrid } from 'lucide-react';
 import { AnimatedTabs } from '@/components/ui/motion-primitives';
 import PostCard from './PostCard';
 import type { PostRow } from '@/lib/db/posts';
+import type { SerializedConnection, PublicationSummary } from '@/lib/db/social-connections';
 
 export interface PostsBoardGating {
   canExport?: boolean;
   variantesUsed?: number;
   variantesMax?: number;
   watermark?: boolean;
+  socialPublishEnabled?: boolean;
+  socialConnections?: SerializedConnection[];
+  postPublications?: PublicationSummary[];
 }
 
 // Posts avec séparation Instagram / LinkedIn — tabs animés à indicateur glissant.
@@ -60,7 +64,17 @@ function Grid({ posts, gating }: { posts: PostRow[]; gating?: PostsBoardGating }
   return (
     <div className="grid gap-5 lg:grid-cols-2">
       {posts.map((p) => (
-        <PostCard key={p.id} post={p} canExport={gating?.canExport} variantesUsed={gating?.variantesUsed} variantesMax={gating?.variantesMax} watermark={gating?.watermark} />
+        <PostCard
+        key={p.id}
+        post={p}
+        canExport={gating?.canExport}
+        variantesUsed={gating?.variantesUsed}
+        variantesMax={gating?.variantesMax}
+        watermark={gating?.watermark}
+        socialPublishEnabled={gating?.socialPublishEnabled}
+        socialConnections={gating?.socialConnections}
+        publications={gating?.postPublications?.filter((pub) => pub.postId === p.id)}
+      />
       ))}
     </div>
   );

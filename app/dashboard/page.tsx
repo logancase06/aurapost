@@ -6,6 +6,7 @@ import { users, tenants } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { listPosts, getPostStats, hasGeneratedThisMonth, getVariantesCount, getLatestGenerationMode, type PostStatus } from '@/lib/db/posts';
 import { canExportPost, getPlanLimits } from '@/lib/plans';
+import { getConnectionsByTenant, getPublicationsBatch } from '@/lib/db/social-connections';
 import { getSmartSuggestions, getGenerationStreak } from '@/lib/db/suggestions';
 import { getOnboardingProgress, getProfileCompletion } from '@/lib/db/onboarding';
 import { getLatestAnalysis } from '@/lib/db/analyses';
@@ -84,7 +85,31 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
 
   const plan = session.user.plan ?? 'starter';
   const planLimits = getPlanLimits(plan);
-  const gating = { canExport: canExportPost(plan), variantesUsed, variantesMax: planLimits.variantesMax, watermark: planLimits.watermark };
+
+  // Social publish : données uniquement pour les plans qui y ont accès.
+  const socialPublishEnabled = planLimits.socialPublishEnabled;
+  const [rawConnections, postPublications] = socialPublishEnabled && posts.length > 0
+    ? await Promise.all([
+        getConnectionsByTenant(tenantId),
+        getPublicationsBatch(tenantId, posts.map((p) => p.id)),
+      ])
+    : [[], []];
+  const socialConnections = rawConnections.map((c) => ({
+    id: c.id,
+    platform: c.platform as string,
+    accountName: c.accountName,
+    accountAvatar: c.accountAvatar,
+  }));
+
+  const gating = {
+    canExport: canExportPost(plan),
+    variantesUsed,
+    variantesMax: planLimits.variantesMax,
+    watermark: planLimits.watermark,
+    socialPublishEnabled,
+    socialConnections,
+    postPublications,
+  };
 
   // Dégradation silencieuse : posts en mode mock alors qu'une IA est configurée.
   const apiConfigured = !!(process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_TUNNEL_URL);
