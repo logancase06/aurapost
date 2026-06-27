@@ -34,6 +34,7 @@ export const tenants = sqliteTable(
     unsubscribedAt: text('unsubscribed_at'),
     unsubscribeToken: text('unsubscribe_token'),
     isDemo: integer('is_demo', { mode: 'boolean' }).notNull().default(false), // exclu des métriques admin
+    zernioProfileId: text('zernio_profile_id'), // ID Zernio Profile créé à la première connexion sociale
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull(),
   },
@@ -506,6 +507,52 @@ export const imageEditJobs = sqliteTable(
   (t) => ({
     tenantIdx: index('image_edit_jobs_tenant_idx').on(t.tenantId),
     statusIdx: index('image_edit_jobs_status_idx').on(t.status),
+  })
+);
+
+// Comptes réseaux sociaux connectés par un coach via Zernio (publication directe depuis AuraPost).
+// Limité à MAX_SOCIAL_ACCOUNTS plateformes par tenant en v1 beta (voir lib/plans.ts).
+// Un seul compte actif par plateforme par tenant (UNIQUE sur tenant_id + platform).
+export const socialConnections = sqliteTable(
+  'social_connections',
+  {
+    id: text('id').primaryKey(),
+    tenantId: text('tenant_id').notNull(),
+    zernioAccountId: text('zernio_account_id').notNull(), // ID du compte dans Zernio
+    platform: text('platform').notNull(), // 'linkedin' | 'instagram' (v1)
+    accountName: text('account_name'),   // handle ou nom affiché (ex: "@coach_martin")
+    accountAvatar: text('account_avatar'), // URL avatar pour l'UI
+    status: text('status').notNull().default('active'), // 'active' | 'expired' | 'revoked'
+    connectedAt: text('connected_at').notNull(),
+    lastUsedAt: text('last_used_at'),
+  },
+  (t) => ({
+    tenantIdx: index('social_connections_tenant_idx').on(t.tenantId),
+    // Un seul compte actif par plateforme par tenant.
+    tenantPlatformIdx: uniqueIndex('social_connections_tenant_platform_idx').on(t.tenantId, t.platform),
+  })
+);
+
+// Historique des publications sociales (une ligne par post × plateforme).
+// Permet de tracker l'état (pending/published/failed) indépendamment du post source.
+export const socialPublications = sqliteTable(
+  'social_publications',
+  {
+    id: text('id').primaryKey(),
+    postId: text('post_id').notNull(),         // FK → generatedPosts.id
+    tenantId: text('tenant_id').notNull(),
+    connectionId: text('connection_id').notNull(), // FK → socialConnections.id
+    zernioPostId: text('zernio_post_id'),      // ID retourné par Zernio (pour webhook + dédup)
+    status: text('status').notNull().default('pending'), // 'pending' | 'published' | 'failed'
+    publishedAt: text('published_at'),
+    errorMessage: text('error_message'),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => ({
+    postIdx: index('social_publications_post_idx').on(t.postId),
+    tenantStatusIdx: index('social_publications_tenant_status_idx').on(t.tenantId, t.status),
+    // Index sur zernio_post_id pour réconcilier les webhooks entrants.
+    zernioPostIdx: index('social_publications_zernio_post_idx').on(t.zernioPostId),
   })
 );
 
