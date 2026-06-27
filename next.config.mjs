@@ -41,7 +41,38 @@ const nextConfig = {
   },
 
   async headers() {
+    // CSP : 'unsafe-inline' requis pour les scripts d'hydratation Next.js et les
+    // styles inline (Tailwind). Les nonces (alternative stricte) nécessitent du
+    // middleware dynamique qui casse ISR — pas adapté ici.
+    // Tiers autorisés explicitement : Stripe, Crisp, GA/GTM, Meta Pixel.
+    const csp = [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://client.crisp.chat https://www.googletagmanager.com https://connect.facebook.net",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob: https:",
+      "font-src 'self' data:",
+      "connect-src 'self' https: wss://client.relay.crisp.chat wss://stream.crisp.chat",
+      "frame-src https://js.stripe.com https://hooks.stripe.com",
+      "worker-src 'self' blob:",
+      "media-src 'self' blob:",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "upgrade-insecure-requests",
+    ].join('; ');
+
     return [
+      // Sécurité globale — appliquée à toutes les pages.
+      {
+        source: '/(.*)',
+        headers: [
+          { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+          { key: 'Content-Security-Policy', value: csp },
+        ],
+      },
       // Routes API mutatives — pas de cache par défaut.
       {
         source: '/api/(.*)',

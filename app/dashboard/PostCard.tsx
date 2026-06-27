@@ -3,13 +3,13 @@
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
-import { Check, X, RefreshCw, Copy, Camera, Briefcase, Loader2, Maximize2, ImageIcon, Lock, Share2 } from 'lucide-react';
+import { Check, X, RefreshCw, Copy, Camera, Briefcase, Loader2, Maximize2, ImageIcon, Lock, Share2, Languages, ChevronDown, Sparkles } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { BorderBeam } from '@/components/ui/border-beam';
-import { approvePostAction, rejectPostAction, requestVariantAction } from './post-actions';
+import { approvePostAction, rejectPostAction, requestVariantAction, translatePostAction } from './post-actions';
 import ApprovePostDialog from './ApprovePostDialog';
 import PublishButton, { PlatformStatusBadge } from '@/components/social/PublishButton';
 import { WATERMARK_TEXT } from '@/lib/plans';
@@ -45,6 +45,20 @@ export default function PostCard({
   const [pending, startTransition] = useTransition();
   const [copied, setCopied] = useState(false);
   const [approveOpen, setApproveOpen] = useState(false);
+  const [translateOpen, setTranslateOpen] = useState(false);
+  const [score, setScore] = useState<{ score: number; conseil: string } | null>(null);
+  const [scoreLoading, setScoreLoading] = useState(false);
+
+  async function fetchScore() {
+    setScoreLoading(true);
+    try {
+      const res = await fetch(`/api/posts/${post.id}/score`, { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      if (data.ok) setScore(data.score);
+      else toast.error('Scoring impossible');
+    } catch { toast.error('Erreur réseau'); }
+    finally { setScoreLoading(false); }
+  }
   const status = STATUS[post.status];
   const variantesLeft = variantesMax === Infinity || variantesUsed < variantesMax;
 
@@ -103,10 +117,36 @@ export default function PostCard({
     <Card className="hover-lift relative flex flex-col overflow-hidden p-5">
       {post.status === 'draft' && <BorderBeam duration={7} />}
       <div className="mb-3 flex items-center justify-between">
-        <Badge variant={post.network === 'linkedin' ? 'secondary' : 'default'}>
-          <Icon className="h-3 w-3" /> {post.network}
-        </Badge>
+        <div className="flex items-center gap-1.5">
+          <Badge variant={post.network === 'linkedin' ? 'secondary' : 'default'}>
+            <Icon className="h-3 w-3" /> {post.network}
+          </Badge>
+          <span
+            title="Contenu généré par intelligence artificielle (EU AI Act Art.50)"
+            className="inline-flex items-center gap-0.5 rounded-full border border-primary/20 bg-primary/5 px-1.5 py-0.5 text-[10px] font-semibold text-primary/70"
+          >
+            <Sparkles className="h-2.5 w-2.5" /> IA
+          </span>
+        </div>
         <div className="flex items-center gap-2">
+          {/* Score IA */}
+          {score ? (
+            <button
+              title={score.conseil}
+              className={`rounded-full px-2 py-0.5 text-xs font-black tabular-nums ${score.score >= 70 ? 'bg-success/15 text-success' : score.score >= 50 ? 'bg-warning/15 text-warning' : 'bg-destructive/15 text-destructive'}`}
+            >
+              {score.score}
+            </button>
+          ) : (
+            <button
+              onClick={fetchScore}
+              disabled={scoreLoading}
+              title="Scorer ce post avec l'IA"
+              className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground hover:border-primary hover:text-primary"
+            >
+              {scoreLoading ? '…' : 'Score'}
+            </button>
+          )}
           <Badge variant={status.variant}>
             {status.label}
             {post.variantOfId && ' · variante'}
@@ -121,6 +161,9 @@ export default function PostCard({
           </Link>
         </div>
       </div>
+      {score?.conseil && (
+        <p className="mb-2 rounded-md bg-primary/5 px-3 py-1.5 text-xs text-primary">💡 {score.conseil}</p>
+      )}
 
       {post.title && <h3 className="font-bold">{post.title}</h3>}
       {post.theme && <p className="mt-0.5 text-xs font-medium text-primary/80">Thème : {post.theme}</p>}
@@ -171,6 +214,43 @@ export default function PostCard({
         <Button size="sm" variant="ghost" onClick={copy} className="ml-auto h-11 sm:h-8">
           <Copy className="h-3.5 w-3.5" /> {copied ? 'Copié' : 'Copier'}
         </Button>
+
+        {/* Traduction — visible pour les plans payants */}
+        {canExport && (
+          <div className="relative">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setTranslateOpen((v) => !v)}
+              className="h-11 sm:h-8"
+              title="Traduire ce post"
+            >
+              <Languages className="h-3.5 w-3.5" />
+              <ChevronDown className="h-3 w-3" />
+            </Button>
+            {translateOpen && (
+              <div className="absolute right-0 top-full z-20 mt-1 w-36 rounded-lg border border-border bg-card py-1 shadow-lg">
+                {(['en', 'es', 'pt', 'de'] as const).map((lang) => (
+                  <button
+                    key={lang}
+                    disabled={pending}
+                    onClick={() => {
+                      setTranslateOpen(false);
+                      startTransition(async () => {
+                        const res = await translatePostAction(post.id, lang);
+                        if (res.ok) toast.success('Traduction générée ✦');
+                        else toast.error(res.error || 'Traduction impossible');
+                      });
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-secondary"
+                  >
+                    {{ en: '🇬🇧 Anglais', es: '🇪🇸 Espagnol', pt: '🇧🇷 Portugais', de: '🇩🇪 Allemand' }[lang]}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Z-5.1 — Bouton "Publier" : visible si plan OK + post approuvé. */}
         {socialPublishEnabled && post.status === 'approved' && (

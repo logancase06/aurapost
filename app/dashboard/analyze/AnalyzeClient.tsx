@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { applyBioAction, markRecommendationDoneAction } from './actions';
+import { applyBioAction, markRecommendationDoneAction, optimizeBioAction, type BioVariants } from './actions';
 import type { InstagramAnalysis, LinkedInAnalysis } from '@/lib/analyze/types';
 
 type Hist = { score: number; date: string };
@@ -383,8 +383,32 @@ export default function AnalyzeClient({
     }
   }
 
+  // Bio optimizer
+  const [bioRes, setBioRes] = useState<BioVariants | null>(null);
+  const [bioLoading, setBioLoading] = useState(false);
+  const [bioTab, setBioTab] = useState<'ig' | 'li'>('ig');
+
+  async function optimizeBio() {
+    setBioLoading(true);
+    try {
+      const res = await optimizeBioAction();
+      if (res.ok && res.data) {
+        setBioRes(res.data);
+        setBioTab('ig');
+      } else {
+        toast.error(res.error || 'Optimisation impossible');
+      }
+    } catch {
+      toast.error('Erreur réseau');
+    } finally {
+      setBioLoading(false);
+    }
+  }
+
   return (
-    <div className="mt-8 grid gap-6 lg:grid-cols-2">
+    <div className="mt-8 space-y-6">
+      {/* Instagram + LinkedIn */}
+      <div className="grid gap-6 lg:grid-cols-2">
       {/* Instagram */}
       <Card className="p-6">
         <h2 className="flex items-center gap-2 text-lg font-bold"><Camera className="h-5 w-5 text-primary" /> Instagram</h2>
@@ -419,6 +443,82 @@ export default function AnalyzeClient({
           </Button>
         </div>
         {liRes && <LinkedInResult a={liRes} history={linkedinHistory} />}
+      </Card>
+      </div>
+
+      {/* Bio Optimizer D-3 */}
+      <Card className="p-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h2 className="flex items-center gap-2 text-lg font-bold">
+              <Sparkles className="h-5 w-5 text-primary" /> Optimiseur de bio
+            </h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Génère 3 variantes Instagram (150 car. max) et 2 titres + résumés LinkedIn à partir de ton profil.
+            </p>
+          </div>
+          <Button onClick={optimizeBio} disabled={bioLoading} variant="gradient" size="sm">
+            {bioLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+            {bioRes ? 'Régénérer' : 'Optimiser ma bio'}
+          </Button>
+        </div>
+
+        {bioRes && (
+          <div className="mt-5">
+            {/* Tabs */}
+            <div className="flex gap-2 border-b border-border">
+              {(['ig', 'li'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setBioTab(tab)}
+                  className={`pb-2 text-sm font-medium border-b-2 transition-colors ${bioTab === tab ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
+                >
+                  {tab === 'ig' ? '📸 Instagram' : '💼 LinkedIn'}
+                </button>
+              ))}
+            </div>
+
+            {bioTab === 'ig' && (
+              <div className="mt-4 space-y-3">
+                {bioRes.instagram.map((bio, i) => (
+                  <div key={i} className="rounded-lg border border-border p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1">
+                        <p className="text-xs font-semibold uppercase text-muted-foreground mb-1">Variante {i + 1} · {bio.length}/150</p>
+                        <p className="text-sm">{bio}</p>
+                      </div>
+                      <CopyButton text={bio} label="Copier" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {bioTab === 'li' && (
+              <div className="mt-4 space-y-4">
+                {bioRes.linkedin.map((variant, i) => (
+                  <div key={i} className="rounded-lg border border-border p-4 space-y-2">
+                    <p className="text-xs font-semibold uppercase text-muted-foreground">Variante {i + 1}</p>
+                    <div>
+                      <p className="text-[11px] font-medium text-primary uppercase tracking-wide">Titre</p>
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-sm font-semibold">{variant.headline}</p>
+                        <CopyButton text={variant.headline} label="Copier" />
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-medium text-primary uppercase tracking-wide">Résumé</p>
+                      <div className="flex items-start justify-between gap-3">
+                        <p className="text-sm text-muted-foreground whitespace-pre-line flex-1">{variant.summary}</p>
+                        <CopyButton text={variant.summary} label="Copier" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </Card>
     </div>
   );
