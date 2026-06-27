@@ -393,4 +393,18 @@ CREATE TABLE IF NOT EXISTS social_publications (
 CREATE INDEX IF NOT EXISTS social_publications_post_idx ON social_publications (post_id);
 CREATE INDEX IF NOT EXISTS social_publications_tenant_status_idx ON social_publications (tenant_id, status);
 CREATE INDEX IF NOT EXISTS social_publications_zernio_post_idx ON social_publications (zernio_post_id);
+
+CREATE TABLE IF NOT EXISTS site_leads (
+  id TEXT PRIMARY KEY,
+  tenant_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  phone TEXT,
+  message TEXT,
+  source TEXT NOT NULL DEFAULT 'contact_form',
+  status TEXT NOT NULL DEFAULT 'new',
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS site_leads_tenant_idx ON site_leads (tenant_id);
+CREATE INDEX IF NOT EXISTS site_leads_created_idx ON site_leads (created_at);
 `;
