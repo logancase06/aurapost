@@ -21,6 +21,7 @@ import { getPlanLimits, canExportPost } from '@/lib/plans';
 import { logEvent, logError } from '@/lib/logger';
 import { nanoid } from 'nanoid';
 import { currentMonth } from '@/lib/utils';
+import { withAnthropicRetry } from '@/lib/anthropic-retry';
 
 async function ctx() {
   const session = await auth();
@@ -184,7 +185,7 @@ export async function translatePostAction(
     if (process.env.ANTHROPIC_API_KEY) {
       const { default: Anthropic } = await import('@anthropic-ai/sdk');
       const client = new Anthropic();
-      const message = await client.messages.create({
+      const message = await withAnthropicRetry(() => client.messages.create({
         model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6',
         max_tokens: 1024,
         system: 'Tu es un expert en traduction de contenu social media. Réponds UNIQUEMENT avec du JSON valide strict, aucun texte autour.',
@@ -202,7 +203,7 @@ Hashtags originaux : ${hashtagsRaw}
 Réponds avec ce JSON exact :
 {"content":"...","hashtags":["..."]}`,
         }],
-      }, { timeout: 25_000 });
+      }, { timeout: 25_000 }), 'translatePost');
       let raw = '';
       for (const b of message.content) { if (b.type === 'text') raw += b.text; }
       const parsed = JSON.parse(raw.trim()) as { content: string; hashtags: string[] };
@@ -258,7 +259,7 @@ export async function recyclePostAction(postId: string): Promise<{ ok: boolean; 
     if (process.env.ANTHROPIC_API_KEY) {
       const { default: Anthropic } = await import('@anthropic-ai/sdk');
       const client = new Anthropic();
-      const message = await client.messages.create({
+      const message = await withAnthropicRetry(() => client.messages.create({
         model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6',
         max_tokens: 1024,
         system: 'Tu es un expert en copywriting pour coachs sportifs. Réponds UNIQUEMENT avec du JSON valide strict.',
@@ -274,7 +275,7 @@ ${post.title ? `Titre : ${post.title}\n` : ''}${post.content}
 Réponds avec ce JSON exact :
 {"title":"...","content":"...","hashtags":["..."],"callToAction":"..."}`,
         }],
-      }, { timeout: 25_000 });
+      }, { timeout: 25_000 }), 'recyclePost');
       let raw = '';
       for (const b of message.content) { if (b.type === 'text') raw += b.text; }
       newContent = JSON.parse(raw.trim());

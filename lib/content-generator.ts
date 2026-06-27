@@ -1,5 +1,6 @@
 import { isMockForced } from './claude-code';
 import { logError, logInfo } from './logger';
+import { withAnthropicRetry } from './anthropic-retry';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Générateur de contenu — 3 chemins avec sélection automatique :
@@ -103,12 +104,12 @@ async function generateViaAnthropic(prompt: string, maxTokens: number, system: s
   // 90 s : génération mensuelle s'exécute en after() (hors limite serverless 26 s).
   // Sans timeout explicite le SDK attend 10 min, laissant une connexion zombie si la
   // fonction est tuée par le runtime serverless avant la fin de l'appel Anthropic.
-  const message = await client.messages.create({
+  const message = await withAnthropicRetry(() => client.messages.create({
     model: API_MODEL,
     max_tokens: maxTokens,
     system,
     messages: [{ role: 'user', content: prompt }],
-  }, { timeout: 90_000 });
+  }, { timeout: 90_000 }), 'generateViaAnthropic');
   let text = '';
   for (const block of message.content) {
     if (block.type === 'text') text += block.text + '\n';
