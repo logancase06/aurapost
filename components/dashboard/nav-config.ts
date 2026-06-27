@@ -1,4 +1,4 @@
-import { LayoutDashboard, Globe, Compass, BarChart3, History, CreditCard, CalendarDays, Gift, Settings, User, Sparkles, type LucideIcon } from 'lucide-react';
+import { LayoutDashboard, Globe, Compass, BarChart3, History, CreditCard, CalendarDays, Gift, Settings, User, Sparkles, Share2, type LucideIcon } from 'lucide-react';
 
 export interface NavLink {
   href: string;
@@ -20,3 +20,7 @@ export const DASHBOARD_LINKS: NavLink[] = [
   { href: '/dashboard/billing', label: 'Abonnement', icon: CreditCard },
   { href: '/dashboard/settings', label: 'Paramètres', icon: Settings },
 ];
+
+// Entrée conditionnelle — visible uniquement si socialPublishEnabled (pack_complet).
+// Passée via showSocial dans DashboardShell → SidebarNav, comme showAdmin.
+export const SOCIAL_LINK: NavLink = { href: '/dashboard/social', label: 'Mes réseaux', icon: Share2 };

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Sparkles, ShieldCheck } from 'lucide-react';
-import { DASHBOARD_LINKS } from './nav-config';
+import { DASHBOARD_LINKS, SOCIAL_LINK } from './nav-config';
 import { cn } from '@/lib/utils';
 
 // Navigation présentationnelle (sans hooks) — utilisable côté serveur ET dans le Sheet mobile.
@@ -8,11 +8,13 @@ export default function SidebarNav({
   active,
   pending = 0,
   showAdmin = false,
+  showSocial = false,
   onNavigate,
 }: {
   active?: string;
   pending?: number;
   showAdmin?: boolean;
+  showSocial?: boolean;
   onNavigate?: () => void;
 }) {
   return (
@@ -49,6 +51,23 @@ export default function SidebarNav({
             </Link>
           );
         })}
+
+        {showSocial && (
+          <Link
+            key={SOCIAL_LINK.href}
+            href={SOCIAL_LINK.href}
+            onClick={onNavigate}
+            className={cn(
+              'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-all duration-150',
+              active === SOCIAL_LINK.href
+                ? 'bg-primary/15 text-primary shadow-[0_0_20px_-6px_hsl(262_83%_58%_/_0.6)]'
+                : 'text-muted-foreground hover:bg-secondary hover:text-foreground hover:shadow-[0_0_18px_-8px_hsl(262_83%_58%_/_0.7)]'
+            )}
+          >
+            <SOCIAL_LINK.icon className="h-4 w-4 shrink-0" />
+            <span className="flex-1">{SOCIAL_LINK.label}</span>
+          </Link>
+        )}
 
         {showAdmin && (
           <Link

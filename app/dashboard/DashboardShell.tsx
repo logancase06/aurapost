@@ -2,6 +2,7 @@ import { auth } from '@/lib/auth';
 import { isAdminSession } from '@/lib/admin';
 import { pendingApprovalCount } from '@/lib/db/analytics';
 import { listNotifications, unreadCount } from '@/lib/db/notifications';
+import { getPlanLimits } from '@/lib/plans';
 import SidebarNav from '@/components/dashboard/SidebarNav';
 import Topbar from '@/components/dashboard/Topbar';
 import MobileBottomBar from '@/components/dashboard/MobileBottomBar';
@@ -18,6 +19,7 @@ export default async function DashboardShell({
   const tenantId = session?.user?.tenantId ?? null;
   const pending = tenantId ? await pendingApprovalCount(tenantId) : 0;
   const showAdmin = isAdminSession(session);
+  const showSocial = getPlanLimits(session?.user?.plan).socialPublishEnabled;
   const [notifications, unread] = tenantId
     ? await Promise.all([listNotifications(tenantId), unreadCount(tenantId)])
     : [[], 0];
@@ -26,7 +28,7 @@ export default async function DashboardShell({
     <div className="min-h-screen bg-background">
       {/* Sidebar fixe (desktop) */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 border-r border-border bg-card/40 p-5 md:block">
-        <SidebarNav active={active} pending={pending} showAdmin={showAdmin} />
+        <SidebarNav active={active} pending={pending} showAdmin={showAdmin} showSocial={showSocial} />
       </aside>
 
       <div className="md:pl-64">
@@ -34,6 +36,7 @@ export default async function DashboardShell({
           active={active}
           pending={pending}
           showAdmin={showAdmin}
+          showSocial={showSocial}
           name={session?.user?.name ?? 'Coach'}
           email={session?.user?.email ?? ''}
           notifications={notifications}

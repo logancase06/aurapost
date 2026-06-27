@@ -21,6 +21,7 @@ export default function Topbar({
   active,
   pending,
   showAdmin,
+  showSocial = false,
   name,
   email,
   notifications = [],
@@ -29,6 +30,7 @@ export default function Topbar({
   active?: string;
   pending: number;
   showAdmin: boolean;
+  showSocial?: boolean;
   name: string;
   email: string;
   notifications?: NotifItem[];
@@ -46,7 +48,7 @@ export default function Topbar({
         </SheetTrigger>
         <SheetContent side="left" className="w-72 p-5">
           <SheetTitle className="sr-only">Navigation</SheetTitle>
-          <SidebarNav active={active} pending={pending} showAdmin={showAdmin} onNavigate={() => setOpen(false)} />
+          <SidebarNav active={active} pending={pending} showAdmin={showAdmin} showSocial={showSocial} onNavigate={() => setOpen(false)} />
         </SheetContent>
       </Sheet>
 
