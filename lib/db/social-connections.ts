@@ -127,6 +127,14 @@ export async function createPublication(params: {
   });
 }
 
+/** Met à jour lastUsedAt après une publication réussie. */
+export async function touchConnectionLastUsed(connectionId: string): Promise<void> {
+  await db
+    .update(socialConnections)
+    .set({ lastUsedAt: new Date().toISOString() })
+    .where(eq(socialConnections.id, connectionId));
+}
+
 /**
  * Met à jour le statut d'une publication via son zernioPostId.
  * Appelé par le webhook Zernio (post.published / post.failed).
