@@ -113,6 +113,11 @@ export interface PlanLimits {
    * Calcul : 20 img × €0.046/img = €0.92 → coût IA total = €0.98 = 1.24% du plan (objectif < 2%).
    */
   aiEditsMax: number;
+  /**
+   * Publication directe sur les réseaux sociaux (Zernio) depuis l'app.
+   * Réservé à pack_complet en v1. MAX_SOCIAL_ACCOUNTS comptes par tenant en beta.
+   */
+  socialPublishEnabled: boolean;
 }
 
 // Les deux plans payants partagent la même limite de variantes intentionnellement.
@@ -121,10 +126,13 @@ const VARIANTS_UNLIMITED = 9_999;
 
 // 'starter' = Découverte (gratuit, hameçon) : 4 posts Instagram avec watermark, pas de
 // site, pas d'export, pas de variantes. Payer débloque le volume, LinkedIn, l'export, le site.
+/** Nombre max de comptes sociaux par tenant en beta Zernio (2 = tier gratuit Zernio). */
+export const MAX_SOCIAL_ACCOUNTS = 2;
+
 const LIMITS: Record<PlanId, PlanLimits> = {
-  starter:      { postsPerMonth: 4,  instagramOnly: true,  sitesEnabled: false, photosMax: 1,  variantesMax: 0,                exportEnabled: false, watermark: true,  profileSections: ['base'],                                      aiEditsMax: 0  },
-  content_only: { postsPerMonth: 12, instagramOnly: false, sitesEnabled: false, photosMax: 10, variantesMax: VARIANTS_UNLIMITED, exportEnabled: true,  watermark: false, profileSections: ['base', 'presence', 'photos', 'results'],    aiEditsMax: 0  },
-  pack_complet: { postsPerMonth: 12, instagramOnly: false, sitesEnabled: true,  photosMax: 10, variantesMax: VARIANTS_UNLIMITED, exportEnabled: true,  watermark: false, profileSections: ['base', 'presence', 'photos', 'results'],    aiEditsMax: 20 },
+  starter:      { postsPerMonth: 4,  instagramOnly: true,  sitesEnabled: false, photosMax: 1,  variantesMax: 0,                exportEnabled: false, watermark: true,  profileSections: ['base'],                                      aiEditsMax: 0,  socialPublishEnabled: false },
+  content_only: { postsPerMonth: 12, instagramOnly: false, sitesEnabled: false, photosMax: 10, variantesMax: VARIANTS_UNLIMITED, exportEnabled: true,  watermark: false, profileSections: ['base', 'presence', 'photos', 'results'],    aiEditsMax: 0,  socialPublishEnabled: false },
+  pack_complet: { postsPerMonth: 12, instagramOnly: false, sitesEnabled: true,  photosMax: 10, variantesMax: VARIANTS_UNLIMITED, exportEnabled: true,  watermark: false, profileSections: ['base', 'presence', 'photos', 'results'],    aiEditsMax: 20, socialPublishEnabled: true  },
 };
 
 export function getPlanLimits(plan: string | null | undefined): PlanLimits {
