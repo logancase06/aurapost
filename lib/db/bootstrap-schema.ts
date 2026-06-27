@@ -407,4 +407,7 @@ CREATE TABLE IF NOT EXISTS site_leads (
 );
 CREATE INDEX IF NOT EXISTS site_leads_tenant_idx ON site_leads (tenant_id);
 CREATE INDEX IF NOT EXISTS site_leads_created_idx ON site_leads (created_at);
+
+CREATE INDEX IF NOT EXISTS notifications_tenant_read_idx ON notifications (tenant_id, read_at);
+CREATE INDEX IF NOT EXISTS notifications_tenant_created_idx ON notifications (tenant_id, created_at);
 `;

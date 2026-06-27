@@ -290,6 +290,10 @@ export const notifications = sqliteTable(
   (t) => ({
     tenantIdx: index('notifications_tenant_idx').on(t.tenantId),
     createdIdx: index('notifications_created_idx').on(t.createdAt),
+    // Badge non-lu : WHERE tenant_id=? AND read_at IS NULL (appelée sur chaque page dashboard).
+    tenantReadIdx: index('notifications_tenant_read_idx').on(t.tenantId, t.readAt),
+    // Liste : WHERE tenant_id=? ORDER BY created_at DESC LIMIT 15.
+    tenantCreatedIdx: index('notifications_tenant_created_idx').on(t.tenantId, t.createdAt),
   })
 );
 
@@ -570,5 +574,26 @@ export const activityLogs = sqliteTable(
   (t) => ({
     tenantIdx: index('activity_logs_tenant_idx').on(t.tenantId),
     createdIdx: index('activity_logs_created_idx').on(t.createdAt),
+  })
+);
+
+
+// Leads capturés via le formulaire de contact du site vitrine coach (C-4).
+export const siteLeads = sqliteTable(
+  'site_leads',
+  {
+    id: text('id').primaryKey(),
+    tenantId: text('tenant_id').notNull(),
+    name: text('name').notNull(),
+    email: text('email').notNull(),
+    phone: text('phone'),
+    message: text('message'),
+    source: text('source').notNull().default('contact_form'), // 'contact_form' | 'chatbot' | 'popup'
+    status: text('status').notNull().default('new'), // 'new' | 'contacted' | 'converted' | 'archived'
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => ({
+    tenantIdx: index('site_leads_tenant_idx').on(t.tenantId),
+    createdIdx: index('site_leads_created_idx').on(t.createdAt),
   })
 );
