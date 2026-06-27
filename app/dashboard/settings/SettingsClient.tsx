@@ -2,13 +2,15 @@
 
 import { useState, useTransition } from 'react';
 import toast from 'react-hot-toast';
-import { Download, Trash2, Globe, Loader2, ShieldAlert } from 'lucide-react';
+import { Download, Trash2, Globe, Loader2, ShieldAlert, Sun, Moon, Monitor } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { updateLanguageAction } from './actions';
+import { useTheme } from 'next-themes';
 
 export default function SettingsClient({ initialLanguage }: { initialLanguage: 'fr' | 'en' }) {
+  const { theme, setTheme } = useTheme();
   const [language, setLanguage] = useState<'fr' | 'en'>(initialLanguage);
   const [confirm, setConfirm] = useState('');
   const [pending, startTransition] = useTransition();
@@ -49,8 +51,36 @@ export default function SettingsClient({ initialLanguage }: { initialLanguage: '
     }
   }
 
+  const THEMES = [
+    { value: 'light', label: 'Clair', icon: Sun },
+    { value: 'dark', label: 'Sombre', icon: Moon },
+    { value: 'system', label: 'Système', icon: Monitor },
+  ] as const;
+
   return (
     <div className="mt-8 space-y-6">
+      {/* Apparence */}
+      <section className="rounded-lg border border-border bg-card p-6">
+        <h2 className="flex items-center gap-2 font-bold">
+          <Moon className="h-5 w-5 text-primary" /> Apparence
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">Choisir entre mode clair, sombre, ou automatique selon le système.</p>
+        <div className="mt-4 inline-flex gap-1 rounded-lg border border-border bg-background p-1">
+          {THEMES.map(({ value, label, icon: Icon }) => (
+            <button
+              key={value}
+              onClick={() => setTheme(value)}
+              className={cn(
+                'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold transition-colors',
+                theme === value ? 'bg-gradient-to-r from-primary to-accent text-white' : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <Icon className="h-4 w-4" /> {label}
+            </button>
+          ))}
+        </div>
+      </section>
+
       {/* Langue */}
       <section className="rounded-lg border border-border bg-card p-6">
         <h2 className="flex items-center gap-2 font-bold">

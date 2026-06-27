@@ -4,6 +4,8 @@ import { GeistMono } from 'geist/font/mono';
 import AppToaster from '@/components/AppToaster';
 import './globals.css';
 import SessionProviderWrapper from '@/components/SessionProviderWrapper';
+import { ThemeProvider } from '@/components/ThemeProvider';
+import KeyboardShortcuts from '@/components/KeyboardShortcuts';
 import ServiceWorkerRegister from '@/components/ServiceWorkerRegister';
 import { GrainOverlay } from '@/components/ui/decor';
 import { CustomCursor } from '@/components/ui/custom-cursor';
@@ -11,6 +13,7 @@ import { FaviconController } from '@/components/ui/favicon-controller';
 import CookieBanner from '@/components/CookieBanner';
 import InstallPrompt from '@/components/InstallPrompt';
 import AnalyticsScripts from '@/components/AnalyticsScripts';
+import CrispChat from '@/components/CrispChat';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://aurapost.fr';
 
@@ -46,7 +49,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr" className={`dark ${GeistSans.variable} ${GeistMono.variable}`} suppressHydrationWarning>
+    <html lang="fr" className={`${GeistSans.variable} ${GeistMono.variable}`} suppressHydrationWarning>
       <head>
         {/* Garde-fou dev : un Service Worker enregistré lors d'une session précédente sert
             du cache périmé (cache-first sur .css) → page sans styles. On le désenregistre et
@@ -72,11 +75,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <GrainOverlay />
         <CustomCursor />
         <FaviconController />
-        <SessionProviderWrapper>{children}</SessionProviderWrapper>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+          <SessionProviderWrapper>{children}</SessionProviderWrapper>
+        </ThemeProvider>
         <ServiceWorkerRegister />
         <AnalyticsScripts />
+        <CrispChat />
         <InstallPrompt />
         <CookieBanner />
+        <KeyboardShortcuts />
         <AppToaster />
       </body>
     </html>
