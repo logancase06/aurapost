@@ -13,12 +13,14 @@ export async function runAnalysisLLM(system: string, user: string): Promise<stri
   const mod = await import('@anthropic-ai/sdk');
   const Anthropic = mod.default;
   const client = new Anthropic();
+  // 30 s : les analyses sont synchrones (pas de after()). Sans timeout explicite le
+  // SDK attend 10 min — la fonction serverless serait tuée avec une connexion zombie.
   const message = await client.messages.create({
     model: MODEL,
     max_tokens: 2000,
     system,
     messages: [{ role: 'user', content: user }],
-  });
+  }, { timeout: 30_000 });
   let text = '';
   for (const block of message.content) {
     if (block.type === 'text') text += block.text + '\n';

@@ -100,12 +100,15 @@ async function generateViaAnthropic(prompt: string, maxTokens: number, system: s
   const mod = await import('@anthropic-ai/sdk');
   const Anthropic = mod.default;
   const client = new Anthropic(); // lit ANTHROPIC_API_KEY dans l'environnement
+  // 90 s : génération mensuelle s'exécute en after() (hors limite serverless 26 s).
+  // Sans timeout explicite le SDK attend 10 min, laissant une connexion zombie si la
+  // fonction est tuée par le runtime serverless avant la fin de l'appel Anthropic.
   const message = await client.messages.create({
     model: API_MODEL,
     max_tokens: maxTokens,
     system,
     messages: [{ role: 'user', content: prompt }],
-  });
+  }, { timeout: 90_000 });
   let text = '';
   for (const block of message.content) {
     if (block.type === 'text') text += block.text + '\n';
@@ -187,29 +190,34 @@ function buildPrompt(profile: CoachProfileInput): string {
 
   // Sections distinctes (chacune a un rôle clair dans le prompt) plutôt qu'un bloc
   // fourre-tout : ton/style, preuve sociale, résultats, profil LinkedIn.
+  // Longueurs max par champ pour limiter l'injection de prompt et la consommation de tokens.
+  const cap = (s: string | null | undefined, n: number) => (s ?? '').slice(0, n);
+
   const voiceLine = profile.instagramVoice
-    ? `- Ton et style (inspiré de l'Instagram du coach, À IMITER fidèlement) : ${profile.instagramVoice}\n`
+    ? `- Ton et style (inspiré de l'Instagram du coach, À IMITER fidèlement) : ${cap(profile.instagramVoice, 800)}\n`
     : '';
   const strengthsLine = profile.clientStrengths?.length
-    ? `- Forces perçues par ses clients (à intégrer comme PREUVE SOCIALE dans les posts CTA et résultat) : ${profile.clientStrengths.join(', ')}\n`
+    ? `- Forces perçues par ses clients (à intégrer comme PREUVE SOCIALE dans les posts CTA et résultat) : ${profile.clientStrengths.map((s) => cap(s, 100)).join(', ')}\n`
     : '';
   const resultsLine = profile.clientResults
-    ? `- Résultats concrets obtenus par ses clients (à citer dans les posts résultat/CTA) : ${profile.clientResults}\n`
+    ? `- Résultats concrets obtenus par ses clients (à citer dans les posts résultat/CTA) : ${cap(profile.clientResults, 500)}\n`
     : '';
-  const linkedinProfile = [profile.linkedinHeadline, profile.linkedinSummary].filter(Boolean).join(' — ');
+  const linkedinHeadline = cap(profile.linkedinHeadline, 200);
+  const linkedinSummary = cap(profile.linkedinSummary, 500);
+  const linkedinProfile = [linkedinHeadline, linkedinSummary].filter(Boolean).join(' — ');
   const linkedinLine = linkedinProfile
     ? `- Profil LinkedIn du coach (à utiliser pour les posts LinkedIn UNIQUEMENT) : ${linkedinProfile}\n`
     : '';
 
   const coachData = escapeForBlock(`PROFIL DU COACH :
 - Nom : ${profile.displayName}
-- Spécialité : ${profile.speciality}
+- Spécialité : ${cap(profile.speciality, 200)}
 - Ville : ${profile.city ?? 'non précisée'}
-- Audience cible : ${profile.targetAudience ?? 'grand public sportif local'}
+- Audience cible : ${cap(profile.targetAudience, 300) || 'grand public sportif local'}
 - Style de contenu : ${profile.contentStyle ?? 'naturel'}
 - Ton souhaité : ${toneLabel}
 - Langue de rédaction : ${lang}
-${voiceLine}${strengthsLine}${resultsLine}${linkedinLine}${profile.bio ? `- Bio : ${profile.bio}\n` : ''}`);
+${voiceLine}${strengthsLine}${resultsLine}${linkedinLine}${profile.bio ? `- Bio : ${cap(profile.bio, 500)}\n` : ''}`);
 
   const voiceInstruction = profile.instagramVoice
     ? `IMITE FIDÈLEMENT cette voix (détectée sur l'Instagram du coach) : ${profile.instagramVoice}. Reprends ses tics de langage, sa longueur de phrase, son usage d'emojis.`
