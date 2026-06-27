@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { auth } from '@/lib/auth';
 import { listPosts, listGeneratedMonths, type PostRow } from '@/lib/db/posts';
 import { currentMonth } from '@/lib/utils';
+import { canExportPost } from '@/lib/plans';
 import { Download, Printer, Camera, Briefcase } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import DashboardShell from '../DashboardShell';
+import RecycleButton from './RecycleButton';
 
 export const metadata = { title: 'Historique' };
 
@@ -34,6 +36,8 @@ export default async function HistoryPage({ searchParams }: { searchParams: Sear
       variantsByParent.set(p.variantOfId, arr);
     }
   }
+
+  const canRecycle = canExportPost(session.user.plan ?? 'starter');
 
   return (
     <DashboardShell active="/dashboard/history">
@@ -84,11 +88,11 @@ export default async function HistoryPage({ searchParams }: { searchParams: Sear
             return (
               <Card key={post.id} className="p-5">
                 <div className={cn('grid gap-5', variants.length > 0 && 'lg:grid-cols-2')}>
-                  <PostBlock post={post} label="Original" />
+                  <PostBlock post={post} label="Original" canRecycle={canRecycle} />
                   {variants.length > 0 && (
                     <div className="space-y-4 lg:border-l lg:border-border lg:pl-5">
                       {variants.map((v) => (
-                        <PostBlock key={v.id} post={v} label="Variante" />
+                        <PostBlock key={v.id} post={v} label="Variante" canRecycle={false} />
                       ))}
                     </div>
                   )}
@@ -102,7 +106,7 @@ export default async function HistoryPage({ searchParams }: { searchParams: Sear
   );
 }
 
-function PostBlock({ post, label }: { post: PostRow; label: string }) {
+function PostBlock({ post, label, canRecycle }: { post: PostRow; label: string; canRecycle: boolean }) {
   const Icon = post.network === 'linkedin' ? Briefcase : Camera;
   const variant = post.status === 'approved' ? 'success' : post.status === 'rejected' ? 'destructive' : 'warning';
   return (
@@ -113,6 +117,9 @@ function PostBlock({ post, label }: { post: PostRow; label: string }) {
         </Badge>
         <Badge variant="outline">{label}</Badge>
         <Badge variant={variant}>{post.status}</Badge>
+        {canRecycle && post.status === 'approved' && (
+          <RecycleButton postId={post.id} />
+        )}
       </div>
       {post.title && <h3 className="font-bold">{post.title}</h3>}
       <p className="mt-1 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{post.content}</p>

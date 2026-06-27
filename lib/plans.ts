@@ -17,8 +17,10 @@ export interface PlanDef {
   id: PlanId;
   name: string;
   tagline: string;
-  /** Stripe Price ID — défini via env quand Stripe sera configuré. */
+  /** Stripe Price ID mensuel — défini via env quand Stripe sera configuré. */
   priceId?: string;
+  /** Stripe Price ID annuel (facturation en une fois, -20%). */
+  annualPriceId?: string;
   /** Montant mensuel en centimes. */
   amount: number;
   currency: string;
@@ -32,6 +34,7 @@ export const PLANS: PlanDef[] = [
     name: 'Coach',
     tagline: 'Le contenu social, en pilote automatique.',
     priceId: process.env.STRIPE_PRICE_CONTENT_ONLY,
+    annualPriceId: process.env.STRIPE_PRICE_CONTENT_ONLY_ANNUAL,
     amount: 3900, // 39 € / mois
     currency: 'eur',
     features: [
@@ -48,6 +51,7 @@ export const PLANS: PlanDef[] = [
     name: 'Coach+Site',
     tagline: 'Le contenu ET le site. Tout-en-un.',
     priceId: process.env.STRIPE_PRICE_PACK_COMPLET,
+    annualPriceId: process.env.STRIPE_PRICE_PACK_COMPLET_ANNUAL,
     amount: 7900, // 79 € / mois
     currency: 'eur',
     featured: true,

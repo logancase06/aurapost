@@ -1,6 +1,6 @@
 import { db } from './index';
 import { generatedPosts, coachProfiles } from './schema';
-import { and, eq, isNull, isNotNull, desc, sql } from 'drizzle-orm';
+import { and, eq, isNull, isNotNull, desc, sql, inArray } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import {
   generateMonthlyContent,
@@ -401,6 +401,23 @@ export async function setPostStatus(
     .where(and(eq(generatedPosts.id, postId), eq(generatedPosts.tenantId, tenantId)));
   await logActivity(tenantId, userId, `post_${status}`, postId);
   return { ok: true };
+}
+
+/** Passe plusieurs posts en un seul UPDATE. Filtre strict sur tenantId. */
+export async function batchSetPostStatus(
+  tenantId: string,
+  userId: string,
+  postIds: string[],
+  status: PostStatus
+): Promise<{ ok: boolean; count: number }> {
+  if (!postIds.length) return { ok: true, count: 0 };
+  const safe = postIds.slice(0, 100); // hard cap anti-abus
+  await db
+    .update(generatedPosts)
+    .set({ status, updatedAt: new Date().toISOString() })
+    .where(and(eq(generatedPosts.tenantId, tenantId), inArray(generatedPosts.id, safe)));
+  await logActivity(tenantId, userId, `batch_${status}`, null, { count: safe.length });
+  return { ok: true, count: safe.length };
 }
 
 // ── Détail d'un post + historique des variantes ──────────────────────────────
