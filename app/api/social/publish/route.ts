@@ -3,6 +3,11 @@
 // Body: { postId: string, connectionIds?: string[] }
 // Si connectionIds est absent ou vide, publie sur toutes les connexions actives du tenant.
 // Gating : pack_complet uniquement (socialPublishEnabled).
+//
+// Règle média :
+//   - Instagram exige un média (pas de post texte seul) — bloque avec 422 si aucune photo.
+//   - LinkedIn accepte le texte seul — la photo est envoyée si disponible, optionnelle sinon.
+//   - Les data URLs (mode mock sans R2) sont filtrées — Zernio ne peut pas les télécharger.
 
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -20,6 +25,7 @@ import {
   type SocialConnectionRow,
 } from '@/lib/db/social-connections';
 import { getPostById } from '@/lib/db/posts';
+import { getPostPhotoUrl } from '@/lib/db/photos';
 import { logError, logEvent } from '@/lib/logger';
 
 export async function POST(req: NextRequest) {
@@ -55,6 +61,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Post introuvable.' }, { status: 404 });
     }
 
+    // Récupérer la photo associée au post (peut être null si aucune photo liée).
+    const rawPhotoUrl = await getPostPhotoUrl(tenantId, postId);
+    // Les data URLs (mode mock sans R2 configuré) ne sont pas utilisables par Zernio :
+    // ce sont des blobs base64, pas des URLs HTTP accessibles publiquement.
+    const mediaUrl = rawPhotoUrl && !rawPhotoUrl.startsWith('data:') ? rawPhotoUrl : null;
+
     // Construire le contenu final (texte + hashtags si présents).
     const hashtagLine =
       post.hashtags.length > 0
@@ -63,7 +75,7 @@ export async function POST(req: NextRequest) {
     const content = post.content + hashtagLine;
 
     // Résoudre la liste des connexions cibles.
-    let connections;
+    let connections: SocialConnectionRow[];
     const requestedIds = Array.isArray(body.connectionIds)
       ? (body.connectionIds as unknown[]).filter((x): x is string => typeof x === 'string')
       : [];
@@ -82,10 +94,25 @@ export async function POST(req: NextRequest) {
     // Publier sur chaque connexion.
     const results = await Promise.all(
       connections.map(async (conn) => {
+        // Instagram exige un média — bloquer proprement plutôt que laisser Zernio échouer.
+        if (conn.platform === 'instagram' && !mediaUrl) {
+          logError('[social/publish] Instagram sans photo — publication bloquée', { tenantId, postId, connectionId: conn.id });
+          return {
+            connectionId: conn.id,
+            platform: conn.platform,
+            ok: false,
+            error: 'Instagram exige une photo. Associez une photo à ce post avant de publier.',
+            code: 'instagram_requires_media',
+          };
+        }
+
         const result = await publishPost({
           zernioAccountId: conn.zernioAccountId,
           platform: conn.platform,
           content,
+          mediaUrls: mediaUrl ? [mediaUrl] : undefined,
+          // Le contenu est généré par IA — active le label de transparence natif Instagram.
+          isAiGenerated: true,
           tenantId,
         });
 
@@ -105,6 +132,7 @@ export async function POST(req: NextRequest) {
             connectionId: conn.id,
             platform: conn.platform,
             zernioPostId: result.data.zernioPostId,
+            hasMedia: !!mediaUrl,
           });
           return { connectionId: conn.id, platform: conn.platform, ok: true, zernioPostId: result.data.zernioPostId };
         } else {

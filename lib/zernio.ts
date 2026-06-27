@@ -135,6 +135,8 @@ export interface PublishPostParams {
   platform: SocialPlatform;
   content: string;
   mediaUrls?: string[];
+  /** Instagram uniquement — active le label de transparence IA natif (Meta AI Content Policy). */
+  isAiGenerated?: boolean;
   tenantId: string; // pour le logging
 }
 
@@ -146,13 +148,18 @@ export interface PublishPostData { zernioPostId: string }
  */
 export async function publishPost(params: PublishPostParams): Promise<ZernioResult<PublishPostData>> {
   if (!isZernioConfigured()) return notConfigured();
-  const { zernioAccountId, platform, content, mediaUrls, tenantId } = params;
+  const { zernioAccountId, platform, content, mediaUrls, isAiGenerated, tenantId } = params;
   try {
     const zernio = await getClient();
+    const platformEntry = {
+      platform,
+      accountId: zernioAccountId,
+      ...(platform === 'instagram' && isAiGenerated ? { isAiGenerated: true } : {}),
+    };
     const res = await zernio.posts.createPost({
       body: {
         content,
-        platforms: [{ platform, accountId: zernioAccountId }],
+        platforms: [platformEntry],
         publishNow: true,
         ...(mediaUrls?.length ? { mediaItems: mediaUrls.map((url) => ({ url })) } : {}),
       },
