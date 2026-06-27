@@ -38,6 +38,16 @@ export const SiteContentSchema = z.object({
     .array(z.object({ title: z.string().max(60), description: z.string().max(200), enabled: z.boolean() }))
     .max(4)
     .optional(),
+  pricing: z
+    .array(z.object({
+      name: z.string().max(60),
+      price: z.string().max(40),
+      duration: z.string().max(30).optional(),
+      description: z.string().max(200).optional(),
+      featured: z.boolean().optional(),
+    }))
+    .max(6)
+    .optional(),
 });
 
 export type SiteContent = z.infer<typeof SiteContentSchema>;
@@ -57,6 +67,7 @@ export function emptySiteContent(): SiteContent {
     about: {},
     contact: {},
     services: [],
+    pricing: [],
   };
 }
 
@@ -80,6 +91,7 @@ export function parseSiteContent(raw: unknown): SiteContent {
     o.strengths = emptySiteContent().strengths;
   }
   o.testimonials = Array.isArray(o.testimonials) ? o.testimonials : [];
+  o.pricing = Array.isArray(o.pricing) ? o.pricing : [];
   o.hero = o.hero ?? {};
   o.about = o.about ?? {};
   o.contact = o.contact ?? {};
@@ -106,6 +118,7 @@ export function mergeSiteContent(base: SiteContent, over: SiteContent): SiteCont
 
   const testimonials = over.testimonials.length ? over.testimonials : base.testimonials;
   const services = (over.services?.length ? over.services : base.services) ?? [];
+  const pricing = (over.pricing?.length ? over.pricing : base.pricing) ?? [];
 
   return {
     hero: {
@@ -129,6 +142,7 @@ export function mergeSiteContent(base: SiteContent, over: SiteContent): SiteCont
       calendly: pick(over.contact.calendly, base.contact.calendly),
     },
     services,
+    pricing,
   };
 }
 

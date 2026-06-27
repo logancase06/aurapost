@@ -15,6 +15,14 @@ export function assertStyleUnreachable(style: never): never {
   throw new Error(`[coach-site] Style non géré : ${String(style)}`);
 }
 
+export interface CoachPricingOffer {
+  name: string;
+  price: string; // ex: "200€/séance" ou "sur demande"
+  duration?: string; // ex: "1h"
+  description?: string;
+  featured?: boolean;
+}
+
 export interface CoachServiceItem {
   title: string;
   description: string;
@@ -58,6 +66,7 @@ export interface CoachSiteData {
   cta?: string;
   photoUrl?: string | null;
   seoDescription?: string;
+  pricing?: CoachPricingOffer[];
 }
 
 export type Force = { title: string; description?: string };

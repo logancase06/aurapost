@@ -5,6 +5,9 @@ import { sendContactEmail } from '@/lib/email';
 import { checkAuthRateLimit } from '@/lib/auth-rate-limit';
 import { isValidEmail } from '@/lib/utils';
 import { logError } from '@/lib/logger';
+import { db } from '@/lib/db';
+import { siteLeads } from '@/lib/db/schema';
+import { nanoid } from 'nanoid';
 
 // Formulaire de contact public d'un site coach → email au coach via Resend.
 export async function POST(req: NextRequest) {
@@ -28,6 +31,22 @@ export async function POST(req: NextRequest) {
 
     const coach = await getCoachContactEmail(subdomain);
     if (!coach) return NextResponse.json({ error: 'Coach introuvable.' }, { status: 404 });
+
+    // Sauvegarder le lead en DB (best-effort, ne bloque pas l'email si ça échoue).
+    try {
+      await db.insert(siteLeads).values({
+        id: nanoid(),
+        tenantId: coach.tenantId,
+        name,
+        email,
+        message,
+        source: 'contact_form',
+        status: 'new',
+        createdAt: new Date().toISOString(),
+      });
+    } catch (e) {
+      logError('[site/contact] lead insert', { error: String(e) });
+    }
 
     await sendContactEmail({ email: coach.email, name: coach.name }, { name, email, message });
     return NextResponse.json({ ok: true });

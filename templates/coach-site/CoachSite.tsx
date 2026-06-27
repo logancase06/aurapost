@@ -9,6 +9,7 @@ import ServicesSection from './components/ServicesSection';
 import ResultsSection from './components/ResultsSection';
 import TemoignagesSection from './components/TemoignagesSection';
 import ContactSection from './components/ContactSection';
+import PricingSection from './components/PricingSection';
 import SiteFooter from './components/SiteFooter';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -31,10 +32,10 @@ export type { CoachSiteData, SiteStyle, CoachServiceItem, CoachTestimonialItem, 
 //   authenticite → storytelling : la voix des clients (témoignages + résultats) en premier.
 // Toute section sans données rend `null` (comportement préservé) ; les ancres de nav
 // (#apropos/#temoignages/#contact) restent valides quel que soit l'ordre.
-const SECTION_ORDER: Record<SiteStyle, ReadonlyArray<'forces' | 'apropos' | 'services' | 'results' | 'temoignages' | 'contact'>> = {
-  impact: ['forces', 'services', 'results', 'temoignages', 'apropos', 'contact'],
-  clarte: ['apropos', 'forces', 'services', 'results', 'temoignages', 'contact'],
-  authenticite: ['temoignages', 'results', 'apropos', 'forces', 'services', 'contact'],
+const SECTION_ORDER: Record<SiteStyle, ReadonlyArray<'forces' | 'apropos' | 'services' | 'pricing' | 'results' | 'temoignages' | 'contact'>> = {
+  impact: ['forces', 'services', 'pricing', 'results', 'temoignages', 'apropos', 'contact'],
+  clarte: ['apropos', 'forces', 'services', 'pricing', 'results', 'temoignages', 'contact'],
+  authenticite: ['temoignages', 'results', 'apropos', 'forces', 'services', 'pricing', 'contact'],
 };
 
 export default function CoachSite({ data }: { data: CoachSiteData }) {
@@ -48,6 +49,7 @@ export default function CoachSite({ data }: { data: CoachSiteData }) {
     forces: <ForcesSection data={data} style={style} accent={accent} t={t} />,
     apropos: <AProposSection data={data} style={style} accent={accent} t={t} />,
     services: <ServicesSection data={data} style={style} accent={accent} t={t} />,
+    pricing: <PricingSection data={data} style={style} accent={accent} t={t} />,
     results: <ResultsSection data={data} style={style} accent={accent} t={t} />,
     temoignages: <TemoignagesSection data={data} style={style} accent={accent} t={t} />,
     contact: <ContactSection data={data} style={style} accent={accent} t={t} />,

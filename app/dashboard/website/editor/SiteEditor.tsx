@@ -91,6 +91,8 @@ export default function SiteEditor({ initial, appDomain, aiEnabled, initialFocus
   const setTestimonials = (list: SiteContent['testimonials']) => setContent((c) => ({ ...c, testimonials: list }));
   const services = content.services ?? [];
   const setServices = (list: NonNullable<SiteContent['services']>) => setContent((c) => ({ ...c, services: list }));
+  const pricing = content.pricing ?? [];
+  const setPricing = (list: NonNullable<SiteContent['pricing']>) => setContent((c) => ({ ...c, pricing: list }));
 
   // Édition IA : remplace le contenu (déjà sauvegardé côté serveur) + refresh aperçu.
   const applyAIContent = (next: SiteContent) => {
@@ -187,6 +189,40 @@ export default function SiteEditor({ initial, appDomain, aiEnabled, initialFocus
         {services.length < 4 && (
           <Button type="button" variant="outline" size="sm" onClick={() => setServices([...services, { title: '', description: '', enabled: true }])}>
             <Plus className="h-4 w-4" /> Ajouter une offre
+          </Button>
+        )}
+      </Panel>
+
+      {/* TARIFS */}
+      <Panel title="Section tarifs">
+        <p className="text-xs text-muted-foreground">
+          Affiche tes prix sur le site vitrine. Laisse vide pour masquer la section.
+        </p>
+        {pricing.map((offer, i) => (
+          <div key={i} className="rounded-lg border border-border p-3">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-xs font-semibold text-muted-foreground">Offre {i + 1}</span>
+              <div className="flex items-center gap-3">
+                <label className="flex cursor-pointer items-center gap-1.5 text-xs">
+                  <input type="checkbox" checked={!!offer.featured} onChange={(e) => setPricing(pricing.map((x, j) => (j === i ? { ...x, featured: e.target.checked } : x)))} />
+                  Populaire
+                </label>
+                <button type="button" onClick={() => setPricing(pricing.filter((_, j) => j !== i))} className="text-muted-foreground hover:text-destructive">
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <FieldText label="Nom de l'offre" value={offer.name} max={60} placeholder="Coaching individuel" onChange={(v) => setPricing(pricing.map((x, j) => (j === i ? { ...x, name: v } : x)))} />
+              <FieldText label="Prix" value={offer.price} max={40} placeholder="60 €/séance" onChange={(v) => setPricing(pricing.map((x, j) => (j === i ? { ...x, price: v } : x)))} />
+            </div>
+            <FieldText label="Durée (optionnel)" value={offer.duration ?? ''} max={30} placeholder="1h" onChange={(v) => setPricing(pricing.map((x, j) => (j === i ? { ...x, duration: v } : x)))} />
+            <FieldArea label="Description (optionnel)" value={offer.description ?? ''} max={200} placeholder="Ce qui est inclus…" onChange={(v) => setPricing(pricing.map((x, j) => (j === i ? { ...x, description: v } : x)))} />
+          </div>
+        ))}
+        {pricing.length < 6 && (
+          <Button type="button" variant="outline" size="sm" onClick={() => setPricing([...pricing, { name: '', price: '' }])}>
+            <Plus className="h-4 w-4" /> Ajouter un tarif
           </Button>
         )}
       </Panel>

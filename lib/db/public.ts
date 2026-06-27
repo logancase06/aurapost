@@ -143,6 +143,7 @@ async function getRawCoachSiteData(subdomain: string, opts?: { requireActive?: b
     testimonials: c.testimonials.map((t) => ({ name: t.author, quote: t.quote })),
     results: results.length ? results : undefined,
     seoDescription: site.seoDescription ?? undefined,
+    pricing: (c.pricing?.length ? c.pricing : undefined),
   };
 }
 
@@ -196,7 +197,7 @@ export async function listActiveCoaches(limit = 60): Promise<PublicCoach[]> {
 }
 
 /** Email du propriétaire d'un site (pour le formulaire de contact public). */
-export async function getCoachContactEmail(subdomain: string): Promise<{ email: string; name: string } | null> {
+export async function getCoachContactEmail(subdomain: string): Promise<{ email: string; name: string; tenantId: string } | null> {
   const [site] = await db.select({ tenantId: websites.tenantId }).from(websites).where(eq(websites.subdomain, subdomain.toLowerCase())).limit(1);
   if (!site) return null;
   const [u] = await db
@@ -204,7 +205,7 @@ export async function getCoachContactEmail(subdomain: string): Promise<{ email: 
     .from(usersTable)
     .where(eq(usersTable.tenantId, site.tenantId))
     .limit(1);
-  return u ? { email: u.email, name: u.name } : null;
+  return u ? { email: u.email, name: u.name, tenantId: site.tenantId } : null;
 }
 
 export interface CoachPortalData {
