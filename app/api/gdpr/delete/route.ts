@@ -7,10 +7,13 @@ import { db } from '@/lib/db';
 import {
   users, coachProfiles, generatedPosts, websites, subscriptions,
   referrals, referralCodes, notifications, activityLogs, tenants,
+  siteLeads, coachPhotos, editedPhotos, socialConnections, socialPublications, siteVisits,
+  profileAnalyses, generationJobs, imageEditJobs,
 } from '@/lib/db/schema';
 import { sendEmail, shell, button, escHtml } from '@/lib/email';
 import { csrfGuard, logUnauthorized } from '@/lib/security';
 import { logInfo, logError } from '@/lib/logger';
+import { deleteR2Object } from '@/lib/r2';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,6 +56,12 @@ export async function POST(req: NextRequest) {
   const name = session.user.name ?? 'Coach';
 
   try {
+    // Collecte des clés R2 AVANT la suppression des lignes DB (best-effort RGPD).
+    const [photoKeys, editedKeys] = await Promise.all([
+      db.select({ r2Key: coachPhotos.r2Key }).from(coachPhotos).where(eq(coachPhotos.tenantId, tenantId)),
+      db.select({ r2Key: editedPhotos.r2Key }).from(editedPhotos).where(eq(editedPhotos.tenantId, tenantId)),
+    ]);
+
     // Suppression de toutes les tables scellées au tenant + le tenant lui-même.
     await Promise.all([
       db.delete(generatedPosts).where(eq(generatedPosts.tenantId, tenantId)),
@@ -63,9 +72,29 @@ export async function POST(req: NextRequest) {
       db.delete(referralCodes).where(eq(referralCodes.tenantId, tenantId)),
       db.delete(notifications).where(eq(notifications.tenantId, tenantId)),
       db.delete(activityLogs).where(eq(activityLogs.tenantId, tenantId)),
+      db.delete(siteLeads).where(eq(siteLeads.tenantId, tenantId)),
+      db.delete(coachPhotos).where(eq(coachPhotos.tenantId, tenantId)),
+      db.delete(editedPhotos).where(eq(editedPhotos.tenantId, tenantId)),
+      db.delete(socialConnections).where(eq(socialConnections.tenantId, tenantId)),
+      db.delete(socialPublications).where(eq(socialPublications.tenantId, tenantId)),
+      db.delete(siteVisits).where(eq(siteVisits.tenantId, tenantId)),
+      db.delete(profileAnalyses).where(eq(profileAnalyses.tenantId, tenantId)),
+      db.delete(generationJobs).where(eq(generationJobs.tenantId, tenantId)),
+      db.delete(imageEditJobs).where(eq(imageEditJobs.tenantId, tenantId)),
     ]);
     await db.delete(users).where(eq(users.tenantId, tenantId));
     await db.delete(tenants).where(eq(tenants.id, tenantId));
+
+    // Purge des fichiers R2 (best-effort : un échec ici ne doit pas bloquer la suppression).
+    const r2Keys = [
+      ...photoKeys.map((r) => r.r2Key),
+      ...editedKeys.map((r) => r.r2Key),
+    ].filter((k): k is string => !!k);
+    if (r2Keys.length) {
+      Promise.all(r2Keys.map(deleteR2Object)).catch((err) =>
+        logError('[gdpr/delete] purge R2 partielle', { error: String(err), tenantId })
+      );
+    }
 
     if (email) {
       sendEmail({ email, name }, 'Ton compte AuraPost a été supprimé', deletionHtml(name.split(' ')[0] || 'coach')).catch(
