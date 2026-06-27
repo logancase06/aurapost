@@ -171,6 +171,25 @@ export async function publishPost(params: PublishPostParams): Promise<ZernioResu
   }
 }
 
+// ─── Suppression d'un compte connecté ────────────────────────────────────────
+
+/**
+ * Révoque un compte social côté Zernio (supprime la connexion OAuth).
+ * Appelé depuis /api/social/disconnect après revokeConnection() en DB.
+ * Non bloquant : un échec ici ne doit pas bloquer la déconnexion locale.
+ */
+export async function deleteZernioAccount(zernioAccountId: string): Promise<ZernioResult<void>> {
+  if (!isZernioConfigured()) return notConfigured();
+  try {
+    const zernio = await getClient();
+    await zernio.accounts.deleteAccount({ path: { accountId: zernioAccountId } });
+    return { ok: true, data: undefined };
+  } catch (err) {
+    logError('[zernio] deleteAccount erreur', { error: String(err), zernioAccountId });
+    return { ok: false, reason: 'api_error', message: String(err) };
+  }
+}
+
 // ─── Vérification signature webhook ──────────────────────────────────────────
 
 /**
