@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
-import { Check, X, RefreshCw, Copy, Camera, Briefcase, Loader2, Maximize2, ImageIcon, Lock } from 'lucide-react';
+import { Check, X, RefreshCw, Copy, Camera, Briefcase, Loader2, Maximize2, ImageIcon, Lock, Share2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,8 +11,10 @@ import { Separator } from '@/components/ui/separator';
 import { BorderBeam } from '@/components/ui/border-beam';
 import { approvePostAction, rejectPostAction, requestVariantAction } from './post-actions';
 import ApprovePostDialog from './ApprovePostDialog';
+import PublishButton, { PlatformStatusBadge } from '@/components/social/PublishButton';
 import { WATERMARK_TEXT } from '@/lib/plans';
 import type { PostRow } from '@/lib/db/posts';
+import type { SerializedConnection, PublicationSummary } from '@/lib/db/social-connections';
 
 const STATUS: Record<string, { label: string; variant: 'warning' | 'success' | 'destructive' | 'secondary' }> = {
   draft: { label: 'Brouillon', variant: 'warning' },
@@ -27,12 +29,18 @@ export default function PostCard({
   variantesUsed = 0,
   variantesMax = Infinity,
   watermark = false,
+  socialPublishEnabled = false,
+  socialConnections = [],
+  publications = [],
 }: {
   post: PostRow;
   canExport?: boolean;
   variantesUsed?: number;
   variantesMax?: number;
   watermark?: boolean;
+  socialPublishEnabled?: boolean;
+  socialConnections?: SerializedConnection[];
+  publications?: PublicationSummary[];
 }) {
   const [pending, startTransition] = useTransition();
   const [copied, setCopied] = useState(false);
@@ -163,7 +171,29 @@ export default function PostCard({
         <Button size="sm" variant="ghost" onClick={copy} className="ml-auto h-11 sm:h-8">
           <Copy className="h-3.5 w-3.5" /> {copied ? 'Copié' : 'Copier'}
         </Button>
+
+        {/* Z-5.1 — Bouton "Publier" : visible si plan OK + post approuvé. */}
+        {socialPublishEnabled && post.status === 'approved' && (
+          socialConnections.length > 0 ? (
+            <PublishButton postId={post.id} connections={socialConnections} publications={publications} />
+          ) : (
+            <Button asChild size="sm" variant="outline" className="h-11 sm:h-8" title="Connecte un réseau pour publier directement">
+              <Link href="/dashboard/social">
+                <Share2 className="h-3.5 w-3.5" /> Connecter un réseau
+              </Link>
+            </Button>
+          )
+        )}
       </div>
+
+      {/* Z-5.4 — Badges de statut de publication par plateforme. */}
+      {publications.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {publications.map((pub) => (
+            <PlatformStatusBadge key={`${pub.connectionId}-${pub.status}`} pub={pub} />
+          ))}
+        </div>
+      )}
 
       {approveOpen && <ApprovePostDialog post={post} open onOpenChange={setApproveOpen} />}
     </Card>
