@@ -18,9 +18,14 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const reqUrl = new URL(request.url);
-  // Ne pas intercepter les polices Google : elles ont leurs propres headers de cache
-  // et la CSP du SW les bloquerait en retournant 504.
-  if (reqUrl.hostname === 'fonts.gstatic.com' || reqUrl.hostname === 'fonts.googleapis.com') return;
+  // Ne pas intercepter les polices Google ni les assets R2 : domaines externes avec
+  // leurs propres headers de cache ; le SW les bloquerait via CSP (connect-src).
+  if (
+    reqUrl.hostname === 'fonts.gstatic.com' ||
+    reqUrl.hostname === 'fonts.googleapis.com' ||
+    reqUrl.hostname.endsWith('.r2.dev') ||
+    reqUrl.hostname.endsWith('.r2.cloudflarestorage.com')
+  ) return;
 
   // Network-first pour la navigation ; fallback cache puis page offline.
   if (request.mode === 'navigate') {

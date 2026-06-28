@@ -49,9 +49,12 @@ function buildCSP(framable: boolean): string {
   const isDev = process.env.NODE_ENV === 'development';
   const scriptSrc = isDev ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'" : "script-src 'self' 'unsafe-inline'";
   // En dev, autorise aussi les WebSocket du HMR (ws:) dans connect-src.
+  // R2_ORIGIN : domaine exact du bucket (ex: https://pub-xxx.r2.dev).
+  // https://*.r2.dev en wildcard couvre les URL signées et les buckets publics.
+  const r2Src = R2_ORIGIN ? `${R2_ORIGIN} https://*.r2.dev` : 'https://*.r2.dev';
   const connectSrc = isDev
-    ? "connect-src 'self' ws: wss: https://*.turso.io wss://*.turso.io https://api.anthropic.com https://api.stripe.com https://*.upstash.io"
-    : "connect-src 'self' https://*.turso.io wss://*.turso.io https://api.anthropic.com https://api.stripe.com https://*.upstash.io";
+    ? `connect-src 'self' ws: wss: https://*.turso.io wss://*.turso.io https://api.anthropic.com https://api.stripe.com https://*.upstash.io ${r2Src}`
+    : `connect-src 'self' https://*.turso.io wss://*.turso.io https://api.anthropic.com https://api.stripe.com https://*.upstash.io ${r2Src}`;
   const frameAncestors = framable
     ? `frame-ancestors 'self' https://${APP_DOMAIN} https://*.${APP_DOMAIN}`
     : "frame-ancestors 'none'";
