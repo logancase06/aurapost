@@ -134,7 +134,7 @@ const VARIANTS_UNLIMITED = 9_999;
 export const MAX_SOCIAL_ACCOUNTS = 2;
 
 const LIMITS: Record<PlanId, PlanLimits> = {
-  starter:      { postsPerMonth: 4,  instagramOnly: true,  sitesEnabled: false, photosMax: 1,  variantesMax: 0,                exportEnabled: false, watermark: true,  profileSections: ['base'],                                      aiEditsMax: 0,  socialPublishEnabled: false },
+  starter:      { postsPerMonth: 4,  instagramOnly: true,  sitesEnabled: false, photosMax: 10, variantesMax: 0,                exportEnabled: false, watermark: true,  profileSections: ['base'],                                      aiEditsMax: 0,  socialPublishEnabled: false },
   content_only: { postsPerMonth: 12, instagramOnly: false, sitesEnabled: false, photosMax: 10, variantesMax: VARIANTS_UNLIMITED, exportEnabled: true,  watermark: false, profileSections: ['base', 'presence', 'photos', 'results'],    aiEditsMax: 0,  socialPublishEnabled: false },
   pack_complet: { postsPerMonth: 12, instagramOnly: false, sitesEnabled: true,  photosMax: 10, variantesMax: VARIANTS_UNLIMITED, exportEnabled: true,  watermark: false, profileSections: ['base', 'presence', 'photos', 'results'],    aiEditsMax: 20, socialPublishEnabled: true  },
 };

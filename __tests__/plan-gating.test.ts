@@ -26,8 +26,8 @@ describe('getPlanLimits — couverture complete des champs de gating', () => {
       expect(l.aiEditsMax).toBe(0);
       expect(l.socialPublishEnabled).toBe(false);
     });
-    it('photos : max 1', () => {
-      expect(l.photosMax).toBe(1);
+    it('photos : max 10', () => {
+      expect(l.photosMax).toBe(10);
     });
     it('profil limité à la section base', () => {
       expect(l.profileSections).toEqual(['base']);
