@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { IS_R2_CONFIGURED } from '@/lib/r2';
+import { IS_R2_CONFIGURED, uploadCoachPhoto } from '@/lib/r2';
 import { db } from '@/lib/db';
 import { sql } from 'drizzle-orm';
 import { coachPhotos } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { savePhoto } from '@/lib/db/photos';
-import { nanoid } from 'nanoid';
+
+// PNG 1x1 pixel rouge — valide pour sharp, < 100 octets.
+const MINIMAL_PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADklEQVQI12P4z8BQDwAEgAF/QualIQAAAABJRU5ErkJggg==',
+  'base64'
+);
 
 export async function GET(req: NextRequest) {
   const secret = req.headers.get('x-debug-secret');
@@ -13,7 +18,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const r2Key = `debug/r2-test-${Date.now()}.txt`;
   const results: Record<string, unknown> = {
     IS_R2_CONFIGURED,
     R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID ? 'set' : 'MISSING',
@@ -30,46 +34,35 @@ export async function GET(req: NextRequest) {
     results.coachPhotosColumns = `PRAGMA error: ${String(err)}`;
   }
 
-  // ── Etape 2 : upload R2 ──────────────────────────────────────────────────────
-  let r2Url = '';
+  // ── Etape 2 : sharp + uploadCoachPhoto (chemin exact du POST /api/posts/photo) ─
+  let uploadRes: Awaited<ReturnType<typeof uploadCoachPhoto>> | null = null;
   try {
-    const { S3Client, PutObjectCommand, DeleteObjectCommand } = await import('@aws-sdk/client-s3');
-    const client = new S3Client({
-      region: 'auto',
-      endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-      credentials: {
-        accessKeyId: process.env.R2_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
-      },
-    });
-    const bucket = process.env.R2_BUCKET_NAME!;
-    await client.send(new PutObjectCommand({
-      Bucket: bucket, Key: r2Key,
-      Body: Buffer.from('test'), ContentType: 'text/plain',
-    }));
-    r2Url = process.env.R2_PUBLIC_URL
-      ? `${process.env.R2_PUBLIC_URL.replace(/\/$/, '')}/${r2Key}`
-      : `https://r2/${r2Key}`;
-    results.r2Upload = 'ok';
-    await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: r2Key })).catch(() => {});
+    uploadRes = await uploadCoachPhoto('debug-tenant', 'test.png', MINIMAL_PNG);
+    results.uploadCoachPhoto = uploadRes.ok ? 'ok' : { ok: false, reason: uploadRes.reason };
   } catch (err) {
-    const e = err as { message?: string; code?: string; cause?: unknown };
-    results.r2Upload = 'FAILED';
-    results.r2Error = { message: e?.message, code: e?.code, cause: e?.cause ? String(e.cause) : null };
-    return NextResponse.json({ step: 'r2', ...results }, { status: 500 });
+    const e = err as { message?: string; stack?: string; code?: string };
+    results.uploadCoachPhoto = 'THREW';
+    results.uploadCoachPhotoError = {
+      message: e?.message ?? String(err),
+      code: e?.code ?? null,
+      stack: (e?.stack ?? '').split('\n').slice(0, 8).join('\n'),
+    };
+    return NextResponse.json({ step: 'uploadCoachPhoto', ...results }, { status: 500 });
   }
 
-  // ── Etape 3 : savePhoto (chemin exact de l'upload prod) ──────────────────────
-  const debugPhotoId = nanoid();
-  const debugTenantId = 'debug-tenant-test-' + Date.now();
+  if (!uploadRes.ok) {
+    return NextResponse.json({ step: 'uploadCoachPhoto', ...results }, { status: 500 });
+  }
+
+  // ── Etape 3 : savePhoto (insert DB) ─────────────────────────────────────────
+  const debugTenantId = 'debug-tenant-test-cleanup';
   try {
     await savePhoto(debugTenantId, {
-      r2Url: r2Url || 'https://debug.test/photo.jpg',
-      r2Key: r2Key,
-      sizeBytes: 4,
+      r2Url: uploadRes.url,
+      r2Key: uploadRes.key,
+      sizeBytes: MINIMAL_PNG.length,
     });
     results.savePhoto = 'ok';
-    // Nettoyage best-effort
     await db.delete(coachPhotos).where(eq(coachPhotos.tenantId, debugTenantId)).catch(() => {});
   } catch (err) {
     const e = err as { message?: string; stack?: string; code?: string; cause?: unknown };
