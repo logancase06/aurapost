@@ -91,6 +91,10 @@
     "ts-jest": "^29.4.9",
     "typescript": "^5"
   },
+  "optionalDependencies": {
+    "@img/sharp-linux-x64": "^0.35.0",
+    "@img/sharp-win32-x64": "^0.35.0"
+  },
   "engines": {
     "node": ">=20.0.0"
   }
