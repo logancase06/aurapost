@@ -30,6 +30,13 @@
   **Vérification :** `SELECT name FROM sqlite_master WHERE type='table' AND name IN ('social_connections','social_publications');` → 2 résultats.
   **Débloque :** connexion LinkedIn/Instagram, bouton "Publier", webhook Zernio.
 
+- [ ] **1c. Migration leads du site vitrine** — Dans le même shell :
+  ```bash
+  turso db shell <nom-base-prod> < drizzle/0007_site_leads.sql
+  ```
+  **Vérification :** `SELECT COUNT(*) FROM site_leads;` → renvoie `0` sans erreur (table créée).
+  **Débloque :** capture automatique des leads depuis le formulaire de contact du site vitrine (`/api/site/contact`), dashboard `/dashboard/leads`, export CSV des leads.
+
 ---
 
 ### 2. Variables d'environnement de base (si pas encore posées)
