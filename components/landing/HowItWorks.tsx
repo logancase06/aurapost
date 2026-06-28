@@ -23,7 +23,7 @@ export default function HowItWorks() {
           {STEPS.map((s, i) => (
             <ScrollReveal key={s.n} delay={i * 0.12}>
               <div className="relative flex flex-col items-center text-center">
-                <span className="pointer-events-none absolute -top-12 left-1/2 -translate-x-1/2 select-none text-[7rem] font-black leading-none text-white/[0.04]">
+                <span className="pointer-events-none absolute -top-12 left-1/2 -translate-x-1/2 select-none text-[7rem] font-black leading-none text-foreground/[0.06]">
                   {s.n}
                 </span>
                 <PhoneFrame src={s.img} alt={`Étape ${s.n} — ${s.title}`} />

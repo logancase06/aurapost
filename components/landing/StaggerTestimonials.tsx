@@ -22,12 +22,12 @@ interface Testimonial {
 }
 
 const ITEMS: Testimonial[] = [
-  { name: 'Karim B.', role: 'Prep physique · Nice', quote: "J'ai triple mes clients en 6 mois. Je relis, je valide — c'est tout.", network: 'instagram', accent: '#7C3AED' },
-  { name: 'Lea M.', role: 'Coach CrossFit · Lyon', quote: "Fini la page blanche du dimanche soir. Un mois de contenu en deux minutes.", network: 'linkedin', accent: '#A855F7' },
-  { name: 'Thomas R.', role: 'Yoga & mobilite · Bordeaux', quote: "Le ton colle parfaitement a ma voix. Mes abonnes ne voient pas la difference.", network: 'instagram', accent: '#6D28D9' },
-  { name: 'Sarah K.', role: 'Coach nutrition · Paris', quote: "Mon site vitrine + mes posts au meme endroit. Un temps fou gagne.", network: 'linkedin', accent: '#db2777' },
-  { name: 'Yanis D.', role: 'Boxe & cardio · Marseille', quote: "Le calendrier editorial a structure toute ma communication. Game changer.", network: 'instagram', accent: '#8B5CF6' },
-  { name: 'Marina C.', role: 'Pilates · Nantes', quote: "En moins d'une heure j'avais 12 posts prets. Je ne peux plus m'en passer.", network: 'linkedin', accent: '#7C3AED' },
+  { name: 'Karim B.', role: 'Prep physique · Nice', quote: "J'ai triple mes clients en 6 mois. Je relis, je valide — c'est tout.", network: 'instagram', accent: '#2B5240' },
+  { name: 'Lea M.', role: 'Coach CrossFit · Lyon', quote: "Fini la page blanche du dimanche soir. Un mois de contenu en deux minutes.", network: 'linkedin', accent: '#3D7059' },
+  { name: 'Thomas R.', role: 'Yoga & mobilite · Bordeaux', quote: "Le ton colle parfaitement a ma voix. Mes abonnes ne voient pas la difference.", network: 'instagram', accent: '#2B5240' },
+  { name: 'Sarah K.', role: 'Coach nutrition · Paris', quote: "Mon site vitrine + mes posts au meme endroit. Un temps fou gagne.", network: 'linkedin', accent: '#3D7059' },
+  { name: 'Yanis D.', role: 'Boxe & cardio · Marseille', quote: "Le calendrier editorial a structure toute ma communication. Game changer.", network: 'instagram', accent: '#2B5240' },
+  { name: 'Marina C.', role: 'Pilates · Nantes', quote: "En moins d'une heure j'avais 12 posts prets. Je ne peux plus m'en passer.", network: 'linkedin', accent: '#2B5240' },
 ];
 
 function InitialAvatar({ name, accent }: { name: string; accent: string }) {
@@ -35,7 +35,7 @@ function InitialAvatar({ name, accent }: { name: string; accent: string }) {
   return (
     <div
       className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-black text-white"
-      style={{ background: `linear-gradient(135deg, ${accent}, #A855F7)` }}
+      style={{ background: `linear-gradient(135deg, ${accent}, #1F3D2E)` }}
       aria-hidden
     >
       {initials}

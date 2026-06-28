@@ -40,12 +40,12 @@ export default function LandingClient({ heroCopy = HERO_VARIANTS.a }: { heroCopy
   const isDesktop = useIsDesktop();
 
   return (
-    <main id="main-content" className="min-h-screen overflow-x-hidden bg-background">
+    <main id="main-content" className="landing landing-body min-h-screen overflow-x-hidden bg-background">
       {/* Nav */}
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/70 backdrop-blur-xl">
         <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <Link href="/" className="group flex items-center gap-2 text-lg font-black tracking-tight">
-            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-gradient-to-br from-primary to-accent transition-transform duration-150 group-hover:rotate-12 group-hover:scale-110">
+            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary transition-transform duration-150 group-hover:rotate-12 group-hover:scale-110">
               <Sparkles className="h-4 w-4 text-white" />
             </span>
             AuraPost
@@ -185,7 +185,7 @@ export default function LandingClient({ heroCopy = HERO_VARIANTS.a }: { heroCopy
               const inner = (
                 <div className="flex h-full flex-col p-8">
                   {featured && (
-                    <span className="mb-3 inline-flex w-fit rounded-md bg-gradient-to-r from-primary to-accent px-3 py-0.5 text-xs font-bold uppercase tracking-widest text-white">
+                    <span className="mb-3 inline-flex w-fit rounded-md bg-primary px-3 py-0.5 text-xs font-bold uppercase tracking-widest text-white">
                       Recommandé
                     </span>
                   )}

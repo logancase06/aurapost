@@ -10,11 +10,11 @@ interface Testimonial {
 }
 
 const TESTIMONIALS: Testimonial[] = [
-  { name: 'Karim B.', role: 'Préparation physique · Nice', quote: 'J’ai triplé mes clients en 6 mois. Je ne touche plus à mes posts, je relis et je valide.', accent: '#7C3AED' },
-  { name: 'Léa M.', role: 'Coach CrossFit · Lyon', quote: 'Fini la page blanche du dimanche soir. Un mois de contenu en deux minutes, c’est irréel.', accent: '#A855F7' },
-  { name: 'Thomas R.', role: 'Yoga & mobilité · Bordeaux', quote: 'Le ton colle parfaitement à ma voix. Mes abonnés ne voient pas la différence.', accent: '#6D28D9' },
-  { name: 'Sarah K.', role: 'Coach nutrition · Paris', quote: 'Mon site vitrine + mes posts au même endroit. J’ai gagné un temps fou.', accent: '#db2777' },
-  { name: 'Yanis D.', role: 'Boxe & cardio · Marseille', quote: 'Le calendrier éditorial a structuré toute ma communication. Game changer.', accent: '#8B5CF6' },
+  { name: 'Karim B.', role: 'Préparation physique · Nice', quote: 'J’ai triplé mes clients en 6 mois. Je ne touche plus à mes posts, je relis et je valide.', accent: '#2B5240' },
+  { name: 'Léa M.', role: 'Coach CrossFit · Lyon', quote: 'Fini la page blanche du dimanche soir. Un mois de contenu en deux minutes, c’est irréel.', accent: '#3D7059' },
+  { name: 'Thomas R.', role: 'Yoga & mobilité · Bordeaux', quote: 'Le ton colle parfaitement à ma voix. Mes abonnés ne voient pas la différence.', accent: '#2B5240' },
+  { name: 'Sarah K.', role: 'Coach nutrition · Paris', quote: 'Mon site vitrine + mes posts au même endroit. J’ai gagné un temps fou.', accent: '#3D7059' },
+  { name: 'Yanis D.', role: 'Boxe & cardio · Marseille', quote: 'Le calendrier éditorial a structuré toute ma communication. Game changer.', accent: '#2B5240' },
 ];
 
 function Avatar({ name, accent }: { name: string; accent: string }) {
@@ -22,7 +22,7 @@ function Avatar({ name, accent }: { name: string; accent: string }) {
   return (
     <div
       className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-black text-white ring-2 ring-primary/20"
-      style={{ background: `linear-gradient(135deg, ${accent}, #A855F7)` }}
+      style={{ background: `linear-gradient(135deg, ${accent}, #1F3D2E)` }}
       aria-hidden
     >
       {initials}

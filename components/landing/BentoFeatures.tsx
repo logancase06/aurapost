@@ -26,9 +26,9 @@ interface BentoTile {
 
 function PostDemo() {
   return (
-    <div className="mt-4 rounded-lg border border-border bg-background/50 p-4 text-left">
+    <div className="mt-4 rounded-lg border border-border bg-secondary/50 p-4 text-left">
       <div className="mb-2 flex items-center gap-2">
-        <div className="h-2 w-2 rounded-full bg-aura-500" />
+        <div className="h-2 w-2 rounded-full bg-primary" />
         <span className="text-xs font-semibold text-muted-foreground">Instagram · Preparation physique</span>
       </div>
       <p className="text-xs leading-relaxed text-foreground/80">
@@ -36,7 +36,7 @@ function PostDemo() {
       </p>
       <div className="mt-2 flex gap-1 flex-wrap">
         {['#coaching', '#performance', '#recuperation'].map((h) => (
-          <span key={h} className="rounded text-[10px] font-medium text-aura-400">{h}</span>
+          <span key={h} className="rounded text-[10px] font-medium text-primary">{h}</span>
         ))}
       </div>
     </div>
@@ -49,7 +49,7 @@ const TILES: BentoTile[] = [
     description: '12 posts / mois calibres sur votre specialite, votre ton, vos clients cibles. Vous relisez, vous publiez.',
     icon: Sparkles,
     className: 'sm:col-span-2',
-    gradient: 'from-aura-900/40 to-aura-800/20',
+    gradient: 'from-white to-card',
     demo: <PostDemo />,
   },
   {
@@ -57,35 +57,35 @@ const TILES: BentoTile[] = [
     description: 'Planifiez vos posts par glisser-deposer. Export iCal pour Google Calendar et Apple Calendar.',
     icon: CalendarDays,
     className: '',
-    gradient: 'from-violet-900/40 to-purple-900/20',
+    gradient: 'from-card to-white',
   },
   {
     title: 'Site vitrine IA',
     description: 'Un site genere depuis votre profil. Trois styles visuels. Publie en un clic sur votre sous-domaine.',
     icon: Globe,
     className: '',
-    gradient: 'from-fuchsia-900/40 to-pink-900/20',
+    gradient: 'from-white to-card',
   },
   {
     title: 'Export vers vos outils',
     description: 'Buffer, Later, ou copie directe. Vos posts partent exactement ou vous les voulez.',
     icon: Download,
     className: '',
-    gradient: 'from-indigo-900/40 to-blue-900/20',
+    gradient: 'from-card to-white',
   },
   {
     title: 'Analyse de profil',
     description: 'Audit IA de votre presence Instagram et LinkedIn. Score, points forts, actions prioritaires.',
     icon: BarChart3,
     className: '',
-    gradient: 'from-emerald-900/40 to-teal-900/20',
+    gradient: 'from-white to-card',
   },
   {
     title: 'Generation instantanee',
     description: 'Un mois de contenu en moins de 2 minutes. Le tout personnalise, pas de templates generiques.',
     icon: Zap,
     className: 'sm:col-span-2',
-    gradient: 'from-aura-900/40 to-violet-900/20',
+    gradient: 'from-card to-white',
   },
 ];
 
@@ -94,14 +94,14 @@ function BentoTile({ tile }: { tile: BentoTile }) {
   return (
     <div
       className={cn(
-        'group relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br p-6 transition-all duration-300 hover:border-aura-600/50 hover:shadow-lg hover:shadow-aura-900/20',
+        'group relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br p-6 transition-all duration-300 hover:border-primary/30 hover:shadow-lg hover:shadow-foreground/5',
         `bg-gradient-to-br ${tile.gradient}`,
         tile.className
       )}
     >
       <div className="flex items-start gap-4">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-aura-600/20 ring-1 ring-aura-500/30">
-          <Icon className="h-5 w-5 text-aura-400" />
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 ring-1 ring-primary/20">
+          <Icon className="h-5 w-5 text-primary" />
         </div>
         <div>
           <h3 className="font-bold text-foreground">{tile.title}</h3>
