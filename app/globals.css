@@ -49,29 +49,76 @@
 }
 
 /* ── Landing AuraPost — système éditorial ISOLÉ ──────────────────────────────
-   Séparé des tokens dashboard (.dark/violet) ET des accents des sites coachs.
-   Direction « presse » : papier chaud, encre noir-chaud, UN seul accent vermillon
-   (énergie/mouvement — anti-cliché violet/bleu dégradé des SaaS-IA). Scopé à `.landing`
-   pour ne jamais fuiter sur le reste de l'app. */
+   Palette Sapin : ivoire · encre noir-chaud · vert forêt (accent unique).
+   Scopé à `.landing` — ne fuite JAMAIS sur le dashboard (violet) ni les sites coachs. */
 .landing {
-  --landing-accent: #e5482b; /* vermillon — couleur de couverture magazine */
-  --landing-accent-dark: #b8371e; /* survol / texte sur papier */
-  --landing-ink: #18130f; /* noir chaud, jamais #000 pur */
-  --landing-paper: #f6f1e9; /* papier os, légèrement chaud */
-  --landing-paper-2: #efe7da; /* second fond (sections denses) */
-  --landing-muted: #6b6258; /* gris chaud — texte secondaire */
-  --landing-line: #e2d9cc; /* filets / règles éditoriales */
+  /* Palette nommée — usage direct dans les composants landing. */
+  --landing-sapin: #2b5240;               /* vert forêt profond — accent unique */
+  --landing-sapin-hover: #3d7059;         /* survol / liens actifs */
+  --landing-sapin-10: rgba(43,82,64,.10); /* fond badges / chips */
+  --landing-ink: #0f0f0e;                 /* noir chaud — jamais #000 pur */
+  --landing-paper: #fafaf8;               /* blanc ivoire — fond principal */
+  --landing-paper-2: #f0ebe1;             /* beige chaud — sections denses */
+  --landing-muted: #7a7570;               /* gris sage — texte secondaire */
+  --landing-line: #e0d8ce;               /* bordures / règles */
+
+  /* Override des tokens shadcn/ui (convention HSL sans wrapper).
+     Tous les utilitaires Tailwind (bg-background, text-primary, etc.)
+     résolvent automatiquement sur la palette Sapin dans ce scope. */
+  --background: 60 8% 97%;               /* #fafaf8 */
+  --foreground: 30 3% 6%;                /* #0f0f0e */
+  --card: 36 30% 91%;                    /* #f0ebe1 */
+  --card-foreground: 30 3% 6%;
+  --popover: 60 8% 97%;
+  --popover-foreground: 30 3% 6%;
+  --primary: 152 31% 25%;                /* #2b5240 */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 36 20% 94%;
+  --secondary-foreground: 30 3% 6%;
+  --muted: 36 20% 92%;
+  --muted-foreground: 30 4% 46%;         /* #7a7570 */
+  --accent: 153 30% 34%;                 /* #3d7059 */
+  --accent-foreground: 0 0% 100%;
+  --border: 33 23% 84%;                  /* #e0d8ce */
+  --input: 33 23% 84%;
+  --ring: 152 31% 25%;
+
   background: var(--landing-paper);
   color: var(--landing-ink);
 }
+
 .landing ::selection {
-  background: var(--landing-accent);
+  background: var(--landing-sapin);
   color: #fff;
 }
-/* Titres display (serif éditoriale Fraunces). */
+
+/* Titres display (Fraunces). */
 .landing-display {
   font-family: var(--font-landing-display), Georgia, 'Times New Roman', serif;
   font-optical-sizing: auto;
+}
+
+/* Body landing (DM Sans). */
+.landing-body {
+  font-family: var(--font-landing-body), system-ui, sans-serif;
+}
+
+/* Numéro de section — encre fantôme sur fond ivoire (override du blanc pur du global). */
+.landing .section-number {
+  color: hsl(30 3% 6% / 0.05);
+}
+
+/* hover-lift — ombre sapin à la place du violet. */
+.landing .hover-lift:hover {
+  box-shadow: 0 12px 40px -12px rgba(43, 82, 64, 0.28);
+  border-color: rgba(43, 82, 64, 0.32);
+}
+
+/* Dégradé de fond landing — sapin (override du violet du .aura-glow global). */
+.landing .aura-glow {
+  background:
+    radial-gradient(60% 60% at 50% 0%, rgba(43, 82, 64, 0.09) 0%, transparent 70%),
+    radial-gradient(40% 40% at 80% 20%, rgba(61, 112, 89, 0.06) 0%, transparent 70%);
 }
 
 @layer base {

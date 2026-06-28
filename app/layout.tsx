@@ -1,6 +1,7 @@
-import type { Metadata, Viewport } from 'next';
+﻿import type { Metadata, Viewport } from 'next';
 import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
+import { landingDisplay, landingBody } from '@/components/landing/fonts';
 import AppToaster from '@/components/AppToaster';
 import './globals.css';
 import SessionProviderWrapper from '@/components/SessionProviderWrapper';
@@ -20,18 +21,18 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://aurapost.fr';
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
   title: {
-    default: 'AuraPost — Votre contenu Instagram généré par IA',
+    default: 'AuraPost â€” Votre contenu Instagram gÃ©nÃ©rÃ© par IA',
     template: '%s | AuraPost',
   },
   description:
-    'AuraPost génère automatiquement vos posts Instagram et LinkedIn de coach sportif et vous loue un site web personnalisé. Un mois de contenu en 30 secondes.',
+    'AuraPost gÃ©nÃ¨re automatiquement vos posts Instagram et LinkedIn de coach sportif et vous loue un site web personnalisÃ©. Un mois de contenu en 30 secondes.',
   openGraph: {
     type: 'website',
     siteName: 'AuraPost',
     locale: 'fr_FR',
     url: APP_URL,
-    title: 'AuraPost — Contenu social automatisé pour coachs sportifs',
-    description: 'Un mois de posts Instagram & LinkedIn générés en 30 secondes.',
+    title: 'AuraPost â€” Contenu social automatisÃ© pour coachs sportifs',
+    description: 'Un mois de posts Instagram & LinkedIn gÃ©nÃ©rÃ©s en 30 secondes.',
   },
   robots: { index: true, follow: true },
   icons: {
@@ -49,12 +50,12 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr" className={`${GeistSans.variable} ${GeistMono.variable}`} suppressHydrationWarning>
+    <html lang="fr" className={`${GeistSans.variable} ${GeistMono.variable} ${landingDisplay.variable} ${landingBody.variable}`} suppressHydrationWarning>
       <head>
-        {/* Garde-fou dev : un Service Worker enregistré lors d'une session précédente sert
-            du cache périmé (cache-first sur .css) → page sans styles. On le désenregistre et
+        {/* Garde-fou dev : un Service Worker enregistrÃ© lors d'une session prÃ©cÃ©dente sert
+            du cache pÃ©rimÃ© (cache-first sur .css) â†’ page sans styles. On le dÃ©senregistre et
             on purge ses caches AVANT React, puis on recharge une seule fois pour repartir
-            sur du réseau propre. Aucun effet en prod (hostname ≠ localhost). */}
+            sur du rÃ©seau propre. Aucun effet en prod (hostname â‰  localhost). */}
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){
@@ -89,3 +90,4 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 }
+
