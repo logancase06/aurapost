@@ -1,4 +1,4 @@
-import type { NextRequest } from 'next/server';
+﻿import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { eq } from 'drizzle-orm';
 import { auth } from '@/lib/auth';
@@ -12,9 +12,9 @@ import { csrfGuard, logUnauthorized, MAX_UPLOAD_BYTES } from '@/lib/security';
 import { validateImage, POST_PHOTO_MIME } from '@/lib/upload';
 import { getPlanLimits } from '@/lib/plans';
 
-// Bibliothèque photos pour le dialog d'approbation des posts.
-//   GET  → 3 dernières photos + mini-profil coach (handle + spécialité pour l'aperçu).
-//   POST → upload (jpg/png/webp/heic ≤ 10 Mo) ; validation magic bytes + resize sharp + R2/mock.
+// Bibliotheque photos pour le dialog d'approbation des posts.
+//   GET  -> 3 dernieres photos + mini-profil coach (handle + specialite pour l'apercu).
+//   POST -> upload (jpg/png/webp/heic <= 10 Mo) ; validation magic bytes + resize sharp + R2/mock.
 
 async function coachMini(tenantId: string): Promise<{ displayName: string; speciality: string } | null> {
   const [row] = await db
@@ -30,7 +30,7 @@ export async function GET() {
     const session = await auth();
     if (!session?.user?.id) {
       logUnauthorized('session manquante', { path: '/api/posts/photo' });
-      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+      return NextResponse.json({ error: 'Non autorise' }, { status: 401 });
     }
     const tenantId = await requireTenantId();
     const [photos, coach] = await Promise.all([listPhotos(tenantId, 6), coachMini(tenantId)]);
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     const session = await auth();
     if (!session?.user?.id) {
       logUnauthorized('session manquante', { path: '/api/posts/photo' });
-      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+      return NextResponse.json({ error: 'Non autorise' }, { status: 401 });
     }
     const tenantId = await requireTenantId();
 
@@ -56,12 +56,15 @@ export async function POST(req: NextRequest) {
     const max = getPlanLimits(session.user.plan).photosMax;
     const existing = await listPhotos(tenantId, max + 1);
     if (existing.length >= max) {
-      return NextResponse.json({ error: `Limite de ${max} photos atteinte — supprime-en une pour en ajouter.` }, { status: 429 });
+      return NextResponse.json(
+        { error: `Limite de ${max} photos atteinte -- supprime-en une pour en ajouter.` },
+        { status: 429 }
+      );
     }
 
     const form = await req.formData();
     const file = form.get('photo');
-    if (!(file instanceof File)) return NextResponse.json({ error: 'Aucune photo reçue.' }, { status: 400 });
+    if (!(file instanceof File)) return NextResponse.json({ error: 'Aucune photo recue.' }, { status: 400 });
 
     if (file.size > MAX_UPLOAD_BYTES) {
       return NextResponse.json(
@@ -71,28 +74,28 @@ export async function POST(req: NextRequest) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    // Validation par signature binaire réelle (pas le file.type déclaré, falsifiable).
+    // Validation par signature binaire reelle (pas le file.type declare, falsifiable).
     if (!validateImage(buffer, POST_PHOTO_MIME)) {
-      return NextResponse.json({ error: 'Format non supporté (JPG, PNG, WebP ou HEIC).' }, { status: 400 });
+      return NextResponse.json({ error: 'Format non supporte (JPG, PNG, WebP ou HEIC).' }, { status: 400 });
     }
 
-    const res = await uploadCoachPhoto(tenantId, file.name || ‘photo.jpg’, buffer);
+    const res = await uploadCoachPhoto(tenantId, file.name || 'photo.jpg', buffer);
     if (!res.ok) {
-      logError(‘[posts/photo POST] uploadCoachPhoto échoué’, { reason: res.reason, tenantId });
-      return NextResponse.json({ error: ‘Échec de l’upload. Réessayez.’ }, { status: 500 });
+      logError('[posts/photo POST] uploadCoachPhoto echoue', { reason: res.reason, tenantId });
+      return NextResponse.json({ error: "Echec de l'upload. Reessayez." }, { status: 500 });
     }
 
     const photo = await savePhoto(tenantId, { r2Url: res.url, r2Key: res.key, sizeBytes: file.size });
     return NextResponse.json({ ok: true, photo });
   } catch (err) {
     const e = err as { message?: string; stack?: string; code?: string; cause?: unknown };
-    logError(‘[posts/photo POST] erreur interne’, {
+    logError('[posts/photo POST] erreur interne', {
       error: e?.message ?? String(err),
       stack: e?.stack ?? null,
       code: e?.code ?? null,
       cause: e?.cause ? String(e.cause) : null,
     });
-    return NextResponse.json({ error: ‘Erreur interne’ }, { status: 500 });
+    return NextResponse.json({ error: 'Erreur interne' }, { status: 500 });
   }
 }
 
