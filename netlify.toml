@@ -10,14 +10,18 @@
 # ─────────────────────────────────────────────────────────────────────────────
 
 [build]
-  command = "npm run build"
+  # --include=optional garantit l'installation de @img/sharp-linux-x64 (binaire natif sharp).
+  command = "npm install --include=optional && npm run build"
   publish = ".next"
 
 [build.environment]
   NODE_VERSION = "20"
   NEXT_TELEMETRY_DISABLED = "1"
-  # Empêche un build de planter si une var optionnelle manque (toutes ont un mock).
-  NPM_FLAGS = "--no-audit --no-fund"
+  NPM_FLAGS = "--no-audit --no-fund --include=optional"
+
+# Inclut les bibliothèques partagées de sharp (.so) dans le bundle des fonctions Netlify.
+[functions]
+  included_files = ["node_modules/@img/**"]
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
