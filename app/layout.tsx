@@ -1,4 +1,4 @@
-﻿import type { Metadata, Viewport } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
 import { landingDisplay, landingBody } from '@/components/landing/fonts';
@@ -77,11 +77,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <CustomCursor />
         <FaviconController />
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
-          <SessionProviderWrapper>{children}</SessionProviderWrapper>
+          <SessionProviderWrapper>{children}<CrispChat /></SessionProviderWrapper>
         </ThemeProvider>
         <ServiceWorkerRegister />
         <AnalyticsScripts />
-        <CrispChat />
         <InstallPrompt />
         <CookieBanner />
         <KeyboardShortcuts />
