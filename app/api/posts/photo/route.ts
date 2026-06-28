@@ -1,5 +1,6 @@
 ﻿import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import type { Session } from 'next-auth';
 import { eq } from 'drizzle-orm';
 import { auth } from '@/lib/auth';
 import { uploadCoachPhoto } from '@/lib/r2';
@@ -46,7 +47,7 @@ export async function POST(req: NextRequest) {
     if (csrf) return csrf;
 
     // ── 1. Session ────────────────────────────────────────────────────────────
-    let session: Awaited<ReturnType<typeof auth>>;
+    let session: Session | null = null;
     try {
       session = await auth();
     } catch (authErr) {
