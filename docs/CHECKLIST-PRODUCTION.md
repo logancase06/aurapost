@@ -176,16 +176,18 @@
   |---|---|
   | `CRON_SECRET` | `openssl rand -hex 32` |
 
-- [ ] **7b. Configurer le planificateur externe** — Utiliser [cron-job.org](https://cron-job.org) (gratuit) ou EasyCron. Créer les 6 jobs avec header `Authorization: Bearer <CRON_SECRET>` :
+- [ ] **7b. Configurer le planificateur externe** — Utiliser [cron-job.org](https://cron-job.org) (gratuit) ou EasyCron. Créer les 8 jobs avec header `Authorization: Bearer <CRON_SECRET>` :
 
-  | URL | Fréquence | Rôle |
-  |---|---|---|
-  | `https://aurapost.fr/api/cron/reconcile-jobs` | **Toutes les 10 min** | Jobs bloqués → failed, verrou libéré |
-  | `https://aurapost.fr/api/cron/email-sequences` | 1×/jour (8h) | Séquences réengagement coaches |
-  | `https://aurapost.fr/api/cron/distributor-activation` | 1×/jour (7h) | Activation J+1/3/7 des distributeurs |
-  | `https://aurapost.fr/api/cron/monthly-reminder` | 1×/jour (9h) | Rappel génération mensuelle |
-  | `https://aurapost.fr/api/cron/data-retention` | 1×/jour (2h) | Nettoyage données RGPD |
-  | `https://aurapost.fr/api/cron/payment-grace` | 1×/jour (6h) | Downgrade après 7j de retard paiement |
+  | URL | Méthode | Fréquence | Rôle |
+  |---|---|---|---|
+  | `https://aurapost.fr/api/cron/reconcile-jobs` | POST | **Toutes les 10 min** | Jobs bloqués → failed, verrou libéré |
+  | `https://aurapost.fr/api/cron/email-sequences` | POST | 1×/jour (8h) | Séquences réengagement coaches |
+  | `https://aurapost.fr/api/cron/distributor-activation` | POST | 1×/jour (7h) | Activation J+1/3/7 des distributeurs |
+  | `https://aurapost.fr/api/cron/monthly-reminder` | POST | 1×/jour (9h) | Rappel génération mensuelle |
+  | `https://aurapost.fr/api/cron/data-retention` | POST | 1×/jour (2h) | Nettoyage données RGPD |
+  | `https://aurapost.fr/api/cron/payment-grace` | POST | 1×/jour (6h) | Downgrade après 7j de retard paiement |
+  | `https://aurapost.fr/api/cron/onboarding-reminder` | POST | 1×/jour (10h) | Relance coaches ayant abandonné l'onboarding |
+  | `https://aurapost.fr/api/cron/monthly-report` | POST | 1×/mois (J=1, 10h) | Rapport mensuel aux coaches (posts, trafic, leads) |
 
   **Vérification :** appeler manuellement `https://aurapost.fr/api/cron/reconcile-jobs` avec le header → réponse `200 {"ok":true}`.
 
@@ -329,9 +331,7 @@
 
 ### 16. Métriques admin en temps réel (B.3 ROADMAP)
 
-- [ ] Remplacer les valeurs hardcodées dans `lib/db/admin.ts` (`demoConversion: 32`, NPS simulé, MRR fictif) par des métriques réelles calculées depuis la DB.
-- **Pourquoi différable :** ne concerne que le panel `/admin` — aucun coach ne le voit.
-- **Effort :** M (~1 jour).
+- [x] ~~Remplacer les valeurs hardcodées~~ — **Fait.** `lib/db/admin.ts` calcule désormais toutes les métriques depuis la DB : MRR réel depuis les plans actifs, taux mock/API, dernière génération, répartition des plans, NPS absent (supprimé). Aucune valeur simulée restante.
 
 ---
 
