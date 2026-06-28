@@ -1,7 +1,6 @@
 ﻿import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { requireTenantId } from '@/lib/tenant';
 import { stripe } from '@/lib/stripe';
 import { getPlan, FREE_TRIAL_DAYS } from '@/lib/plans';
 import { db } from '@/lib/db';
@@ -16,7 +15,8 @@ export async function POST(req: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.id) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
-    const tenantId = await requireTenantId();
+    const tenantId = session.user.tenantId;
+    if (!tenantId) return NextResponse.json({ error: 'Session invalide' }, { status: 401 });
 
     // Cette route est exclue du rate-limit global du proxy (passthrough) → limite dédiée
     // par tenant pour éviter la création en masse de sessions de paiement.
