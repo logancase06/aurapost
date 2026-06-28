@@ -5,6 +5,8 @@ import { auth } from '@/lib/auth';
 import { getPostWithVariants } from '@/lib/db/posts';
 import { getBrandConstraintsForTenant } from '@/lib/db/organizations';
 import { findForbidden } from '@/lib/compliance';
+import { getPlanLimits } from '@/lib/plans';
+import { getPublicationsBatch } from '@/lib/db/social-connections';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import DashboardShell from '../../DashboardShell';
@@ -28,6 +30,10 @@ export default async function PostDetailPage({ params }: { params: Promise<{ id:
   // Badge conformité marque (si le tenant appartient à une organisation/réseau).
   const brand = await getBrandConstraintsForTenant(tenantId);
   const breaches = brand ? findForbidden(post.content, brand.forbiddenWords) : null;
+
+  // Publication sociale — chargé uniquement pour les plans pack_complet.
+  const socialPublishEnabled = getPlanLimits(session.user.plan ?? 'starter').socialPublishEnabled;
+  const publications = socialPublishEnabled ? await getPublicationsBatch(tenantId, [post.id]) : [];
 
   return (
     <DashboardShell active="/dashboard">
@@ -71,9 +77,12 @@ export default async function PostDetailPage({ params }: { params: Promise<{ id:
               hashtags: post.hashtags,
               callToAction: post.callToAction,
               network: post.network,
+              status: post.status,
               scheduledFor: post.scheduledFor,
               copyCount: post.copyCount,
             }}
+            socialPublishEnabled={socialPublishEnabled}
+            publications={publications}
           />
         </div>
       </div>

@@ -6,6 +6,9 @@ import { Copy, Check, CalendarClock, ExternalLink, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { schedulePostAction, trackCopyAction } from '../../post-actions';
+import PublishPostDialog from '@/components/social/PublishPostDialog';
+import { PlatformStatusBadge } from '@/components/social/PublishButton';
+import type { PublicationSummary } from '@/lib/db/social-connections';
 
 interface PostLite {
   id: string;
@@ -13,12 +16,19 @@ interface PostLite {
   hashtags: string[];
   callToAction: string | null;
   network: string;
+  status: string;
   scheduledFor: string | null;
   copyCount: number;
 }
 
-/** Bloc d'actions du détail post : copier (+stat), planifier, exporter Buffer/Later. */
-export default function PostDetailClient({ post }: { post: PostLite }) {
+interface Props {
+  post: PostLite;
+  socialPublishEnabled?: boolean;
+  publications?: PublicationSummary[];
+}
+
+/** Bloc d'actions du détail post : copier (+stat), planifier, publier sur réseaux, exporter. */
+export default function PostDetailClient({ post, socialPublishEnabled = false, publications = [] }: Props) {
   const [copied, setCopied] = useState(false);
   const [copyCount, setCopyCount] = useState(post.copyCount);
   const [date, setDate] = useState(post.scheduledFor ? post.scheduledFor.slice(0, 10) : '');
@@ -60,6 +70,7 @@ export default function PostDetailClient({ post }: { post: PostLite }) {
 
   return (
     <div className="space-y-6">
+      {/* Actions principales */}
       <div className="flex flex-wrap items-center gap-3">
         <Button onClick={copy} variant="gradient" className="min-h-[44px]">
           {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -68,8 +79,27 @@ export default function PostDetailClient({ post }: { post: PostLite }) {
         <span className="text-sm text-muted-foreground">
           Copié <strong className="text-foreground">{copyCount}</strong> fois
         </span>
+
+        {/* Z-3.3 — Bouton publication sociale (pack_complet uniquement) */}
+        {socialPublishEnabled && (
+          <PublishPostDialog
+            postId={post.id}
+            postContent={fullText}
+            disabled={post.status !== 'approved'}
+          />
+        )}
       </div>
 
+      {/* Z-3.4 — Badges "Déjà publié" */}
+      {publications.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {publications.map((pub) => (
+            <PlatformStatusBadge key={`${pub.connectionId}-${pub.status}`} pub={pub} />
+          ))}
+        </div>
+      )}
+
+      {/* Planification */}
       <div className="rounded-lg border border-border bg-card p-5">
         <p className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-muted-foreground">
           <CalendarClock className="h-4 w-4 text-primary" /> Programmer
