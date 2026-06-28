@@ -76,14 +76,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Format non supporté (JPG, PNG, WebP ou HEIC).' }, { status: 400 });
     }
 
-    const res = await uploadCoachPhoto(tenantId, file.name || 'photo.jpg', buffer);
-    if (!res.ok) return NextResponse.json({ error: 'Échec de l’upload. Réessayez.' }, { status: 500 });
+    const res = await uploadCoachPhoto(tenantId, file.name || ‘photo.jpg’, buffer);
+    if (!res.ok) {
+      logError(‘[posts/photo POST] uploadCoachPhoto échoué’, { reason: res.reason, tenantId });
+      return NextResponse.json({ error: ‘Échec de l’upload. Réessayez.’ }, { status: 500 });
+    }
 
     const photo = await savePhoto(tenantId, { r2Url: res.url, r2Key: res.key, sizeBytes: file.size });
     return NextResponse.json({ ok: true, photo });
   } catch (err) {
-    logError('[posts/photo POST]', { error: String(err) });
-    return NextResponse.json({ error: 'Erreur interne' }, { status: 500 });
+    const e = err as { message?: string; stack?: string; code?: string; cause?: unknown };
+    logError(‘[posts/photo POST] erreur interne’, {
+      error: e?.message ?? String(err),
+      stack: e?.stack ?? null,
+      code: e?.code ?? null,
+      cause: e?.cause ? String(e.cause) : null,
+    });
+    return NextResponse.json({ error: ‘Erreur interne’ }, { status: 500 });
   }
 }
 
