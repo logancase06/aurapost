@@ -50,11 +50,19 @@ export async function POST(req: NextRequest) {
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    const existing = await db
-      .select({ id: users.id })
-      .from(users)
-      .where(eq(users.email, normalizedEmail))
-      .limit(1);
+    let existing: { id: string }[];
+    try {
+      existing = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.email, normalizedEmail))
+        .limit(1);
+    } catch (dbErr) {
+      logError('[register] DB inaccessible', {
+        error: dbErr instanceof Error ? dbErr.stack ?? dbErr.message : String(dbErr),
+      });
+      return NextResponse.json({ error: 'Service temporairement indisponible.' }, { status: 503 });
+    }
 
     if (existing.length > 0) {
       // Égalisation de temps — empêche l'énumération d'emails par timing.
@@ -167,7 +175,9 @@ export async function POST(req: NextRequest) {
     logEvent('auth.register', tenantId, { userId });
     return NextResponse.json({ message: 'Compte créé avec succès' }, { status: 201 });
   } catch (err) {
-    logError('[register] Erreur interne', { error: String(err) });
+    logError('[register] Erreur interne', {
+      error: err instanceof Error ? err.stack ?? err.message : String(err),
+    });
     return NextResponse.json({ error: 'Erreur interne' }, { status: 500 });
   }
 }
