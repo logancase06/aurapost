@@ -217,7 +217,7 @@
   | `ZERNIO_WEBHOOK_SECRET` | Secret généré ci-dessus |
 
 - [ ] **8d. Configurer le webhook dans Zernio** — Dashboard Zernio → **Webhooks → Add endpoint** :
-  - URL : `https://aurapost.fr/api/social/webhook`
+  - URL : `https://aurapost.fr/api/webhooks/zernio`
   - Signing secret : la valeur de `ZERNIO_WEBHOOK_SECRET` ci-dessus
   - Événements : `post.published`, `post.failed`
 
