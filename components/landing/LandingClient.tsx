@@ -5,19 +5,17 @@ import dynamic from 'next/dynamic';
 import { Camera, Briefcase, Globe, ArrowRight, Check, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ShimmerButton } from '@/components/ui/shimmer-button';
-import { Spotlight } from '@/components/ui/spotlight';
 import { TypewriterEffect } from '@/components/ui/typewriter-effect';
 import { BorderBeam } from '@/components/ui/border-beam';
 import { MovingBorderCard } from '@/components/ui/moving-border';
 import { ScrollReveal } from '@/components/ui/motion-primitives';
-import { MouseGlow, BetaBadge } from '@/components/ui/decor';
+import { BetaBadge } from '@/components/ui/decor';
 import { useIsDesktop } from '@/lib/hooks/use-media-query';
 import { PLANS, formatPrice } from '@/lib/plans';
 import { HERO_VARIANTS, type HeroCopy } from '@/lib/ab';
 import { unsplash, FITNESS_PHOTO_IDS } from '@/lib/stock-images';
 import TrustWidget from './TrustWidget';
-import HeroMockup from './HeroMockup';
-import { PhoneFrame } from '@/components/ui/device-frames';
+import HeroDashboard from './HeroDashboard';
 import InstagramGridBackground from './InstagramGridBackground';
 
 // Effets lourds chargés en dynamic import (bundle initial allégé), désactivés sur mobile.
@@ -70,9 +68,6 @@ export default function LandingClient({ heroCopy = HERO_VARIANTS.a }: { heroCopy
       {/* Hero */}
       <section className="relative flex min-h-[88vh] items-center overflow-hidden py-16">
         <InstagramGridBackground />
-        {isDesktop && <Spotlight className="-top-40 left-0 md:-top-20 md:left-60" fill="#7C3AED" />}
-        {isDesktop && <Particles quantity={40} />}
-        <MouseGlow />
         <span className="section-number pointer-events-none absolute -right-4 top-6 select-none md:right-6">N°1</span>
 
         <div className="relative z-10 mx-auto grid w-full max-w-6xl items-center gap-12 px-6 lg:grid-cols-[1.05fr_1fr]">
@@ -82,10 +77,10 @@ export default function LandingClient({ heroCopy = HERO_VARIANTS.a }: { heroCopy
               <Sparkles className="h-3.5 w-3.5" /> Contenu social piloté par IA
             </div>
 
-            <h1 className="text-6xl font-black uppercase leading-[0.92] tracking-tighter sm:text-7xl md:text-8xl">
+            <h1 className="landing-display text-6xl font-black uppercase leading-[0.92] tracking-tighter sm:text-7xl md:text-8xl">
               {heroCopy.line1}
               <br />
-              <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">{heroCopy.line2}</span>
+              <span className="text-primary">{heroCopy.line2}</span>
             </h1>
 
             <div className="mt-6 flex justify-center lg:justify-start">
@@ -115,15 +110,15 @@ export default function LandingClient({ heroCopy = HERO_VARIANTS.a }: { heroCopy
               <TrustWidget />
             </div>
 
-            {/* Mockup produit mobile (iPhone) — sous le texte, < lg uniquement */}
-            <div className="mt-10 flex justify-center lg:hidden">
-              <PhoneFrame src="/mockups/phone-posts.png" alt="Le tableau de bord AuraPost de Vincent sur mobile" className="max-w-[180px]" />
+            {/* Dashboard anime mobile — sous le texte, < lg uniquement */}
+            <div className="mt-10 lg:hidden">
+              <HeroDashboard />
             </div>
           </div>
 
           {/* Colonne mockup produit (MacBook) — desktop ≥ lg */}
-          <div className="hidden lg:block">
-            <HeroMockup />
+          <div className="hidden lg:flex lg:items-center lg:justify-center">
+            <HeroDashboard />
           </div>
         </div>
       </section>
