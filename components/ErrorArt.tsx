@@ -5,8 +5,8 @@ export function ErrorArt({ code }: { code: string }) {
       <svg width="180" height="180" viewBox="0 0 180 180" fill="none" aria-hidden>
         <defs>
           <linearGradient id="aura-grad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#7c3aed" />
-            <stop offset="100%" stopColor="#a855f7" />
+            <stop offset="0%" stopColor="#2b5240" />
+            <stop offset="100%" stopColor="#3d7059" />
           </linearGradient>
         </defs>
         <circle cx="90" cy="90" r="70" stroke="url(#aura-grad)" strokeWidth="2" strokeOpacity="0.5" />

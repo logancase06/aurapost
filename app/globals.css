@@ -12,25 +12,25 @@
 @layer base {
   :root,
   .dark {
-    --background: 240 24% 5%; /* #0A0A0F */
-    --foreground: 0 0% 98%;
+    --background: 60 8% 97%;         /* #fafaf8 — ivoire */
+    --foreground: 30 3% 6%;          /* #0f0f0e — encre noir-chaud */
 
-    --card: 240 18% 8%; /* #111118 */
-    --card-foreground: 0 0% 98%;
+    --card: 36 30% 91%;              /* #f0ebe1 — beige chaud */
+    --card-foreground: 30 3% 6%;
 
-    --popover: 240 18% 9%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 60 8% 97%;
+    --popover-foreground: 30 3% 6%;
 
-    --primary: 262 83% 58%; /* #7C3AED */
+    --primary: 152 31% 25%;          /* #2b5240 — Sapin */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 10% 15%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 36 20% 94%;
+    --secondary-foreground: 30 3% 6%;
 
-    --muted: 240 10% 13%;
-    --muted-foreground: 240 6% 64%;
+    --muted: 36 20% 92%;
+    --muted-foreground: 30 4% 46%;   /* #7a7570 — gris sage */
 
-    --accent: 271 91% 65%; /* #A855F7 */
+    --accent: 153 30% 34%;           /* #3d7059 — Sapin clair */
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
@@ -39,11 +39,10 @@
     --success: 152 60% 45%;
     --warning: 38 92% 55%;
 
-    --border: 240 10% 18%;
-    --input: 240 10% 18%;
-    --ring: 262 83% 58%;
+    --border: 33 23% 84%;            /* #e0d8ce — ligne chaude */
+    --input: 33 23% 84%;
+    --ring: 152 31% 25%;
 
-    /* Angles nets — border-radius max 8px (style « Nike SaaS »). */
     --radius: 0.5rem;
   }
 }
@@ -155,8 +154,8 @@
 /* Dégradé radial décoratif réutilisable (héros). */
 .aura-glow {
   background:
-    radial-gradient(60% 60% at 50% 0%, hsl(262 83% 58% / 0.18) 0%, transparent 70%),
-    radial-gradient(40% 40% at 80% 20%, hsl(271 91% 65% / 0.12) 0%, transparent 70%);
+    radial-gradient(60% 60% at 50% 0%, rgba(43, 82, 64, 0.09) 0%, transparent 70%),
+    radial-gradient(40% 40% at 80% 20%, rgba(61, 112, 89, 0.06) 0%, transparent 70%);
 }
 
 /* Survol : la card se soulève et projette une ombre (micro-interaction). */
@@ -168,8 +167,8 @@
 }
 .hover-lift:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 40px -12px hsl(262 83% 58% / 0.35);
-  border-color: hsl(262 83% 58% / 0.4);
+  box-shadow: 0 12px 40px -12px rgba(43, 82, 64, 0.28);
+  border-color: rgba(43, 82, 64, 0.32);
 }
 
 /* Sections en diagonale (clip-path) — jamais de séparateurs droits. */

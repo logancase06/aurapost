@@ -13,8 +13,8 @@ export function Meteors({ number = 20, className }: { number?: number; className
         <span
           key={i}
           className={cn(
-            'absolute left-1/2 top-1/2 h-0.5 w-0.5 rotate-[215deg] animate-meteor rounded-[9999px] bg-violet-400 shadow-[0_0_0_1px_#ffffff10]',
-            "before:absolute before:top-1/2 before:h-px before:w-[60px] before:-translate-y-1/2 before:transform before:bg-gradient-to-r before:from-violet-400 before:to-transparent before:content-['']",
+            'absolute left-1/2 top-1/2 h-0.5 w-0.5 rotate-[215deg] animate-meteor rounded-[9999px] bg-primary shadow-[0_0_0_1px_rgba(43,82,64,0.15)]',
+            "before:absolute before:top-1/2 before:h-px before:w-[60px] before:-translate-y-1/2 before:transform before:bg-gradient-to-r before:from-primary before:to-transparent before:content-['']",
             className
           )}
           style={{

@@ -45,7 +45,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#0A0A0F',
+  themeColor: '#fafaf8',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -69,14 +69,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
       </head>
-      <body className="min-h-screen bg-background font-sans text-foreground antialiased">
+      <body className="landing-body min-h-screen bg-background font-sans text-foreground antialiased">
         <a href="#main-content" className="skip-link">
           Aller au contenu principal
         </a>
         <GrainOverlay />
         <CustomCursor />
         <FaviconController />
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <SessionProviderWrapper>{children}<CrispChat /></SessionProviderWrapper>
         </ThemeProvider>
         <ServiceWorkerRegister />
