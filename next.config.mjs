@@ -45,7 +45,7 @@ const nextConfig = {
     // styles inline (Tailwind). Les nonces (alternative stricte) nécessitent du
     // middleware dynamique qui casse ISR — pas adapté ici.
     // Tiers autorisés explicitement : Stripe, Crisp, GA/GTM, Meta Pixel.
-    const appDomain = process.env.APP_DOMAIN || 'localhost';
+    const appDomain = process.env.NEXT_PUBLIC_APP_DOMAIN || 'localhost';
     const csp = [
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://client.crisp.chat https://www.googletagmanager.com https://connect.facebook.net",
