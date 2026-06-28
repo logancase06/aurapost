@@ -29,14 +29,19 @@ export async function createTenantAndOwner(
   const now = new Date().toISOString();
   const email = data.email.toLowerCase().trim();
 
-  await db.insert(tenants).values({
-    id: tenantId,
-    name: data.brandName.trim(),
-    ownerId: userId,
-    plan: 'starter',
-    createdAt: now,
-    updatedAt: now,
-  });
+  try {
+    await db.insert(tenants).values({
+      id: tenantId,
+      name: data.brandName.trim(),
+      ownerId: userId,
+      plan: 'starter',
+      createdAt: now,
+      updatedAt: now,
+    });
+  } catch (err) {
+    console.error('[createTenantAndOwner] tenants INSERT failed:', err);
+    throw err;
+  }
 
   try {
     await db.insert(users).values({
@@ -51,6 +56,7 @@ export async function createTenantAndOwner(
       createdAt: now,
     });
   } catch (err) {
+    console.error('[createTenantAndOwner] users INSERT failed:', err);
     // Nettoyage du tenant orphelin si l'insertion user échoue (ex: email déjà pris).
     db.delete(tenants)
       .where(eq(tenants.id, tenantId))
