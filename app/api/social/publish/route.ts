@@ -60,6 +60,9 @@ export async function POST(req: NextRequest) {
     if (!post) {
       return NextResponse.json({ error: 'Post introuvable.' }, { status: 404 });
     }
+    if (post.status !== 'approved') {
+      return NextResponse.json({ error: 'Le post doit être approuvé avant publication.' }, { status: 400 });
+    }
 
     // Récupérer la photo associée au post (peut être null si aucune photo liée).
     const rawPhotoUrl = await getPostPhotoUrl(tenantId, postId);
