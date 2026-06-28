@@ -6,6 +6,7 @@ import { db } from '@/lib/db';
 import { coachProfiles } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import Anthropic from '@anthropic-ai/sdk';
+import { withAnthropicRetry } from '@/lib/anthropic-retry';
 import { logError } from '@/lib/logger';
 import { z } from 'zod';
 
@@ -54,14 +55,14 @@ export async function generateThreadAction(topic: string): Promise<{ ok: boolean
     }
 
     const client = new Anthropic();
-    // Timeout 20 s : server action synchrone — sans timeout le SDK attend 10 min.
-    const message = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 1200,
-      system: `Tu es ${profile.displayName}, coach en ${profile.speciality}. Tu crées des fils Twitter/X engageants pour ton audience : ${profile.targetAudience ?? 'sportifs et personnes actives'}. Ton ton : ${profile.tone}. Réponds UNIQUEMENT en JSON valide.`,
-      messages: [{
-        role: 'user',
-        content: `Crée un fil Twitter/X de 6 tweets sur le sujet : "${parsed.data}".
+    const message = await withAnthropicRetry(
+      () => client.messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1200,
+        system: `Tu es ${profile.displayName}, coach en ${profile.speciality}. Tu crées des fils Twitter/X engageants pour ton audience : ${profile.targetAudience ?? 'sportifs et personnes actives'}. Ton ton : ${profile.tone}. Réponds UNIQUEMENT en JSON valide.`,
+        messages: [{
+          role: 'user',
+          content: `Crée un fil Twitter/X de 6 tweets sur le sujet : "${parsed.data}".
 
 Règles :
 - Tweet 1 : accroche forte + "(1/6)" à la fin
@@ -82,8 +83,10 @@ Réponds avec ce JSON exact :
   ],
   "hashtags": ["mot1", "mot2", "mot3"]
 }`,
-      }],
-    }, { timeout: 20_000 });
+        }],
+      }, { timeout: 20_000 }),
+      '[threads/generate]',
+    );
 
     let raw = '';
     for (const b of message.content) { if (b.type === 'text') raw += b.text; }

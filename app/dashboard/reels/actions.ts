@@ -6,6 +6,7 @@ import { db } from '@/lib/db';
 import { coachProfiles } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import Anthropic from '@anthropic-ai/sdk';
+import { withAnthropicRetry } from '@/lib/anthropic-retry';
 import { logError } from '@/lib/logger';
 import { z } from 'zod';
 
@@ -64,13 +65,14 @@ export async function generateReelScriptAction(topic: string): Promise<{ ok: boo
     }
 
     const client = new Anthropic();
-    const msg = await client.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 1000,
-      messages: [
-        {
-          role: 'user',
-          content: `Tu es ${profile.displayName}, coach ${profile.speciality}${profile.targetAudience ? ` pour ${profile.targetAudience}` : ''}.
+    const msg = await withAnthropicRetry(
+      () => client.messages.create({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        messages: [
+          {
+            role: 'user',
+            content: `Tu es ${profile.displayName}, coach ${profile.speciality}${profile.targetAudience ? ` pour ${profile.targetAudience}` : ''}.
 Ton style : ${profile.tone ?? 'direct, authentique, motivant'}.
 
 Crée un script complet pour un Reel Instagram / TikTok (60s max) sur le sujet : "${parsed.data}"
@@ -95,9 +97,11 @@ Réponds UNIQUEMENT en JSON strict :
   "hashtags": ["tableau", "de", "8 à 12", "hashtags", "sans #"],
   "caption": "Légende pour le post (max 400 chars)"
 }`,
-        },
-      ],
-    }, { timeout: 25_000 });
+          },
+        ],
+      }, { timeout: 25_000 }),
+      '[reel-script]',
+    );
 
     const raw = msg.content[0].type === 'text' ? msg.content[0].text.trim() : '';
     const data = JSON.parse(raw.replace(/^```json\s*/i, '').replace(/```$/i, '').trim());

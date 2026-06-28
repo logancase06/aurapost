@@ -6,6 +6,7 @@ import { db } from '@/lib/db';
 import { coachProfiles } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import Anthropic from '@anthropic-ai/sdk';
+import { withAnthropicRetry } from '@/lib/anthropic-retry';
 import { logError } from '@/lib/logger';
 import { z } from 'zod';
 
@@ -53,13 +54,14 @@ export async function generateNewsletterAction(theme: string): Promise<{ ok: boo
     }
 
     const client = new Anthropic();
-    const msg = await client.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 1200,
-      messages: [
-        {
-          role: 'user',
-          content: `Tu es ${profile.displayName}, coach ${profile.speciality}${profile.targetAudience ? ` spécialisé pour ${profile.targetAudience}` : ''}.
+    const msg = await withAnthropicRetry(
+      () => client.messages.create({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1200,
+        messages: [
+          {
+            role: 'user',
+            content: `Tu es ${profile.displayName}, coach ${profile.speciality}${profile.targetAudience ? ` spécialisé pour ${profile.targetAudience}` : ''}.
 Ton ton : ${profile.tone ?? 'professionnel et bienveillant'}.
 
 Génère une newsletter mensuelle sur le thème : "${parsed.data}"
@@ -75,9 +77,11 @@ Réponds UNIQUEMENT en JSON strict :
   ],
   "cta": "Call to action final, 1-2 phrases (max 200 chars)"
 }`,
-        },
-      ],
-    }, { timeout: 25_000 });
+          },
+        ],
+      }, { timeout: 25_000 }),
+      '[newsletter]',
+    );
 
     const raw = msg.content[0].type === 'text' ? msg.content[0].text.trim() : '';
     const data = JSON.parse(raw.replace(/^```json\s*/i, '').replace(/```$/i, '').trim());
