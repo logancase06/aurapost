@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
       customer_email: u?.email,
-      success_url: `${APP_URL}/dashboard/billing?success=1`,
+      success_url: `${APP_URL}/dashboard/billing/success?plan=${plan.id}`,
       cancel_url: `${APP_URL}/dashboard/billing?canceled=1`,
       // Essai gratuit 14 jours (cohérent avec FREE_TRIAL_LABEL affiché partout).
       subscription_data: { trial_period_days: FREE_TRIAL_DAYS, metadata: { tenantId, plan: plan.id, billing: wantsAnnual ? 'annual' : 'monthly' } },
