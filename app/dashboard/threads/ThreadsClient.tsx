@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
-import DashboardShell from '@/app/dashboard/DashboardShell';
 import { generateThreadAction, type TwitterThread } from './actions';
 import { UpgradeBanner } from '@/components/UpgradeGate';
 
@@ -42,19 +41,19 @@ export default function ThreadsClient({ canExport, hasProfile = true }: { canExp
 
   if (!canExport) {
     return (
-      <DashboardShell active="/dashboard/threads">
+      <>
         <div className="mx-auto max-w-2xl">
           <h1 className="flex items-center gap-2 text-2xl font-bold mb-4">
             <MessageSquareText className="h-6 w-6 text-primary" /> Fil Twitter/X
           </h1>
           <UpgradeBanner featureName="Fil Twitter/X" requiredPlan="content_only" />
         </div>
-      </DashboardShell>
+      </>
     );
   }
 
   return (
-    <DashboardShell active="/dashboard/threads">
+    <>
       <div className="mx-auto max-w-2xl">
         {!hasProfile && (
           <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30 p-4 text-sm text-amber-800 dark:text-amber-300">
@@ -143,6 +142,6 @@ export default function ThreadsClient({ canExport, hasProfile = true }: { canExp
           </div>
         )}
       </div>
-    </DashboardShell>
+    </>
   );
 }

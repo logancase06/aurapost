@@ -6,7 +6,6 @@ import { Hash, Loader2, Copy, Check, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import DashboardShell from '@/app/dashboard/DashboardShell';
 import { generateHashtagsAction, type HashtagSet } from '@/app/dashboard/analyze/actions';
 
 export default function HashtagsClient() {
@@ -50,7 +49,7 @@ export default function HashtagsClient() {
   }
 
   return (
-    <DashboardShell active="/dashboard/hashtags">
+    <>
       <div className="mx-auto max-w-2xl">
         <div className="mb-8">
           <h1 className="text-2xl font-bold">Générateur de hashtags</h1>
@@ -131,6 +130,6 @@ export default function HashtagsClient() {
           </div>
         )}
       </div>
-    </DashboardShell>
+    </>
   );
 }

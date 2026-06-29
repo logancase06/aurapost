@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
-import DashboardShell from '@/app/dashboard/DashboardShell';
 import { generateReelScriptAction, type ReelScript } from './actions';
 import { UpgradeBanner } from '@/components/UpgradeGate';
 
@@ -49,7 +48,7 @@ export default function ReelsClient({ canExport }: { canExport: boolean }) {
   }
 
   return (
-    <DashboardShell active="/dashboard/reels">
+    <>
       <div className="mx-auto max-w-2xl">
         <div className="mb-8">
           <h1 className="flex items-center gap-2 text-2xl font-bold">
@@ -101,7 +100,7 @@ export default function ReelsClient({ canExport }: { canExport: boolean }) {
           </div>
         )}
       </div>
-    </DashboardShell>
+    </>
   );
 }
 

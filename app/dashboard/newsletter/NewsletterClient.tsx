@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
-import DashboardShell from '@/app/dashboard/DashboardShell';
 import { generateNewsletterAction, type NewsletterResult } from './actions';
 
 export default function NewsletterClient({ hasProfile = true }: { hasProfile?: boolean }) {
@@ -43,7 +42,7 @@ export default function NewsletterClient({ hasProfile = true }: { hasProfile?: b
   }
 
   return (
-    <DashboardShell active="/dashboard/newsletter">
+    <>
       <div className="mx-auto max-w-2xl">
         {!hasProfile && (
           <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30 p-4 text-sm text-amber-800 dark:text-amber-300">
@@ -103,7 +102,7 @@ export default function NewsletterClient({ hasProfile = true }: { hasProfile?: b
           </div>
         )}
       </div>
-    </DashboardShell>
+    </>
   );
 }
 
