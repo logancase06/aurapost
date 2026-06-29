@@ -8,6 +8,7 @@ import { eq } from 'drizzle-orm';
 import Anthropic from '@anthropic-ai/sdk';
 import { withAnthropicRetry } from '@/lib/anthropic-retry';
 import { logError } from '@/lib/logger';
+import { checkAuthRateLimit } from '@/lib/auth-rate-limit';
 import { z } from 'zod';
 
 export interface ReelScript {
@@ -30,6 +31,9 @@ export async function generateReelScriptAction(topic: string): Promise<{ ok: boo
 
     const parsed = topicSchema.safeParse(topic);
     if (!parsed.success) return { ok: false, error: 'Sujet invalide' };
+
+    const rl = await checkAuthRateLimit(`reels:${tenantId}`, 20, 60 * 60 * 1000);
+    if (!rl.allowed) return { ok: false, error: `Limite atteinte. Réessaie dans ${Math.ceil(rl.retryAfterSec / 60)} min.` };
 
     const [profile] = await db
       .select({ displayName: coachProfiles.displayName, speciality: coachProfiles.speciality, tone: coachProfiles.tone, targetAudience: coachProfiles.targetAudience })

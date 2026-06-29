@@ -8,6 +8,7 @@ import { eq } from 'drizzle-orm';
 import Anthropic from '@anthropic-ai/sdk';
 import { withAnthropicRetry } from '@/lib/anthropic-retry';
 import { logError } from '@/lib/logger';
+import { checkAuthRateLimit } from '@/lib/auth-rate-limit';
 import { z } from 'zod';
 
 export interface NewsletterResult {
@@ -28,6 +29,9 @@ export async function generateNewsletterAction(theme: string): Promise<{ ok: boo
 
     const parsed = themeSchema.safeParse(theme);
     if (!parsed.success) return { ok: false, error: 'Thème invalide' };
+
+    const rl = await checkAuthRateLimit(`newsletter:${tenantId}`, 10, 60 * 60 * 1000);
+    if (!rl.allowed) return { ok: false, error: `Limite atteinte. Réessaie dans ${Math.ceil(rl.retryAfterSec / 60)} min.` };
 
     const [profile] = await db
       .select({ displayName: coachProfiles.displayName, speciality: coachProfiles.speciality, bio: coachProfiles.bio, tone: coachProfiles.tone, targetAudience: coachProfiles.targetAudience })
