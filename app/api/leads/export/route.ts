@@ -5,6 +5,7 @@ import { requireTenantId } from '@/lib/tenant';
 import { db } from '@/lib/db';
 import { siteLeads } from '@/lib/db/schema';
 import { eq, desc } from 'drizzle-orm';
+import { checkAuthRateLimit } from '@/lib/auth-rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,6 +13,9 @@ export async function GET(_req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) return new NextResponse('Non autorisé', { status: 401 });
   const tenantId = await requireTenantId();
+
+  const rl = await checkAuthRateLimit(`leads-export:${tenantId}`, 10, 60 * 60 * 1000);
+  if (!rl.allowed) return new NextResponse('Trop de demandes. Réessayez plus tard.', { status: 429 });
 
   const leads = await db
     .select()

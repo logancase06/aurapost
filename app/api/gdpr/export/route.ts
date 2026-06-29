@@ -10,6 +10,7 @@ import {
 } from '@/lib/db/schema';
 import { logActivity } from '@/lib/db/activity';
 import { logUnauthorized } from '@/lib/security';
+import { checkAuthRateLimit } from '@/lib/auth-rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,6 +25,9 @@ export async function GET() {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }
   const tenantId = await requireTenantId();
+
+  const rl = await checkAuthRateLimit(`gdpr-export:${tenantId}`, 3, 60 * 60 * 1000);
+  if (!rl.allowed) return NextResponse.json({ error: 'Trop de demandes. Réessayez dans une heure.' }, { status: 429 });
 
   const [user, profile, posts, sites, subs, refs, refCodes, notifs, logs, leads, photos, editedPics, socialConns, publications, analyses] = await Promise.all([
     db.select().from(users).where(eq(users.id, session.user.id)),
