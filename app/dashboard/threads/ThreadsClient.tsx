@@ -31,13 +31,13 @@ export default function ThreadsClient({ canExport }: { canExport: boolean }) {
       setCopiedIdx(idx);
       toast.success('Tweet copié !');
       setTimeout(() => setCopiedIdx(null), 1500);
-    });
+    }).catch(() => toast.error('Copie impossible'));
   }
 
   function copyAll() {
     if (!result) return;
     const text = result.tweets.map((t) => t.text).join('\n\n');
-    navigator.clipboard.writeText(text).then(() => toast.success('Fil copié !'));
+    navigator.clipboard.writeText(text).then(() => toast.success('Fil copié !')).catch(() => toast.error('Copie impossible'));
   }
 
   if (!canExport) {

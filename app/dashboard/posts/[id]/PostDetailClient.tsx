@@ -64,8 +64,9 @@ export default function PostDetailClient({ post, socialPublishEnabled = false, p
 
   const bufferUrl = `https://buffer.com/add?text=${encodeURIComponent(fullText)}`;
   const laterNote = () => {
-    void navigator.clipboard.writeText(fullText);
-    toast('Copié — collez-le dans Later ✦', { icon: '📋' });
+    navigator.clipboard.writeText(fullText)
+      .then(() => toast('Copié — collez-le dans Later ✦', { icon: '📋' }))
+      .catch(() => toast.error('Copie impossible'));
   };
 
   return (

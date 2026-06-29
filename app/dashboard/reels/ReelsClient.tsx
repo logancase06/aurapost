@@ -45,7 +45,7 @@ export default function ReelsClient({ canExport }: { canExport: boolean }) {
       '',
       `CAPTION : ${result.caption}`,
     ].join('\n');
-    navigator.clipboard.writeText(text).then(() => toast.success('Script copié !'));
+    navigator.clipboard.writeText(text).then(() => toast.success('Script copié !')).catch(() => toast.error('Copie impossible'));
   }
 
   return (
@@ -108,7 +108,7 @@ export default function ReelsClient({ canExport }: { canExport: boolean }) {
 function CopyBtn({ text }: { text: string }) {
   const [done, setDone] = useState(false);
   return (
-    <button onClick={() => navigator.clipboard.writeText(text).then(() => { setDone(true); setTimeout(() => setDone(false), 1200); })} className="text-muted-foreground hover:text-primary">
+    <button onClick={() => navigator.clipboard.writeText(text).then(() => { setDone(true); setTimeout(() => setDone(false), 1200); }).catch(() => {})} className="text-muted-foreground hover:text-primary">
       {done ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
     </button>
   );

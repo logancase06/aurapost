@@ -34,7 +34,7 @@ export default function HashtagsClient() {
       setCopiedSet(set.name);
       toast.success('Hashtags copiés !');
       setTimeout(() => setCopiedSet(null), 1500);
-    });
+    }).catch(() => toast.error('Copie impossible'));
   }
 
   function saveSet(set: HashtagSet) {
