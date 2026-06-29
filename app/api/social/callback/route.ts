@@ -1,6 +1,6 @@
-// Z-2.2 — Callback OAuth Zernio après autorisation du coach.
+// Z-2.2 — Callback OAuth Zernio apres autorisation du coach.
 // GET /api/social/callback?connected={platform}&profileId=X&accountId=Y&username=Z
-// Zernio appelle cette URL après que le coach a connecté son compte social.
+// Zernio appelle cette URL apres que le coach a connecte son compte social.
 
 import { type NextRequest, NextResponse } from 'next/server';
 import { nanoid } from 'nanoid';
@@ -11,37 +11,39 @@ import { SUPPORTED_PLATFORMS, listZernioAccounts, type SocialPlatform } from '@/
 import { upsertConnection } from '@/lib/db/social-connections';
 import { logError, logEvent } from '@/lib/logger';
 
+// Toujours utiliser NEXT_PUBLIC_APP_URL comme base : req.url retourne
+// l'URL interne Netlify (xxxx.netlify.app), pas le domaine custom.
+function abs(path: string): string {
+  const base = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+  return `${base}${path}`;
+}
+
 export async function GET(req: NextRequest) {
-  // Auth — le coach doit toujours être connecté à AuraPost.
+  // Auth
   const session = await auth();
   if (!session?.user?.id) {
     logUnauthorized('session manquante', { path: '/api/social/callback' });
-    return NextResponse.redirect(new URL('/login', req.url));
+    return NextResponse.redirect(abs('/login'));
   }
 
   const tenantId = await requireTenantId();
 
   const { searchParams } = req.nextUrl;
 
-  // Zernio renvoie ?connected={platform} ou rien en cas d'annulation.
   const connected = searchParams.get('connected');
   const profileId = searchParams.get('profileId');
   const accountId = searchParams.get('accountId');
   const username = searchParams.get('username');
 
-  // Annulation ou callback invalide
   if (!connected || !profileId || !accountId) {
-    return NextResponse.redirect(new URL('/dashboard/social?error=cancelled', req.url));
+    return NextResponse.redirect(abs('/dashboard/social?error=cancelled'));
   }
 
-  // Valider la plateforme retournée
   const platform = connected as SocialPlatform;
   if (!SUPPORTED_PLATFORMS.includes(platform)) {
-    return NextResponse.redirect(new URL('/dashboard/social?error=invalid_platform', req.url));
+    return NextResponse.redirect(abs('/dashboard/social?error=invalid_platform'));
   }
 
-  // Récupérer les détails du compte (avatar, displayName) via l'API Zernio.
-  // On filtre sur l'accountId retourné pour trouver les métadonnées.
   let accountName: string | null = username ?? null;
   let accountAvatar: string | null = null;
 
@@ -53,15 +55,13 @@ export async function GET(req: NextRequest) {
       accountAvatar = match.accountAvatar;
     }
   } else {
-    // Non bloquant : on persiste quand même avec le username du callback.
-    logError('[social/callback] listZernioAccounts échec (non bloquant)', {
+    logError('[social/callback] listZernioAccounts echec (non bloquant)', {
       tenantId,
       platform,
       reason: accountsResult.reason,
     });
   }
 
-  // Persiste la connexion (INSERT OR REPLACE via UNIQUE INDEX tenant_id × platform).
   try {
     await upsertConnection({
       id: nanoid(),
@@ -72,11 +72,11 @@ export async function GET(req: NextRequest) {
       accountAvatar,
     });
   } catch (err) {
-    logError('[social/callback] upsertConnection échec', { tenantId, platform, error: String(err) });
-    return NextResponse.redirect(new URL('/dashboard/social?error=save_failed', req.url));
+    logError('[social/callback] upsertConnection echec', { tenantId, platform, error: String(err) });
+    return NextResponse.redirect(abs('/dashboard/social?error=save_failed'));
   }
 
   logEvent('social.connection_added', tenantId, { platform, accountId });
 
-  return NextResponse.redirect(new URL(`/dashboard/social?success=${platform}`, req.url));
+  return NextResponse.redirect(abs(`/dashboard/social?success=${platform}`));
 }
