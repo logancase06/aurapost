@@ -171,11 +171,18 @@ export async function applyAIEdit(instruction: string, currentContent: unknown):
 
   let raw: string;
   try {
-    raw = await callModel(AI_EDIT_SYSTEM, user, 3000);
+    raw = await callModel(AI_EDIT_SYSTEM, user, 3000, 25_000);
   } catch (err) {
-    logError('[applyAIEdit] appel modèle échoué', { error: String(err) });
-    logEvent('ai_edit.failed', c.tenantId, { reason: 'api_error' });
-    return { ok: false, error: 'L’IA est indisponible — réessaie dans quelques minutes' };
+    const msg = String(err).toLowerCase();
+    const isTimeout = msg.includes('timeout') || msg.includes('timed out');
+    logError('[applyAIEdit] appel modèle échoué', { error: String(err), timeout: isTimeout });
+    logEvent('ai_edit.failed', c.tenantId, { reason: isTimeout ? 'timeout' : 'api_error' });
+    return {
+      ok: false,
+      error: isTimeout
+        ? "L'IA a mis trop longtemps à répondre — réessaie dans quelques secondes."
+        : "L'IA est indisponible — réessaie dans quelques minutes.",
+    };
   }
 
   // Parse + coercition tolérante → contenu valide ; merge sur l'actuel (les champs

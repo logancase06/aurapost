@@ -96,19 +96,19 @@ const DEFAULT_GEN_SYSTEM =
   'Tu réponds TOUJOURS avec du JSON valide strict, sans aucun texte avant ou après le JSON.';
 
 /** Chemin 1 — API Anthropic directe (claude-sonnet-4-6). `system` personnalisable. */
-async function generateViaAnthropic(prompt: string, maxTokens: number, system: string = DEFAULT_GEN_SYSTEM): Promise<string> {
+async function generateViaAnthropic(prompt: string, maxTokens: number, system: string = DEFAULT_GEN_SYSTEM, timeoutMs = 90_000): Promise<string> {
   const mod = await import('@anthropic-ai/sdk');
   const Anthropic = mod.default;
   const client = new Anthropic(); // lit ANTHROPIC_API_KEY dans l'environnement
-  // 90 s : génération mensuelle s'exécute en after() (hors limite serverless 26 s).
-  // Sans timeout explicite le SDK attend 10 min, laissant une connexion zombie si la
-  // fonction est tuée par le runtime serverless avant la fin de l'appel Anthropic.
+  // 90 s par défaut (génération mensuelle en after(), hors limite serverless).
+  // Pour les appels interactifs (ex : édition IA du site), passer timeoutMs = 25_000
+  // afin d'échouer proprement avant que Netlify ne coupe la fonction à 26 s.
   const message = await withAnthropicRetry(() => client.messages.create({
     model: API_MODEL,
     max_tokens: maxTokens,
     system,
     messages: [{ role: 'user', content: prompt }],
-  }, { timeout: 90_000 }), 'generateViaAnthropic');
+  }, { timeout: timeoutMs }), 'generateViaAnthropic');
   let text = '';
   for (const block of message.content) {
     if (block.type === 'text') text += block.text + '\n';
@@ -159,9 +159,9 @@ export function aiTextAvailable(): boolean {
  * Emprunte le MÊME chemin que la génération — API directe OU tunnel Claude Code local
  * (key-less) — au lieu d'exiger spécifiquement une ANTHROPIC_API_KEY. Lève en mode mock.
  */
-export async function callModel(system: string, user: string, maxTokens = 2000): Promise<string> {
-  if (GENERATION_MODE === 'anthropic-api') return generateViaAnthropic(user, maxTokens, system);
-  if (GENERATION_MODE === 'cloudflare-tunnel') return generateViaTunnel(`${system}\n\n---\n\n${user}`);
+export async function callModel(system: string, user: string, maxTokens = 2000, timeoutMs = 90_000): Promise<string> {
+  if (GENERATION_MODE === 'anthropic-api') return generateViaAnthropic(user, maxTokens, system, timeoutMs);
+  if (GENERATION_MODE === 'cloudflare-tunnel') return generateViaTunnel(`${system}\n\n---\n\n${user}`, timeoutMs);
   throw new Error('mode mock-enrichi — aucun appel externe');
 }
 

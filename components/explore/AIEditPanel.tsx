@@ -58,7 +58,20 @@ export default function AIEditPanel({
     if (!value || value.length > MAX_LEN || isLoading) return;
     setIsLoading(true);
     const previousContent = content;
-    const res = await applyAIEdit(value, content);
+
+    // Garde-fou client : si le serveur ne répond pas dans 27s (Netlify coupe à 26s),
+    // on annule le loading et on affiche un message plutôt que de rester bloqué.
+    const clientTimeout = new Promise<{ ok: false; error: string }>((resolve) =>
+      setTimeout(() => resolve({ ok: false, error: 'La requête a pris trop longtemps — réessaie.' }), 27_000)
+    );
+
+    let res: { ok: boolean; content?: import('@/lib/db/site').SiteContent; error?: string };
+    try {
+      res = await Promise.race([applyAIEdit(value, content), clientTimeout]);
+    } catch {
+      res = { ok: false, error: 'Erreur réseau — réessaie.' };
+    }
+
     setIsLoading(false);
     if (!res.ok || !res.content) {
       toast.error(res.error || 'Modification impossible');
