@@ -1,7 +1,8 @@
 ﻿'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { CheckCircle2, ArrowRight, Sparkles, Zap, Globe, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -34,13 +35,19 @@ const ICONS = [Sparkles, Zap, Globe, Star, CheckCircle2];
 
 export default function BillingSuccessClient({ plan }: { plan: string }) {
   const router = useRouter();
+  const { update } = useSession();
   const feat = FEATURES[plan] ?? FEATURES.content_only;
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const t = setTimeout(() => setVisible(true), 80);
-    return () => clearTimeout(t);
-  }, []);
+    // Animation d'entree
+    const t1 = setTimeout(() => setVisible(true), 80);
+
+    // Rafraichit la session apres 3s pour laisser le webhook Stripe mettre a jour tenants.plan
+    const t2 = setTimeout(() => update(), 3_000);
+
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [update]);
 
   return (
     <div
