@@ -33,8 +33,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }
 
-  // Confirmation que la génération passe bien par le tunnel.
-  console.log('[AuraPost] Local generate appelé via tunnel ✅');
   logInfo('[local-generate] requête tunnel authentifiée', {});
 
   const body = (await req.json().catch(() => ({}))) as { prompt?: string };

@@ -76,7 +76,6 @@ export const GENERATION_MODE: GenerationMode = isMockForced()
       : 'mock-enrichi';
 
 // Log explicite du mode actif (une fois par process / cold start).
-console.log(`[AuraPost] Génération mode: ${GENERATION_MODE}`);
 logInfo('[content-generator] mode de génération actif', { mode: GENERATION_MODE });
 
 function backoffDelay(attempt: number): number {
