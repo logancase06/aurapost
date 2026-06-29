@@ -2,8 +2,7 @@
 // GET /api/social/callback?connected={platform}&profileId=X&accountId=Y&username=Z
 // Zernio appelle cette URL après que le coach a connecté son compte social.
 
-import type { NextRequest } from 'next/server';
-import { redirect } from 'next/navigation';
+import { type NextRequest, NextResponse } from 'next/server';
 import { nanoid } from 'nanoid';
 import { auth } from '@/lib/auth';
 import { requireTenantId } from '@/lib/tenant';
@@ -17,7 +16,7 @@ export async function GET(req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) {
     logUnauthorized('session manquante', { path: '/api/social/callback' });
-    redirect('/login');
+    return NextResponse.redirect(new URL('/login', req.url));
   }
 
   const tenantId = await requireTenantId();
@@ -32,13 +31,13 @@ export async function GET(req: NextRequest) {
 
   // Annulation ou callback invalide
   if (!connected || !profileId || !accountId) {
-    redirect('/dashboard/social?error=cancelled');
+    return NextResponse.redirect(new URL('/dashboard/social?error=cancelled', req.url));
   }
 
   // Valider la plateforme retournée
   const platform = connected as SocialPlatform;
   if (!SUPPORTED_PLATFORMS.includes(platform)) {
-    redirect('/dashboard/social?error=invalid_platform');
+    return NextResponse.redirect(new URL('/dashboard/social?error=invalid_platform', req.url));
   }
 
   // Récupérer les détails du compte (avatar, displayName) via l'API Zernio.
@@ -74,10 +73,10 @@ export async function GET(req: NextRequest) {
     });
   } catch (err) {
     logError('[social/callback] upsertConnection échec', { tenantId, platform, error: String(err) });
-    redirect('/dashboard/social?error=save_failed');
+    return NextResponse.redirect(new URL('/dashboard/social?error=save_failed', req.url));
   }
 
   logEvent('social.connection_added', tenantId, { platform, accountId });
 
-  redirect(`/dashboard/social?success=${platform}`);
+  return NextResponse.redirect(new URL(`/dashboard/social?success=${platform}`, req.url));
 }

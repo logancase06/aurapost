@@ -3,8 +3,7 @@
 // Redirige vers l'URL d'autorisation Zernio → revient sur /api/social/callback.
 // Gating : pack_complet uniquement, MAX_SOCIAL_ACCOUNTS comptes actifs max.
 
-import type { NextRequest } from 'next/server';
-import { redirect } from 'next/navigation';
+import { type NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { requireTenantId } from '@/lib/tenant';
 import { logUnauthorized } from '@/lib/security';
@@ -30,7 +29,7 @@ export async function GET(req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) {
     logUnauthorized('session manquante', { path: '/api/social/connect' });
-    redirect('/login');
+    return NextResponse.redirect(new URL('/login', req.url));
   }
 
   const tenantId = await requireTenantId();
@@ -38,26 +37,31 @@ export async function GET(req: NextRequest) {
   // Gating plan
   const limits = getPlanLimits(session.user.plan);
   if (!limits.socialPublishEnabled) {
-    redirect('/dashboard/social?error=plan_required');
+    return NextResponse.redirect(new URL('/dashboard/social?error=plan_required', req.url));
   }
 
   // Zernio configuré ?
   if (!isZernioConfigured()) {
-    redirect(`${SOCIAL_ERROR_BASE}not_configured`);
+    return NextResponse.redirect(new URL(`${SOCIAL_ERROR_BASE}not_configured`, req.url));
   }
 
   // Valider le paramètre ?platform=
   const platform = req.nextUrl.searchParams.get('platform') as SocialPlatform | null;
   if (!platform || !SUPPORTED_PLATFORMS.includes(platform)) {
-    redirect(`${SOCIAL_ERROR_BASE}invalid_platform`);
+    return NextResponse.redirect(new URL(`${SOCIAL_ERROR_BASE}invalid_platform`, req.url));
   }
 
   // Quota MAX_SOCIAL_ACCOUNTS
-  const connections = await getConnectionsByTenant(tenantId);
+  let connections: Awaited<ReturnType<typeof getConnectionsByTenant>> = [];
+  try {
+    connections = await getConnectionsByTenant(tenantId);
+  } catch {
+    return NextResponse.redirect(new URL(`${SOCIAL_ERROR_BASE}db_error`, req.url));
+  }
   const alreadyConnectedPlatforms = connections.map((c) => c.platform);
   // Pas de double compte sur la même plateforme (UNIQUE index DB), mais on vérifie la limite globale.
   if (!alreadyConnectedPlatforms.includes(platform) && connections.length >= MAX_SOCIAL_ACCOUNTS) {
-    redirect(`${SOCIAL_ERROR_BASE}quota_reached`);
+    return NextResponse.redirect(new URL(`${SOCIAL_ERROR_BASE}quota_reached`, req.url));
   }
 
   // getOrCreate le Zernio Profile pour ce tenant
@@ -66,7 +70,7 @@ export async function GET(req: NextRequest) {
     const result = await createZernioProfile(session.user.name ?? tenantId);
     if (!result.ok) {
       logError('[social/connect] createZernioProfile échec', { tenantId, reason: result.reason });
-      redirect(`${SOCIAL_ERROR_BASE}api_error`);
+      return NextResponse.redirect(new URL(`${SOCIAL_ERROR_BASE}api_error`, req.url));
     }
     profileId = result.data.profileId;
     await setTenantZernioProfileId(tenantId, profileId);
@@ -80,8 +84,8 @@ export async function GET(req: NextRequest) {
   const result = await getZernioConnectUrl(profileId, platform, callbackUrl);
   if (!result.ok) {
     logError('[social/connect] getZernioConnectUrl échec', { tenantId, platform, reason: result.reason });
-    redirect(`${SOCIAL_ERROR_BASE}api_error`);
+    return NextResponse.redirect(new URL(`${SOCIAL_ERROR_BASE}api_error`, req.url));
   }
 
-  redirect(result.data.authUrl);
+  return NextResponse.redirect(result.data.authUrl);
 }
