@@ -96,24 +96,42 @@ export async function setSitePublished(published: boolean): Promise<{ ok: boolea
 // ── Édition IA en langage naturel ────────────────────────────────────────────
 
 const AIEditSchema = z.object({
-  instruction: z.string().min(1).max(500),
+  instruction: z.string().min(3).max(500).refine(
+    (s) => s.trim().split(/\s+/).filter(Boolean).length >= 1 && /[a-zA-ZÀ-ÿ]/.test(s),
+    { message: 'Instruction incompréhensible' }
+  ),
   currentContent: SiteContentSchema,
 });
 
 const AI_EDIT_SYSTEM = `Tu es un expert en copywriting pour coachs sportifs et professionnels du bien-être.
-Tu reçois le contenu actuel d'un site vitrine (JSON) et une instruction de modification en langage naturel du coach.
-Tu renvoies le contenu COMPLET du site en JSON valide, avec toutes les modifications appliquées.
-La réponse DOIT inclure tous les champs : hero, strengths (exactement 3), testimonials, about, contact, services, pricing.
-Sans explication, sans markdown, sans balises de code.
-Règles strictes :
+Tu reçois le contenu actuel d'un site vitrine (JSON) et une instruction en langage naturel du coach.
+
+RÈGLE ABSOLUE : Tu DOIS toujours produire une modification visible. Si l'instruction est vague,
+interprète-la dans le sens le plus logique et utile pour un coach. Ne refuse jamais de modifier.
+
+Exemples d'instructions et comment les interpréter :
+- "inverse X et Y" / "permute" → échange l'ordre de ces éléments
+- "supprime X" / "enlève X" → retire la section ou l'élément mentionné
+- "rends plus court" / "raccourcis" → résume en gardant l'essentiel
+- "change le ton" / "plus chaleureux" / "plus pro" → réécris dans le registre demandé
+- "ajoute une section sur X" → crée ou enrichit la partie la plus pertinente avec ce sujet
+- "mets en avant X" / "X en premier" → déplace l'élément mentionné en priorité
+- "rends plus percutant" / "améliore" → reformule pour plus d'impact et d'émotion
+- "trop long" / "trop court" → ajuste la longueur des textes concernés
+
+Si l'instruction est ambiguë → modifie la section la plus pertinente dans le sens le plus logique.
+Si plusieurs sections peuvent être améliorées → améliore aussi celle qui sembles le plus en lien.
+
+Règles de contenu :
 - Ne jamais inventer de statistiques, résultats ou chiffres non présents dans le contenu actuel
-- Modifications ciblées : ne changer QUE ce qui est demandé, conserver le reste à l'identique
-- Respecter le style du coach (ton, langue)
+- Respecter le ton et le style du coach
 - hero.title : maximum 80 caractères
 - hero.subtitle : maximum 200 caractères
 - strengths[].title : maximum 40 caractères
 - strengths[].description : maximum 120 caractères
-- Répondre UNIQUEMENT avec le JSON, rien d'autre`;
+
+Format de réponse : JSON UNIQUEMENT, sans markdown, sans balise de code, sans explication.
+Inclure TOUS les champs : hero, strengths (exactement 3), testimonials, about, contact, services, pricing.`;
 
 function buildAIEditUser(
   profile: { name: string; speciality: string; city: string | null; tone: string },
@@ -128,12 +146,14 @@ Ville : ${profile.city ?? 'non précisée'}
 Ton : ${profile.tone}
 Style du site : ${template}
 
-Contenu actuel du site :
+Contenu actuel du site (JSON) :
 ${JSON.stringify(currentContent, null, 2)}
 
-Instruction du coach : "${instruction}"
+INSTRUCTION DU COACH : "${instruction}"
 
-Renvoie le contenu COMPLET du site en JSON valide (tous les champs inclus).`;
+Applique cette instruction au contenu ci-dessus. Renvoie le JSON COMPLET modifié.
+Si l'instruction porte sur un élément qui n'existe pas exactement, modifie l'élément le plus proche.
+Tu DOIS retourner un JSON différent du contenu actuel.`;
 }
 
 export interface AIEditResult {
@@ -201,7 +221,7 @@ export async function applyAIEdit(instruction: string, currentContent: unknown):
   // emptySiteContent(), ce qui fait que merge == currentContent. On détecte ce faux-succès.
   if (JSON.stringify(merged) === JSON.stringify(parsed.data.currentContent)) {
     logEvent('ai_edit.failed', c.tenantId, { reason: 'no_change' });
-    return { ok: false, error: "L'IA n'a pas pu modifier le contenu — reformule ton instruction." };
+    return { ok: false, error: "L'IA n'a pas pu appliquer la modification — essaie d'être plus précis (ex: 'rends le titre plus court' ou 'change le ton')." };
   }
 
   const res = await saveEditorSiteContent(c.tenantId, c.userId, merged);
