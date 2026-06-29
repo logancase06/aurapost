@@ -102,7 +102,9 @@ const AIEditSchema = z.object({
 
 const AI_EDIT_SYSTEM = `Tu es un expert en copywriting pour coachs sportifs et professionnels du bien-être.
 Tu reçois le contenu actuel d'un site vitrine (JSON) et une instruction de modification en langage naturel du coach.
-Tu renvoies UNIQUEMENT le contenu modifié en JSON valide, sans explication, sans markdown, sans balises de code.
+Tu renvoies le contenu COMPLET du site en JSON valide, avec toutes les modifications appliquées.
+La réponse DOIT inclure tous les champs : hero, strengths (exactement 3), testimonials, about, contact, services, pricing.
+Sans explication, sans markdown, sans balises de code.
 Règles strictes :
 - Ne jamais inventer de statistiques, résultats ou chiffres non présents dans le contenu actuel
 - Modifications ciblées : ne changer QUE ce qui est demandé, conserver le reste à l'identique
@@ -131,7 +133,7 @@ ${JSON.stringify(currentContent, null, 2)}
 
 Instruction du coach : "${instruction}"
 
-Renvoie le contenu modifié en JSON valide.`;
+Renvoie le contenu COMPLET du site en JSON valide (tous les champs inclus).`;
 }
 
 export interface AIEditResult {
@@ -169,7 +171,7 @@ export async function applyAIEdit(instruction: string, currentContent: unknown):
 
   let raw: string;
   try {
-    raw = await callModel(AI_EDIT_SYSTEM, user, 1200);
+    raw = await callModel(AI_EDIT_SYSTEM, user, 3000);
   } catch (err) {
     logError('[applyAIEdit] appel modèle échoué', { error: String(err) });
     logEvent('ai_edit.failed', c.tenantId, { reason: 'api_error' });
@@ -187,6 +189,14 @@ export async function applyAIEdit(instruction: string, currentContent: unknown):
   }
 
   const merged = mergeSiteContent(parsed.data.currentContent, aiContent);
+
+  // parseSiteContent ne throw jamais — si le JSON AI est vide ou invalide elle retourne
+  // emptySiteContent(), ce qui fait que merge == currentContent. On détecte ce faux-succès.
+  if (JSON.stringify(merged) === JSON.stringify(parsed.data.currentContent)) {
+    logEvent('ai_edit.failed', c.tenantId, { reason: 'no_change' });
+    return { ok: false, error: "L'IA n'a pas pu modifier le contenu — reformule ton instruction." };
+  }
+
   const res = await saveEditorSiteContent(c.tenantId, c.userId, merged);
   if (!res.ok) return { ok: false, error: 'Sauvegarde impossible' };
 
