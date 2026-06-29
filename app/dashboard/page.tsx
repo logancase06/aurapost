@@ -155,7 +155,6 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
 
       <AnalyzeCard instagram={analyzeCard ? { score: analyzeCard.score, date: analyzeCard.date } : null} staleDays={analyzeCard?.staleDays ?? null} />
 
-
       {fallbackMock && (
         <Alert variant="warning" className="mt-6">
           <XCircle />
