@@ -1,4 +1,4 @@
-import { LayoutDashboard, Globe, Compass, BarChart3, History, CreditCard, CalendarDays, Gift, Settings, User, Sparkles, Share2, Hash, UserRound, Mail, Video, MessageSquareText, type LucideIcon } from 'lucide-react';
+import { LayoutDashboard, Globe, Compass, BarChart3, History, CreditCard, CalendarDays, Gift, Settings, User, Sparkles, Share2, Hash, UserRound, Mail, Video, MessageSquareText, Clapperboard, Captions, LayoutGrid, type LucideIcon } from 'lucide-react';
 
 export interface NavLink {
   href: string;
@@ -29,3 +29,11 @@ export const DASHBOARD_LINKS: NavLink[] = [
 // Entrée conditionnelle — visible uniquement si socialPublishEnabled (pack_complet).
 // Passée via showSocial dans DashboardShell → SidebarNav, comme showAdmin.
 export const SOCIAL_LINK: NavLink = { href: '/dashboard/social', label: 'Mes réseaux', icon: Share2 };
+
+// Section "Création vidéo & visuels" — toujours visible (gating par page).
+export const VIDEO_SECTION_LABEL = 'Création vidéo & visuels';
+export const VIDEO_LINKS: NavLink[] = [
+  { href: '/dashboard/scripts', label: 'Scripts vidéo', icon: Clapperboard },
+  { href: '/dashboard/subtitles', label: 'Sous-titres', icon: Captions },
+  { href: '/dashboard/carousels', label: 'Carrousels', icon: LayoutGrid },
+];
