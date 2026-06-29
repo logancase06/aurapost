@@ -11,7 +11,7 @@ import DashboardShell from '@/app/dashboard/DashboardShell';
 import { generateThreadAction, type TwitterThread } from './actions';
 import { UpgradeBanner } from '@/components/UpgradeGate';
 
-export default function ThreadsClient({ canExport }: { canExport: boolean }) {
+export default function ThreadsClient({ canExport, hasProfile = true }: { canExport: boolean; hasProfile?: boolean }) {
   const [topic, setTopic] = useState('');
   const [result, setResult] = useState<TwitterThread | null>(null);
   const [pending, startTransition] = useTransition();
@@ -56,6 +56,12 @@ export default function ThreadsClient({ canExport }: { canExport: boolean }) {
   return (
     <DashboardShell active="/dashboard/threads">
       <div className="mx-auto max-w-2xl">
+        {!hasProfile && (
+          <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30 p-4 text-sm text-amber-800 dark:text-amber-300">
+            <strong>Profil manquant —</strong> complète ton profil coach avant de générer un fil.{' '}
+            <a href="/dashboard/profile" className="underline font-medium">Aller au profil →</a>
+          </div>
+        )}
         <div className="mb-8">
           <h1 className="flex items-center gap-2 text-2xl font-bold">
             <MessageSquareText className="h-6 w-6 text-primary" /> Fil Twitter/X
@@ -78,7 +84,7 @@ export default function ThreadsClient({ canExport }: { canExport: boolean }) {
                 onKeyDown={(e) => { if (e.key === 'Enter') generate(); }}
               />
             </div>
-            <Button onClick={generate} disabled={pending || !topic.trim()} className="w-full">
+            <Button onClick={generate} disabled={pending || !topic.trim() || !hasProfile} className="w-full">
               {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
               Générer le fil
             </Button>

@@ -10,7 +10,7 @@ import { Card } from '@/components/ui/card';
 import DashboardShell from '@/app/dashboard/DashboardShell';
 import { generateNewsletterAction, type NewsletterResult } from './actions';
 
-export default function NewsletterClient() {
+export default function NewsletterClient({ hasProfile = true }: { hasProfile?: boolean }) {
   const [theme, setTheme] = useState('');
   const [result, setResult] = useState<NewsletterResult | null>(null);
   const [pending, startTransition] = useTransition();
@@ -45,6 +45,12 @@ export default function NewsletterClient() {
   return (
     <DashboardShell active="/dashboard/newsletter">
       <div className="mx-auto max-w-2xl">
+        {!hasProfile && (
+          <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30 p-4 text-sm text-amber-800 dark:text-amber-300">
+            <strong>Profil manquant —</strong> complète ton profil coach avant de générer ta newsletter.{' '}
+            <a href="/dashboard/profile" className="underline font-medium">Aller au profil →</a>
+          </div>
+        )}
         <div className="mb-8">
           <h1 className="text-2xl font-bold">Générateur de newsletter</h1>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -63,7 +69,7 @@ export default function NewsletterClient() {
                 onKeyDown={(e) => e.key === 'Enter' && generate()}
               />
             </div>
-            <Button onClick={generate} disabled={pending || !theme.trim()} variant="gradient">
+            <Button onClick={generate} disabled={pending || !theme.trim() || !hasProfile} variant="gradient">
               {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
               Générer la newsletter
             </Button>

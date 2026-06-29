@@ -44,7 +44,12 @@ export default async function SocialPage({
     );
   }
 
-  const connections = await getConnectionsByTenant(tenantId);
+  let connections: Awaited<ReturnType<typeof getConnectionsByTenant>> = [];
+  try {
+    connections = await getConnectionsByTenant(tenantId);
+  } catch {
+    // Table absente (migration non appliquée) → liste vide, pas de crash.
+  }
 
   // Serialize les données pour le Client Component (évite de passer des objets Drizzle non sérialisables).
   const serializedConnections = connections.map((c) => ({

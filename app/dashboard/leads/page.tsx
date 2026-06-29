@@ -28,12 +28,17 @@ export default async function LeadsPage() {
   const tenantId = session.user.tenantId!;
   const hasSite = canGenerateSite(session.user.plan);
 
-  const leads = await db
-    .select()
-    .from(siteLeads)
-    .where(eq(siteLeads.tenantId, tenantId))
-    .orderBy(desc(siteLeads.createdAt))
-    .limit(500);
+  let leads: typeof siteLeads.$inferSelect[] = [];
+  try {
+    leads = await db
+      .select()
+      .from(siteLeads)
+      .where(eq(siteLeads.tenantId, tenantId))
+      .orderBy(desc(siteLeads.createdAt))
+      .limit(500);
+  } catch {
+    // Table absente (migration non appliquée) → état vide, pas de crash.
+  }
 
   return (
     <DashboardShell active="/dashboard/leads">
