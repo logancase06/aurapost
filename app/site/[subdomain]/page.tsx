@@ -89,7 +89,7 @@ export default async function PublicSitePage({ params, searchParams }: { params:
   // Aucun cookie déposé, aucune IP transmise → exemption CNIL 2020-091 audience measurement.
   // Le tracking est ignoré en mode aperçu (isPreview) pour ne pas fausser les stats.
   const trackingScript = !isPreview
-    ? `(function(){var s='${subdomain}';var r=document.referrer;try{navigator.sendBeacon('/api/track/site-visit',JSON.stringify({subdomain:s,referrer:r}));}catch(e){}})();`
+    ? `(function(){var s=${JSON.stringify(subdomain)};var r=document.referrer;try{navigator.sendBeacon('/api/track/site-visit',JSON.stringify({subdomain:s,referrer:r}));}catch(e){}})();`
     : null;
 
   return (
