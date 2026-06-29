@@ -12,7 +12,7 @@ const NEXT_STATUS: Record<string, { label: string; value: string }> = {
   archived: { label: '', value: '' },
 };
 
-export default function LeadActions({ leadId, currentStatus, email }: { leadId: string; currentStatus: string; email: string; name: string }) {
+export default function LeadActions({ leadId, currentStatus, email }: { leadId: string; currentStatus: string; email: string }) {
   const [pending, startTransition] = useTransition();
   const next = NEXT_STATUS[currentStatus];
 

@@ -91,7 +91,7 @@ export default async function LeadsPage() {
                       <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{lead.message}</p>
                     )}
                   </div>
-                  <LeadActions leadId={lead.id} currentStatus={lead.status} email={lead.email} name={lead.name} />
+                  <LeadActions leadId={lead.id} currentStatus={lead.status} email={lead.email} />
                 </div>
               </Card>
             );
