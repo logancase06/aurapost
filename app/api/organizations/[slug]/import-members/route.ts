@@ -75,7 +75,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
       else if (res.created) created++;
       else linked++;
     } catch (err) {
-      logError('[import-members] ligne échouée', { email: row.email, error: String(err) });
+      logError('[import-members] ligne échouée', { email: row.email.slice(0, 3) + '***', error: String(err) });
       errors.push({ email: row.email, error: 'erreur interne' });
     }
   }
