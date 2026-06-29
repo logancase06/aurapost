@@ -4,6 +4,7 @@ import { canExportPost } from '@/lib/plans';
 import ReelsClient from './ReelsClient';
 
 export const metadata = { title: 'Script Reels' };
+export const maxDuration = 60;
 
 export default async function ReelsPage() {
   const session = await auth();

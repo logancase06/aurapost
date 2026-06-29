@@ -6,10 +6,12 @@ import { db } from '@/lib/db';
 import { generatedPosts } from '@/lib/db/schema';
 import { and, eq } from 'drizzle-orm';
 import Anthropic from '@anthropic-ai/sdk';
+import { withAnthropicRetry } from '@/lib/anthropic-retry';
 import { logError } from '@/lib/logger';
 import { getPlanLimits } from '@/lib/plans';
 
 export const dynamic = 'force-dynamic';
+export const maxDuration = 30;
 
 interface ScoreResult {
   score: number; // 0–100
@@ -56,7 +58,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const client = new Anthropic();
     const hashtagsText = Array.isArray(post.hashtags) ? post.hashtags.join(' ') : '';
 
-    const msg = await client.messages.create({
+    const msg = await withAnthropicRetry(() => client.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 256,
       messages: [
@@ -72,7 +74,7 @@ Réponds UNIQUEMENT en JSON strict (pas de markdown) :
 {"accroche":X,"lisibilite":X,"cta":X,"hashtags":X,"conseil":"string court max 100 chars"}`,
         },
       ],
-    }, { timeout: 15_000 });
+    }, { timeout: 15_000 }), 'post-score');
 
     const raw = msg.content[0].type === 'text' ? msg.content[0].text.trim() : '';
     let parsed: { accroche: number; lisibilite: number; cta: number; hashtags: number; conseil: string };

@@ -4,6 +4,7 @@ import { getPlanLimits } from '@/lib/plans';
 import ThreadsClient from './ThreadsClient';
 
 export const metadata = { title: 'Fil Twitter/X — AuraPost' };
+export const maxDuration = 60;
 
 export default async function ThreadsPage() {
   const session = await auth();
