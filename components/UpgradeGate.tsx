@@ -144,7 +144,7 @@ export function UpgradeBanner({
         <Button asChild size="sm" variant="gradient" className="h-8">
           <Link href="/dashboard/billing">Voir les plans</Link>
         </Button>
-        <button onClick={() => setDismissed(true)} className="text-muted-foreground hover:text-foreground">
+        <button onClick={() => setDismissed(true)} aria-label="Fermer" className="text-muted-foreground hover:text-foreground">
           <X className="h-4 w-4" />
         </button>
       </div>

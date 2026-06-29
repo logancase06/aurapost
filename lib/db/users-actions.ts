@@ -39,7 +39,7 @@ export async function createTenantAndOwner(
       updatedAt: now,
     });
   } catch (err) {
-    console.error('[createTenantAndOwner] tenants INSERT failed:', err);
+    logError('[createTenantAndOwner] tenants INSERT échoué', { error: String(err) });
     throw err;
   }
 
@@ -56,7 +56,7 @@ export async function createTenantAndOwner(
       createdAt: now,
     });
   } catch (err) {
-    console.error('[createTenantAndOwner] users INSERT failed:', err);
+    logError('[createTenantAndOwner] users INSERT échoué', { error: String(err) });
     // Nettoyage du tenant orphelin si l'insertion user échoue (ex: email déjà pris).
     db.delete(tenants)
       .where(eq(tenants.id, tenantId))
